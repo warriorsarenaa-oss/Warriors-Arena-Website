@@ -1,0 +1,314 @@
+@import "tailwindcss";
+
+@theme {
+  --color-wa-bg: #0a0d0a;
+  --color-wa-panel: #161b18;
+  --color-wa-green: #8FE04A;
+  --color-wa-orange: #FF7A1A;
+  --color-wa-red: #ff3d3d;
+  --color-wa-text: #eef1ea;
+  --color-wa-text-dim: #9aa59a;
+
+  --font-archivo: var(--font-archivo);
+  --font-barlow: var(--font-barlow);
+  --font-mono: var(--font-mono);
+  --font-cairo: var(--font-cairo);
+}
+
+@layer base {
+  :root {
+    --wa-bg: #0a0d0a;
+    --wa-bg-2: #12161a;
+    --wa-panel: #161b18;
+    --wa-panel-2: #1d231f;
+    --wa-line: #2a322c;
+    --wa-line-hot: #3a4a3a;
+    --wa-text: #eef1ea;
+    --wa-text-dim: #9aa59a;
+    --wa-text-mute: #626a60;
+    --wa-green: #8FE04A;
+    --wa-orange: #FF7A1A;
+    --wa-red: #ff3d3d;
+    --wa-amber: #ffc043;
+  }
+
+  html, body {
+    background: var(--wa-bg);
+    color: var(--wa-text);
+    font-family: var(--font-barlow), sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  [lang="ar"] body {
+    font-family: var(--font-cairo), sans-serif;
+  }
+}
+
+@layer components {
+  /* ================================== NOISE / SCANLINES ========================== */
+  .wa-noise::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 3px);
+    pointer-events: none;
+    mix-blend-mode: overlay;
+    z-index: 1;
+  }
+  
+  .wa-grain {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .18 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    opacity: .45; mix-blend-mode: overlay;
+    z-index: 2;
+  }
+
+  /* ================================== PANEL ========================== */
+  .wa-panel {
+    background: linear-gradient(180deg, var(--wa-panel-2) 0%, var(--wa-panel) 100%);
+    border: 1px solid var(--wa-line);
+  }
+  
+  .wa-panel-clip {
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+  }
+  
+  .wa-panel-clip-sm {
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  }
+
+  .wa-brackets { position: relative; }
+  .wa-brackets::before, .wa-brackets::after {
+    content: ""; position: absolute; width: 14px; height: 14px;
+    border: 2px solid var(--wa-green); pointer-events: none;
+    z-index: 10;
+  }
+  .wa-brackets::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+  .wa-brackets::after  { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+  /* ================================== BUTTONS ========================== */
+  .wa-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px 22px;
+    font-family: var(--font-archivo);
+    font-size: 14px; letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--wa-bg);
+    background: var(--wa-green);
+    border: 0;
+    cursor: pointer;
+    position: relative;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    transition: transform 120ms ease, filter 120ms ease, background 120ms ease;
+  }
+  
+  .wa-btn::after {
+    content: ""; position: absolute; inset: 0;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+    box-shadow: 0 0 32px rgba(143,224,74,.35);
+    pointer-events: none;
+  }
+  
+  .wa-btn:hover { transform: scale(1.02); filter: brightness(1.1); }
+  .wa-btn:active { transform: scale(0.98); }
+
+  /* ================================== TAPE / LABEL ========================== */
+  .wa-tape {
+    display: inline-block;
+    background: var(--wa-green);
+    color: #0a0d0a;
+    font-family: var(--font-archivo);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    font-size: 12px;
+    transform: rotate(-1deg);
+    position: relative;
+  }
+  
+  [dir="rtl"] .wa-tape { transform: rotate(1deg); }
+
+  /* ================================== ANIMATIONS ========================== */
+  @keyframes wa-grid-pan {
+    from { background-position: 0 0, 0 0; }
+    to   { background-position: 160px 160px, 0 0; }
+  }
+  
+  @keyframes wa-scan {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(200%); }
+  }
+
+  .wa-anim-grid {
+    background-image:
+      linear-gradient(rgba(143,224,74,.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(143,224,74,.08) 1px, transparent 1px);
+    background-size: 40px 40px, 40px 40px;
+    animation: wa-grid-pan 12s linear infinite;
+  }
+
+  .wa-scanline {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(143,224,74,.06) 50%, transparent 100%);
+    height: 40%;
+    animation: wa-scan 6s linear infinite;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  @keyframes wa-marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  @keyframes wa-fadein-up {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+
+  /* Blur-in from above — used on success icon */
+  @keyframes wa-count {
+    0%   { filter: blur(10px); opacity: 0; transform: translateY(-12px); }
+    100% { filter: blur(0);    opacity: 1; transform: translateY(0); }
+  }
+
+  /* Calendar cell: staggered fade-slide-in */
+  @keyframes wa-cell-in {
+    from { opacity: 0; transform: translateY(8px) scale(0.92); }
+    to   { opacity: 1; transform: translateY(0)   scale(1); }
+  }
+
+  /* Calendar day selected: satisfying pop */
+  @keyframes wa-day-pop {
+    0%   { transform: scale(0.85); }
+    55%  { transform: scale(1.14); }
+    80%  { transform: scale(0.96); }
+    100% { transform: scale(1); }
+  }
+
+  /* ================================== BUTTON VARIANTS ========================== */
+  .wa-btn--ghost {
+    background: transparent;
+    color: var(--wa-green);
+    border: 1px solid var(--wa-green);
+    clip-path: none;
+  }
+  .wa-btn--ghost::after { display: none; }
+  .wa-btn--ghost:hover { background: rgba(143,224,74,.08); transform: translate(-2px, -2px); }
+
+  .wa-btn--orange {
+    background: var(--wa-orange);
+  }
+  .wa-btn--orange::after {
+    box-shadow: 0 0 32px rgba(255,122,26,.35);
+  }
+
+  .wa-btn-sm {
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+
+  /* ================================== FORM ELEMENTS ========================== */
+  .wa-input {
+    width: 100%;
+    background: var(--wa-panel);
+    border: 1px solid var(--wa-line);
+    color: var(--wa-text);
+    padding: 14px 16px;
+    font-family: var(--font-barlow), sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 150ms;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wa-input:focus { border-color: var(--wa-green); }
+  .wa-input::placeholder { color: var(--wa-text-mute); }
+
+  .wa-label {
+    display: block;
+    font-family: var(--font-mono), monospace;
+    font-size: 11px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--wa-text-dim);
+    margin-bottom: 8px;
+  }
+
+  /* ================================== TIME SLOTS ========================== */
+  .wa-slot {
+    border: 1px solid var(--wa-line);
+    background: var(--wa-panel);
+    color: var(--wa-text);
+    cursor: pointer;
+    text-align: center;
+    transition: all 150ms;
+    font-family: var(--font-archivo), sans-serif;
+  }
+  .wa-slot--available:hover { border-color: var(--wa-green); background: rgba(143,224,74,.06); }
+  .wa-slot--selected { background: rgba(143,224,74,.12); border-color: var(--wa-green); color: var(--wa-green); }
+  .wa-slot--booked { opacity: .4; cursor: not-allowed; border-color: rgba(255,61,61,.3); color: var(--wa-text-mute); }
+  .wa-slot--closing { border-color: rgba(255,192,67,.4); color: var(--wa-amber); }
+  .wa-slot--closed { opacity: .25; cursor: not-allowed; }
+
+  /* ================================== CALENDAR ========================== */
+  .wa-cal-day {
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    position: relative;
+    font-family: var(--font-archivo);
+    font-size: 16px;
+    cursor: pointer;
+    border: 1px solid var(--wa-line);
+    background: var(--wa-panel);
+    color: var(--wa-text);
+    transition: border-color 150ms, background 150ms;
+  }
+  .wa-cal-day:hover:not(:disabled) {
+    border-color: var(--wa-green);
+    background: rgba(143,224,74,.07);
+    box-shadow: 0 0 14px rgba(143,224,74,.1) inset;
+  }
+  .wa-cal-day--selected {
+    background: var(--wa-green) !important;
+    border-color: var(--wa-green) !important;
+    color: #0a0d0a !important;
+    cursor: default;
+  }
+  .wa-cal-day--closed {
+    background: rgba(8,11,8,.5) !important;
+    border-color: rgba(255,255,255,.03) !important;
+    color: var(--wa-text-mute) !important;
+    cursor: not-allowed !important;
+  }
+  .wa-cal-day--past {
+    opacity: 0.2 !important;
+    cursor: not-allowed !important;
+  }
+
+  /* ================================== TAGS ========================== */
+  .wa-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono), monospace;
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--wa-green);
+    border: 1px solid rgba(143,224,74,.3);
+    background: rgba(143,224,74,.06);
+    padding: 5px 10px;
+  }
+  .wa-tag--orange {
+    color: var(--wa-orange);
+    border-color: rgba(255,122,26,.3);
+    background: rgba(255,122,26,.06);
+  }
+  .wa-tag--amber {
+    color: var(--wa-amber);
+    border-color: rgba(255,192,67,.3);
+    background: rgba(255,192,67,.06);
+  }
+}

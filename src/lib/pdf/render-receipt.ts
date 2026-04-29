@@ -1,0 +1,109 @@
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
+import React from 'react';
+import { supabaseService } from '@/lib/db/supabase-service';
+import { ReceiptTemplate } from './receipt-template';
+import { generateQRCode } from './qr-code';
+import { format } from 'date-fns';
+import { enUS, arSA } from 'date-fns/locale';
+
+/**
+ * Generates a PDF receipt for a booking.
+ * Returns a Buffer of the PDF data.
+ */
+export async function generateReceipt(
+  bookingOrCode: string | any, 
+  locale: 'en' | 'ar' = 'en'
+): Promise<Buffer> {
+  let browser = null;
+  let bookingStrOrObj = bookingOrCode;
+  let bookingCode = typeof bookingOrCode === 'string' ? bookingOrCode : bookingOrCode.booking_code;
+
+  try {
+    // 1. Resolve Booking Data
+    let booking = typeof bookingStrOrObj === 'string' ? null : bookingStrOrObj;
+
+    if (!booking || !booking.games) {
+       throw new Error(`Booking data is incomplete or missing joins for code: ${bookingCode}`);
+    }
+
+    // 2. Fetch System Settings (InstaPay, WhatsApp)
+    const { data: settings } = await supabaseService
+      .from('system_settings')
+      .select('key, value');
+
+    const findSetting = (key: string) => settings?.find(s => s.key === key)?.value;
+    
+    const whatsappData = findSetting('whatsapp_number') as { number: string };
+    const instapayData = findSetting('instapay_identifier') as { identifier: string };
+
+    // 3. Prepare Template Props
+    const dateLocale = locale === 'ar' ? arSA : enUS;
+    const bookingDateFormatted = format(new Date(booking.booking_date), 'MMMM dd, yyyy', { locale: dateLocale });
+    
+    // QR Code links to the booking lookup page
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://warriorsarena.me';
+    const phoneLast4 = booking.customer_phone.slice(-4);
+    const lookupUrl = `${baseUrl}/${locale}/book/lookup?code=${bookingCode}&phone_last4=${phoneLast4}`;
+    const qrCodeDataUrl = await generateQRCode(lookupUrl);
+
+    const templateProps = {
+      bookingCode: booking.booking_code,
+      gameTitle: locale === 'ar' ? booking.games.name_ar : booking.games.name_en,
+      bookingDate: bookingDateFormatted,
+      startTime: booking.start_time.substring(0, 5), // HH:mm
+      endTime: booking.end_time.substring(0, 5),
+      duration: `${booking.duration_minutes} min`,
+      playerCount: booking.player_count,
+      totalPrice: Number(booking.total_price_at_booking),
+      depositAmount: Number(booking.deposit_amount),
+      currencyCode: 'EGP',
+      whatsappNumber: whatsappData?.number || '+20 122 655 7592',
+      instapayId: instapayData?.identifier || 'warriors@instapay',
+      locale,
+      qrCodeDataUrl,
+    };
+
+    // 4. Render React to Static HTML
+    const { renderToStaticMarkup } = require('react-dom/server');
+    const html = renderToStaticMarkup(
+      React.createElement(ReceiptTemplate, templateProps)
+    );
+
+    // 5. PDF Generation via Puppeteer
+    const isLocal = process.env.NODE_ENV === 'development';
+    
+    browser = await puppeteer.launch({
+      args: isLocal ? [] : (chromium as any).args,
+      defaultViewport: { width: 1280, height: 720 },
+      executablePath: isLocal 
+        ? process.env.CHROME_BIN || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+        : await (chromium as any).executablePath(),
+      headless: true,
+    });
+
+    const page = await browser.newPage();
+    
+    // Set content and wait for it to render
+    await page.setContent(`<!DOCTYPE html><html><body>${html}</body></html>`, {
+      waitUntil: 'networkidle0'
+    });
+
+    // Print to PDF (A4)
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: 0, right: 0, bottom: 0, left: 0 }
+    });
+
+    return Buffer.from(pdfBuffer);
+
+  } catch (err) {
+    console.error(`[PDF_GEN_ERROR] ${bookingCode}:`, err);
+    throw err;
+  } finally {
+    if (browser) {
+      await (browser as any).close();
+    }
+  }
+}

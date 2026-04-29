@@ -1,0 +1,3241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Warriors Arena — Booking & Ops</title>
+<style>
+/* ========================================================================
+   WARRIORS ARENA — TACTICAL ARENA DESIGN SYSTEM
+   ======================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow+Condensed:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Cairo:wght@400;600;700;800;900&display=swap');
+
+:root {
+  /* Brand */
+  --wa-bg:        #0a0d0a;
+  --wa-bg-2:      #12161a;
+  --wa-panel:     #161b18;
+  --wa-panel-2:   #1d231f;
+  --wa-line:      #2a322c;
+  --wa-line-hot:  #3a4a3a;
+  --wa-text:      #eef1ea;
+  --wa-text-dim:  #9aa59a;
+  --wa-text-mute: #626a60;
+
+  /* Signature */
+  --wa-green:     #8FE04A;      /* acid green, from brand */
+  --wa-green-2:   #b2f066;
+  --wa-green-dim: #5a8c30;
+  --wa-orange:    #FF7A1A;      /* signal orange */
+  --wa-orange-2:  #ff9a4a;
+  --wa-red:       #ff3d3d;      /* warning / booked */
+  --wa-amber:     #ffc043;
+
+  --wa-green-glow:   0 0 0 1px rgba(143,224,74,.6), 0 0 24px rgba(143,224,74,.25);
+  --wa-orange-glow:  0 0 0 1px rgba(255,122,26,.6), 0 0 24px rgba(255,122,26,.25);
+
+  /* Type */
+  --ff-display: 'Archivo Black', 'Arial Black', sans-serif;
+  --ff-ui:      'Barlow Condensed', 'Helvetica Neue', sans-serif;
+  --ff-mono:    'IBM Plex Mono', ui-monospace, monospace;
+  --ff-ar:      'Cairo', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--wa-bg);
+  color: var(--wa-text);
+  font-family: var(--ff-ui);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}
+body[dir="rtl"] {
+  font-family: var(--ff-ar);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--wa-bg); }
+::-webkit-scrollbar-thumb { background: var(--wa-line); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--wa-line-hot); }
+
+/* ================================== NOISE / SCANLINES ========================== */
+.wa-noise::before {
+  content: "";
+  position: absolute; inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 3px);
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  z-index: 1;
+}
+.wa-grain {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .18 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  opacity: .45; mix-blend-mode: overlay;
+}
+
+/* ================================== PANEL ========================== */
+.wa-panel {
+  position: relative;
+  background:
+    linear-gradient(180deg, var(--wa-panel-2) 0%, var(--wa-panel) 100%);
+  border: 1px solid var(--wa-line);
+}
+.wa-panel--hot {
+  border-color: rgba(143,224,74,.35);
+  box-shadow: 0 0 0 1px rgba(143,224,74,.08), 0 0 32px rgba(143,224,74,.08) inset;
+}
+.wa-panel--clip {
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+}
+
+/* corner brackets */
+.wa-brackets { position: relative; }
+.wa-brackets::before, .wa-brackets::after {
+  content: ""; position: absolute; width: 14px; height: 14px;
+  border: 2px solid var(--wa-green); pointer-events: none;
+}
+.wa-brackets::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.wa-brackets::after  { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+/* ================================== BUTTONS ========================== */
+.wa-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px 22px;
+  font-family: var(--ff-display);
+  font-size: 14px; letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--wa-bg);
+  background: var(--wa-green);
+  border: 0;
+  cursor: pointer;
+  position: relative;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  transition: transform 120ms ease, filter 120ms ease, background 120ms ease;
+}
+.wa-btn::after {
+  content: ""; position: absolute; inset: 0;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  box-shadow: 0 0 32px rgba(143,224,74,.35);
+  pointer-events: none;
+}
+.wa-btn:hover { transform: translate(-2px, -2px); filter: brightness(1.08); }
+.wa-btn:active { transform: translate(0, 0); }
+.wa-btn--orange { background: var(--wa-orange); color: #1a0d00; }
+.wa-btn--ghost {
+  background: transparent; color: var(--wa-text);
+  border: 1px solid var(--wa-line-hot);
+  clip-path: none;
+}
+.wa-btn--ghost::after { display: none; }
+.wa-btn--ghost:hover { border-color: var(--wa-green); color: var(--wa-green); }
+
+.wa-btn-sm { padding: 9px 14px; font-size: 12px; }
+
+/* shift-clip CTA (offset shadow snap) */
+.wa-cta {
+  position: relative; display: inline-block;
+}
+.wa-cta::before {
+  content: ""; position: absolute; inset: 0;
+  background: var(--wa-green);
+  transform: translate(6px, 6px);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+  opacity: .2;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+.wa-cta:hover::before { transform: translate(3px, 3px); opacity: .4; }
+
+/* ================================== TAPE / LABEL ========================== */
+.wa-tape {
+  display: inline-block;
+  background: var(--wa-green);
+  color: #0a0d0a;
+  font-family: var(--ff-display);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  font-size: 12px;
+  transform: rotate(-1deg);
+  position: relative;
+}
+.wa-tape--black { background: #0a0d0a; color: var(--wa-green); border: 1px solid var(--wa-green); }
+.wa-tape--orange { background: var(--wa-orange); color: #180800; }
+
+/* torn-edge */
+.wa-torn {
+  --c: var(--wa-green);
+  background:
+    linear-gradient(var(--c), var(--c));
+  mask:
+    linear-gradient(#000, #000),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='24' viewBox='0 0 200 24' preserveAspectRatio='none'><path d='M0 24 L0 20 L4 18 L10 22 L14 16 L20 20 L28 14 L34 18 L40 12 L48 16 L56 10 L64 14 L72 8 L80 12 L88 6 L96 10 L104 4 L112 8 L120 2 L128 6 L136 0 L144 4 L152 8 L160 2 L168 6 L176 10 L184 4 L192 8 L200 2 L200 24 Z' fill='black'/></svg>");
+  mask-size: 100% 100%, 100% 100%;
+  mask-composite: intersect;
+}
+
+/* ================================== HERO ANIMATION ========================== */
+@keyframes wa-fadein-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes wa-grid-pan {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 160px 160px, 0 0; }
+}
+@keyframes wa-scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
+}
+@keyframes wa-blink { 0%,92%,100%{opacity:1;} 95%{opacity:.2;} }
+@keyframes wa-pulse-glow {
+  0%,100% { box-shadow: 0 0 0 0 rgba(143,224,74,.5); }
+  50% { box-shadow: 0 0 0 12px rgba(143,224,74,0); }
+}
+@keyframes wa-target-spin { to { transform: rotate(360deg); } }
+@keyframes wa-reticle-bob { 0%,100%{transform:translate(-50%,-50%) scale(1);} 50%{transform:translate(-50%,-50%) scale(1.04);} }
+@keyframes wa-laser-beam {
+  0% { transform: scaleX(0); transform-origin: left; opacity: 0; }
+  20%, 80% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+@keyframes wa-type-caret { 50% { opacity: 0; } }
+@keyframes wa-drift { 0%,100% { transform: translate(0,0); } 50% { transform: translate(6px, -8px); } }
+@keyframes wa-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes wa-count {
+  0% { filter: blur(10px); opacity: 0; transform: translateY(-12px); }
+  100% { filter: blur(0); opacity: 1; transform: translateY(0); }
+}
+@keyframes wa-shake {
+  0%,100% { transform: translate(0,0); }
+  20% { transform: translate(-1px, 1px); }
+  40% { transform: translate(1px, -1px); }
+  60% { transform: translate(-1px, 0); }
+  80% { transform: translate(0, 1px); }
+}
+
+.wa-anim-grid {
+  background-image:
+    linear-gradient(rgba(143,224,74,.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(143,224,74,.08) 1px, transparent 1px);
+  background-size: 40px 40px, 40px 40px;
+  animation: wa-grid-pan 12s linear infinite;
+}
+
+.wa-scanline {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(143,224,74,.06) 50%, transparent 100%);
+  height: 40%;
+  animation: wa-scan 6s linear infinite;
+  pointer-events: none;
+}
+
+.wa-marquee {
+  display: flex; gap: 48px;
+  animation: wa-marquee 28s linear infinite;
+  will-change: transform;
+}
+
+/* ================================== TYPE ========================== */
+.wa-h-display {
+  font-family: var(--ff-display);
+  line-height: .88;
+  letter-spacing: -.01em;
+  text-transform: uppercase;
+}
+.wa-mono { font-family: var(--ff-mono); }
+.wa-ui { font-family: var(--ff-ui); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+
+/* ================================== GENERIC HELPERS ========================== */
+.wa-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  font-family: var(--ff-mono); font-size: 11px;
+  color: var(--wa-green); border: 1px solid rgba(143,224,74,.35);
+  text-transform: uppercase; letter-spacing: .08em;
+}
+.wa-tag--orange { color: var(--wa-orange); border-color: rgba(255,122,26,.4); }
+.wa-tag--neutral { color: var(--wa-text-dim); border-color: var(--wa-line); }
+
+.wa-kbd {
+  font-family: var(--ff-mono); font-size: 11px;
+  padding: 2px 6px;
+  background: var(--wa-panel-2);
+  border: 1px solid var(--wa-line);
+  color: var(--wa-text-dim);
+}
+
+/* input */
+.wa-input {
+  background: var(--wa-bg-2);
+  border: 1px solid var(--wa-line);
+  color: var(--wa-text);
+  font-family: var(--ff-ui);
+  font-size: 16px;
+  padding: 12px 14px;
+  width: 100%;
+  outline: none;
+  transition: border-color 120ms;
+}
+.wa-input:focus { border-color: var(--wa-green); box-shadow: 0 0 0 2px rgba(143,224,74,.15); }
+.wa-label {
+  font-family: var(--ff-mono); font-size: 11px;
+  color: var(--wa-text-dim);
+  text-transform: uppercase; letter-spacing: .08em;
+  margin-bottom: 6px; display: block;
+}
+
+/* slot pill */
+.wa-slot {
+  position: relative;
+  padding: 10px 8px;
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid var(--wa-line);
+  background: var(--wa-panel);
+  transition: all 120ms ease;
+}
+.wa-slot--available { border-color: rgba(143,224,74,.4); color: var(--wa-green); }
+.wa-slot--available:hover { background: rgba(143,224,74,.12); box-shadow: var(--wa-green-glow); }
+.wa-slot--selected { background: var(--wa-green); color: var(--wa-bg); border-color: var(--wa-green); }
+.wa-slot--booked { background: repeating-linear-gradient(-45deg, #2a1818 0 6px, #1a0e0e 6px 10px); color: #ff7474; border-color: rgba(255,61,61,.4); cursor: not-allowed; }
+.wa-slot--closing { background: repeating-linear-gradient(-45deg, #2a2618 0 6px, #1a170e 6px 10px); color: var(--wa-amber); border-color: rgba(255,192,67,.35); cursor: not-allowed; }
+.wa-slot--closed { background: #0e110f; color: #3a3e3a; border-color: #1e231f; cursor: not-allowed; }
+
+/* spinner */
+.wa-spin {
+  width: 14px; height: 14px; border: 2px solid rgba(143,224,74,.25);
+  border-top-color: var(--wa-green);
+  border-radius: 50%;
+  animation: wa-target-spin 800ms linear infinite;
+}
+
+/* RTL adjustments */
+body[dir="rtl"] .wa-tape { transform: rotate(1deg); }
+body[dir="rtl"] .wa-h-display { letter-spacing: 0; }
+
+/* Success stamp */
+@keyframes wa-stamp {
+  0% { transform: rotate(-18deg) scale(2.4); opacity: 0; }
+  60% { transform: rotate(-18deg) scale(.9); opacity: 1; }
+  100% { transform: rotate(-12deg) scale(1); opacity: 1; }
+}
+.wa-stamp { animation: wa-stamp 600ms cubic-bezier(.2,1.2,.4,1) both; }
+
+/* Focus ring */
+:focus-visible { outline: 2px solid var(--wa-green); outline-offset: 2px; }
+
+/* Phone mock frame */
+.wa-phone {
+  width: 390px; height: 780px;
+  background: #000;
+  border: 10px solid #0a0a0a;
+  border-radius: 44px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px #222;
+  overflow: hidden;
+  position: relative;
+}
+.wa-phone-notch {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+  width: 110px; height: 28px; background: #000; border-radius: 20px; z-index: 100;
+}
+
+/* ========================================================================
+   ADVANCED ANIMATION MODULE — loader, confetti, barcode, parallax, scroll-faq
+   ======================================================================== */
+
+/* ---- Boot loader (morphing tactical SVG: circle→triangle→rect) ---- */
+.wa-boot {
+  position: fixed; inset: 0; z-index: 999;
+  background: #0a0d0a;
+  display: grid; place-items: center;
+  animation: wa-boot-out 500ms ease 2.2s forwards;
+}
+.wa-boot::before {
+  content:""; position:absolute; inset:0;
+  background: repeating-linear-gradient(0deg, rgba(143,224,74,.04) 0 1px, transparent 1px 4px);
+  pointer-events: none;
+}
+.wa-boot::after {
+  content:""; position:absolute; left:0; right:0; height: 160px; top: 30%;
+  background: linear-gradient(180deg, transparent, rgba(143,224,74,.08), transparent);
+  animation: wa-boot-scan 1.4s linear infinite;
+  pointer-events: none;
+}
+@keyframes wa-boot-out {
+  to { opacity: 0; transform: scale(1.02); visibility: hidden; }
+}
+@keyframes wa-boot-scan {
+  from { transform: translateY(-180px); }
+  to   { transform: translateY(140vh); }
+}
+.wa-boot-loaders {
+  display: flex; gap: 42px; align-items: center;
+}
+.wa-boot-loader svg {
+  width: 72px; height: 72px;
+  overflow: visible;
+  fill: none; stroke: var(--wa-green);
+  stroke-width: 6; stroke-linecap: round; stroke-linejoin: round;
+}
+.wa-boot-loader svg circle,
+.wa-boot-loader svg polygon,
+.wa-boot-loader svg rect {
+  fill: none;
+}
+.wa-boot-loader--circle svg #wa-l-c {
+  stroke-dasharray: 150 50 50 50;
+  stroke-dashoffset: 75;
+  animation: wa-path-circle 1.6s cubic-bezier(.785,.135,.15,.86) infinite;
+}
+.wa-boot-loader--tri svg polygon {
+  stroke-dasharray: 17 95 40 95;
+  stroke-dashoffset: 75;
+  animation: wa-path-tri 1.6s cubic-bezier(.785,.135,.15,.86) infinite;
+}
+.wa-boot-loader--rect svg rect {
+  stroke-dasharray: 192 64 64 64;
+  stroke-dashoffset: 0;
+  animation: wa-path-rect 1.6s cubic-bezier(.785,.135,.15,.86) infinite;
+}
+@keyframes wa-path-circle {
+  25%  { stroke-dashoffset: 125; }
+  50%  { stroke-dashoffset: 175; }
+  75%  { stroke-dashoffset: 225; }
+  100% { stroke-dashoffset: 275; }
+}
+@keyframes wa-path-tri {
+  33%  { stroke-dashoffset: 74; }
+  66%  { stroke-dashoffset: 147; }
+  100% { stroke-dashoffset: 221; }
+}
+@keyframes wa-path-rect {
+  25% { stroke-dashoffset: 64;  }
+  50% { stroke-dashoffset: 128; }
+  75% { stroke-dashoffset: 192; }
+  100%{ stroke-dashoffset: 256; }
+}
+.wa-boot-label {
+  position: absolute; bottom: 14vh; left: 50%; transform: translateX(-50%);
+  font-family: var(--ff-mono);
+  font-size: 11px; letter-spacing: .35em; color: var(--wa-text-dim);
+  text-transform: uppercase;
+}
+.wa-boot-label::after {
+  content:""; display:inline-block; width: 8px; height: 8px;
+  background: var(--wa-green); margin-inline-start: 12px;
+  animation: wa-blink .8s steps(2) infinite;
+  vertical-align: middle;
+}
+@keyframes wa-blink { 50% { opacity: 0; } }
+
+/* ---- Confetti (success screen) ---- */
+.wa-confetti {
+  position: fixed; inset: 0; z-index: 220;
+  pointer-events: none; overflow: hidden;
+}
+.wa-confetti i {
+  position: absolute; top: -20px; width: 8px; height: 14px;
+  opacity: .95;
+  animation: wa-confetti-fall linear forwards;
+}
+@keyframes wa-confetti-fall {
+  0%   { transform: translate3d(0,-10vh,0) rotate(0); opacity: 1; }
+  100% { transform: translate3d(var(--dx,0), 110vh, 0) rotate(720deg); opacity: 0; }
+}
+
+/* ---- Barcode (success) ---- */
+.wa-barcode {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 18px 10px 6px;
+}
+.wa-barcode svg { display:block; }
+.wa-barcode-num {
+  font-family: var(--ff-mono);
+  font-size: 12px; color: var(--wa-text-dim);
+  letter-spacing: .3em;
+  margin-top: 10px;
+}
+
+/* ---- Parallax hints ---- */
+.wa-parallax {
+  will-change: transform;
+  transition: transform 60ms linear;
+}
+
+/* ---- FAQ scroll-progress accent rail ---- */
+.wa-faq-rail {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 2px; background: var(--wa-line);
+  overflow: hidden;
+}
+.wa-faq-rail::after {
+  content:""; position: absolute; inset: 0 0 auto 0;
+  height: var(--wa-faq-progress, 0%);
+  background: linear-gradient(180deg, var(--wa-green), var(--wa-orange));
+  transition: height 200ms ease;
+}
+[dir="rtl"] .wa-faq-rail { left: auto; right: 0; }
+
+/* ---- Ticket cut-out (success screen ticket) ---- */
+.wa-ticket {
+  position: relative;
+}
+.wa-ticket::before,
+.wa-ticket::after {
+  content:""; position: absolute; top: 50%;
+  width: 28px; height: 28px;
+  background: #0a0d0a;
+  border-radius: 50%;
+  transform: translateY(-50%);
+}
+.wa-ticket::before { left: -14px; }
+.wa-ticket::after  { right: -14px; }
+
+/* ---- Game card hover showcase (subtle 3D tilt) ---- */
+.wa-game-card {
+  transform-style: preserve-3d;
+  transition: transform 280ms cubic-bezier(.2,1.1,.2,1), box-shadow 280ms ease;
+}
+.wa-game-card:hover {
+  transform: translateY(-6px) rotateX(2deg);
+  box-shadow: 0 30px 60px -20px rgba(143,224,74,.25);
+}
+
+</style>
+</head>
+<body>
+
+<!-- Boot loader (morphing tactical SVG) — auto-removes after 2.7s -->
+<div class="wa-boot" id="wa-boot">
+  <div class="wa-boot-loaders">
+    <div class="wa-boot-loader wa-boot-loader--circle">
+      <svg viewBox="0 0 80 80"><circle id="wa-l-c" cx="40" cy="40" r="32"/></svg>
+    </div>
+    <div class="wa-boot-loader wa-boot-loader--tri">
+      <svg viewBox="0 0 86 80"><polygon points="43 8 79 72 7 72"/></svg>
+    </div>
+    <div class="wa-boot-loader wa-boot-loader--rect">
+      <svg viewBox="0 0 80 80"><rect x="8" y="8" width="64" height="64"/></svg>
+    </div>
+  </div>
+  <div class="wa-boot-label">WARRIORS ARENA · SYSTEMS ONLINE</div>
+</div>
+
+<div id="root"></div>
+<script>
+// Suppress benign ResizeObserver loop warnings (Chrome quirk, harmless).
+window.addEventListener('error', (e) => {
+  if (e.message && e.message.indexOf('ResizeObserver') !== -1) {
+    e.stopImmediatePropagation();
+    e.preventDefault();
+  }
+});
+
+// Remove boot splash from DOM after animation completes
+setTimeout(()=>{ const el = document.getElementById('wa-boot'); if (el) el.remove(); }, 2800);
+
+// Hero parallax — translates any element with [data-parallax]
+(function(){
+  let ticking = false, scrollY = 0;
+  function onScroll(){
+    scrollY = window.scrollY;
+    if (!ticking) {
+      requestAnimationFrame(()=>{
+        document.querySelectorAll('[data-parallax]').forEach(el => {
+          const speed = parseFloat(el.getAttribute('data-parallax')) || 0.2;
+          el.style.transform = `translate3d(0, ${scrollY * speed}px, 0)`;
+        });
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+})();
+</script>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" data-presets="react">
+/* global React */
+/* ==========================================================================
+   WARRIORS ARENA — shared primitives
+   ========================================================================== */
+
+const useState = React.useState;
+const useEffect = React.useEffect;
+const useRef = React.useRef;
+const useMemo = React.useMemo;
+const useCallback = React.useCallback;
+const createContext = React.createContext;
+const useContext = React.useContext;
+
+// ------- i18n -----------------------------------------------------------
+const STRINGS = {
+  en: {
+    bookNow: "Book Now", games: "Games", bundles: "Bundles", howItWorks: "How It Works",
+    gallery: "Gallery", faq: "FAQ", location: "Location", contact: "Contact",
+    laserTag: "Laser Tag", gelBlasters: "Gel Blasters",
+    heroKicker: "HELIOPOLIS · CAIRO", heroLine1: "GEAR UP.", heroLine2: "LOCK IN.", heroLine3: "WIN.",
+    heroSub: "Cairo's tactical arena for laser tag & gel blasters. Exclusive 30-minute slots. Six players max. All-out warfare.",
+    reserveSlot: "Reserve a slot", viewPricing: "View pricing",
+    startingAt: "Starting at", perPlayer: "/ player", duration: "Duration",
+    featured: "Featured", allBundles: "All bundles", select: "Select",
+    step: "Step", of: "of", chooseGame: "Choose game", configure: "Configure",
+    selectDate: "Select date", selectTime: "Select time", yourInfo: "Your info",
+    confirm: "Confirm", next: "Next", back: "Back",
+    players: "Players", minutes: "minutes",
+    totalPrice: "Total", reservationCode: "Reservation code",
+    locked: "LOCKED IN", sendWhatsapp: "Confirm on WhatsApp",
+    downloadReceipt: "Download receipt", deposit: "50% deposit required to confirm",
+    parkFee: "Park entrance fee (paid at gate, not included).",
+    minPlayers: "minimum 2 players",
+    fullName: "Full name", phone: "Phone", email: "Email (optional)",
+  },
+  ar: {
+    bookNow: "احجز الآن", games: "الألعاب", bundles: "العروض", howItWorks: "كيف يعمل",
+    gallery: "الصور", faq: "الأسئلة", location: "الموقع", contact: "تواصل",
+    laserTag: "ليزر تاغ", gelBlasters: "جل بلاسترز",
+    heroKicker: "مصر الجديدة · القاهرة", heroLine1: "جهّز.", heroLine2: "اقفل.", heroLine3: "اكسب.",
+    heroSub: "الساحة التكتيكية الأولى في القاهرة لليزر تاغ وجل بلاسترز. فترات حصرية ٣٠ دقيقة. حتى ٦ لاعبين. حرب شاملة.",
+    reserveSlot: "احجز مكانك", viewPricing: "عرض الأسعار",
+    startingAt: "يبدأ من", perPlayer: "/ لاعب", duration: "المدة",
+    featured: "مميّز", allBundles: "كل العروض", select: "اختر",
+    step: "خطوة", of: "من", chooseGame: "اختر لعبة", configure: "اختَر الإعدادات",
+    selectDate: "اختر التاريخ", selectTime: "اختر الوقت", yourInfo: "بياناتك",
+    confirm: "تأكيد", next: "التالي", back: "رجوع",
+    players: "اللاعبين", minutes: "دقيقة",
+    totalPrice: "الإجمالي", reservationCode: "كود الحجز",
+    locked: "تم الحجز", sendWhatsapp: "تأكيد عبر واتساب",
+    downloadReceipt: "تحميل الإيصال", deposit: "مطلوب عربون ٥٠٪ لتأكيد الحجز",
+    parkFee: "رسوم دخول الحديقة تُدفع عند البوابة وليست مشمولة.",
+    minPlayers: "الحد الأدنى ٢ لاعبين",
+    fullName: "الاسم بالكامل", phone: "رقم الهاتف", email: "البريد (اختياري)",
+  },
+};
+
+const I18nContext = createContext({ lang: 'en', t: (k) => STRINGS.en[k] || k, setLang: () => {} });
+const useI18n = () => useContext(I18nContext);
+
+// ------- Icons (tactical / hairline / monoweight) -----------------------
+const Icon = {
+  crosshair: (p) => (
+    <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.6" {...p}>
+      <circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+    </svg>
+  ),
+  bolt: (p) => (
+    <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" {...p}>
+      <path d="M13 2L4 14h7l-1 8 10-14h-7l0-6z"/>
+    </svg>
+  ),
+  shield: (p) => (
+    <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" {...p}>
+      <path d="M12 2l8 3v7c0 5-3.4 9-8 10-4.6-1-8-5-8-10V5l8-3z"/>
+    </svg>
+  ),
+  target: (p) => (
+    <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.6" {...p}>
+      <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+    </svg>
+  ),
+  users: (p) => (
+    <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" {...p}>
+      <circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M15 20c0-3 2-5 5-5"/>
+    </svg>
+  ),
+  clock: (p) => (
+    <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" {...p}>
+      <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+    </svg>
+  ),
+  calendar: (p) => (
+    <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" {...p}>
+      <rect x="3" y="5" width="18" height="16" rx="1"/><path d="M3 9h18M8 3v4M16 3v4"/>
+    </svg>
+  ),
+  whatsapp: (p) => (
+    <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="currentColor" {...p}>
+      <path d="M12 2a10 10 0 00-8.5 15.2L2 22l5-1.3A10 10 0 1012 2zm5.8 14.1c-.3.7-1.5 1.4-2.1 1.5-.5.1-1.2.1-2-.1a12 12 0 01-6.7-6.2c-.3-.6-.7-1.6-.7-2.4 0-.8.4-1.2.6-1.4.2-.2.5-.3.7-.3h.5c.2 0 .5 0 .7.5l1 2.2c.1.2.2.5 0 .7l-.4.5-.2.3c-.1.1-.2.3-.1.5a8 8 0 004 3.7c.2.1.4.1.5 0l.7-.9c.2-.3.4-.2.7-.1l2.2 1c.3.1.5.2.6.4 0 .3 0 1-.4 1.7z"/>
+    </svg>
+  ),
+  download: (p) => (
+    <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" {...p}>
+      <path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>
+    </svg>
+  ),
+  plus: (p) => <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>,
+  minus: (p) => <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14"/></svg>,
+  arrow: (p) => <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>,
+  arrowL: (p) => <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><path d="M19 12H5M11 5l-7 7 7 7"/></svg>,
+  x: (p) => <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>,
+  chevron: (p) => <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><path d="M9 6l6 6-6 6"/></svg>,
+  lock: (p) => <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="1"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>,
+  settings: (p) => <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a7.7 7.7 0 000-6l2-1.2-2-3.4-2.4.9a8 8 0 00-5-2.9L11.5 0h-3l-.5 2.4a8 8 0 00-5 2.9l-2.4-.9-2 3.4L.6 9a7.7 7.7 0 000 6L-1.4 16.2l2 3.4 2.4-.9a8 8 0 005 2.9l.5 2.4h3l.5-2.4a8 8 0 005-2.9l2.4.9 2-3.4L19.4 15z"/></svg>,
+  check: (p) => <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round"><path d="M5 12l5 5L20 7"/></svg>,
+  pin: (p) => <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"><path d="M12 22s-7-7.5-7-13a7 7 0 0114 0c0 5.5-7 13-7 13z"/><circle cx="12" cy="9" r="2.5"/></svg>,
+  globe: (p) => <svg viewBox="0 0 24 24" width={p.size||16} height={p.size||16} fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>,
+  menu: (p) => <svg viewBox="0 0 24 24" width={p.size||20} height={p.size||20} fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 6h18M3 12h18M3 18h18"/></svg>,
+  search: (p) => <svg viewBox="0 0 24 24" width={p.size||18} height={p.size||18} fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>,
+  spark: (p) => <svg viewBox="0 0 24 24" width={p.size||16} height={p.size||16} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg>,
+  trash: (p) => <svg viewBox="0 0 24 24" width={p.size||18} height={p.size||18} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></svg>,
+  edit: (p) => <svg viewBox="0 0 24 24" width={p.size||18} height={p.size||18} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"><path d="M14 4l6 6-10 10H4v-6z"/></svg>,
+  dots: (p) => <svg viewBox="0 0 24 24" width={p.size||18} height={p.size||18} fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>,
+};
+
+// ------- Placeholder tactical artwork (inline SVG, no hand-drawing people) -----
+function GamePlaceholder({ variant = "laser", label }) {
+  // variant: laser | gel | bundle
+  const palette = variant === "gel"
+    ? { a:"#FF7A1A", b:"#7a3a08", bg:"#1a0f08" }
+    : variant === "bundle"
+      ? { a:"#b2f066", b:"#3a5a1a", bg:"#0d140a" }
+      : { a:"#8FE04A", b:"#2a5a1a", bg:"#0a120a" };
+  return (
+    <div style={{ position: "relative", width: "100%", height: "100%", background: palette.bg, overflow: "hidden" }}>
+      {/* diagonal tactical stripes */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background: `repeating-linear-gradient(135deg, ${palette.b}22 0 12px, transparent 12px 36px)`,
+      }}/>
+      {/* concentric reticle */}
+      <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet"
+        style={{ position:"absolute", inset:0, width:"100%", height:"100%" }}>
+        <g stroke={palette.a} strokeWidth="0.8" fill="none" opacity=".35">
+          <circle cx="100" cy="100" r="80"/><circle cx="100" cy="100" r="60"/>
+          <circle cx="100" cy="100" r="40"/><circle cx="100" cy="100" r="20"/>
+          <line x1="10" y1="100" x2="190" y2="100"/><line x1="100" y1="10" x2="100" y2="190"/>
+        </g>
+        <g stroke={palette.a} strokeWidth="1.4" fill="none">
+          <path d="M20 20 L20 50 M20 20 L50 20"/>
+          <path d="M180 20 L180 50 M180 20 L150 20"/>
+          <path d="M20 180 L20 150 M20 180 L50 180"/>
+          <path d="M180 180 L180 150 M180 180 L150 180"/>
+        </g>
+      </svg>
+      {/* faux scanner bar */}
+      <div style={{
+        position:"absolute", left:0, right:0, height: "10%",
+        background: `linear-gradient(180deg, transparent, ${palette.a}40, transparent)`,
+        top: "45%",
+      }}/>
+      {/* label */}
+      <div style={{
+        position:"absolute", left: 14, bottom: 12,
+        fontFamily:"var(--ff-mono)", fontSize:11, color:palette.a,
+        letterSpacing:".12em", textTransform:"uppercase"
+      }}>
+        {label || "ARENA IMAGE · DROP PHOTO HERE"}
+      </div>
+    </div>
+  );
+}
+
+// ------- Data ------------------------------------------------------------
+const GAMES = [
+  { id:"laser-30", type:"laser", name:"Laser Tag · 30", duration:30, price:120, blurb:"Quick sortie. No gear fatigue. Perfect sample run.", variant:"laser" },
+  { id:"laser-60", type:"laser", name:"Laser Tag · 60", duration:60, price:200, blurb:"Long ops. Multiple game modes. Full rotation.", variant:"laser" },
+  { id:"gel-30",   type:"gel",   name:"Gel Blasters · 30", duration:30, price:150, blurb:"High-impact, biodegradable. Eye protection issued.", variant:"gel" },
+];
+const BUNDLES = [
+  { id:"b1", name:"SQUAD RUN", mode:"per_player", price:150, players:4, duration:60, includes:["2 game rounds","All gear included","Debrief room"], variant:"bundle" },
+  { id:"b2", name:"FIRE TEAM", mode:"fixed_total", price:1500, players:6, duration:60, includes:["All modes unlocked","Team photos","Victory lap"], variant:"laser" },
+  { id:"b3", name:"BIRTHDAY OPS", mode:"fixed_total", price:2200, players:8, duration:90, includes:["Private host","Cake space","Loot bags x8"], variant:"gel" },
+];
+const TIME_SLOTS = ["6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM"];
+
+function fmt(n) { return new Intl.NumberFormat('en-US').format(n); }
+function genCode() {
+  const c = "WA-" + Math.random().toString(36).slice(2,6).toUpperCase() + "-" + Math.random().toString(36).slice(2,5).toUpperCase();
+  return c;
+}
+
+Object.assign(window, {
+  STRINGS, I18nContext, useI18n,
+  Icon, GamePlaceholder,
+  GAMES, BUNDLES, TIME_SLOTS,
+  fmt, genCode,
+  useState, useEffect, useRef, useMemo, useCallback,
+});
+
+</script>
+<script type="text/babel" data-presets="react">
+/* global React, Icon, GamePlaceholder, GAMES, BUNDLES, TIME_SLOTS, fmt, genCode, useI18n */
+
+// ==========================================================================
+// PUBLIC LANDING PAGE
+// ==========================================================================
+
+function TopNav({ onBook, onAdmin, view, setView }) {
+  const { lang, setLang, t } = useI18n();
+  return (
+    <header style={{
+      position: "sticky", top: 0, zIndex: 50,
+      borderBottom: "1px solid var(--wa-line)",
+      background: "rgba(10,13,10,.85)", backdropFilter: "blur(12px)",
+    }}>
+      <div style={{
+        maxWidth: 1320, margin: "0 auto",
+        padding: "14px 24px",
+        display: "flex", alignItems: "center", gap: 24,
+      }}>
+        <Logo />
+        <nav style={{ display: "flex", gap: 22, flex: 1, marginInlineStart: 32 }} className="wa-ui" data-hide-mobile>
+          {[
+            ["public", t("games")],
+            ["bundles", t("bundles")],
+            ["how", t("howItWorks")],
+            ["location", t("location")],
+          ].map(([id, label]) => (
+            <a key={id} href="#" onClick={(e)=>{e.preventDefault(); setView('public'); setTimeout(()=>document.getElementById(id)?.scrollIntoView({behavior:'smooth', block:'start'}),10);}}
+              style={{ color: "var(--wa-text-dim)", textDecoration: "none", fontSize: 13, letterSpacing: ".1em" }}
+              onMouseEnter={(e)=>e.currentTarget.style.color='var(--wa-green)'}
+              onMouseLeave={(e)=>e.currentTarget.style.color='var(--wa-text-dim)'}>
+              {label}
+            </a>
+          ))}
+        </nav>
+        <button onClick={()=>setLang(lang==='en'?'ar':'en')}
+          className="wa-ui"
+          style={{ background:"transparent", border:"1px solid var(--wa-line)", color:"var(--wa-text-dim)",
+            padding:"8px 12px", cursor:"pointer", display:"inline-flex", alignItems:"center", gap:6, fontSize:12 }}>
+          <Icon.globe size={14}/> {lang === 'en' ? 'AR' : 'EN'}
+        </button>
+        <button onClick={()=>setView(view === 'admin' ? 'public' : 'admin')} className="wa-ui"
+          style={{ background:"transparent", border:"1px solid var(--wa-line)", color: view==='admin'?'var(--wa-orange)':'var(--wa-text-dim)',
+            padding:"8px 12px", cursor:"pointer", fontSize:12 }}>
+          {view==='admin' ? 'PUBLIC SITE' : 'ADMIN'}
+        </button>
+        <button onClick={onBook} className="wa-btn wa-btn-sm">
+          <Icon.bolt size={14}/> {t("bookNow")}
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function Logo() {
+  return (
+    <a href="#" onClick={(e)=>e.preventDefault()} style={{ display:"flex", alignItems:"center", gap: 10, textDecoration:"none" }}>
+      <div style={{
+        width: 36, height: 36, background: "var(--wa-green)",
+        clipPath: "polygon(50% 0, 100% 30%, 100% 100%, 0 100%, 0 30%)",
+        display: "grid", placeItems: "center", color: "#0a0d0a",
+      }}>
+        <Icon.crosshair size={20}/>
+      </div>
+      <div style={{ lineHeight: 1, display:"flex", flexDirection:"column" }}>
+        <span className="wa-h-display" style={{ fontSize: 18, color:"var(--wa-text)" }}>WARRIORS</span>
+        <span className="wa-mono" style={{ fontSize: 10, color: "var(--wa-green)", letterSpacing: ".3em" }}>ARENA · EGY</span>
+      </div>
+    </a>
+  );
+}
+
+// ------- HERO (animated, no video) ---------------------------------------
+function Hero({ onBook }) {
+  const { t, lang } = useI18n();
+  return (
+    <section style={{ position: "relative", overflow: "hidden", minHeight: 720, borderBottom: "1px solid var(--wa-line)" }} className="wa-parallax-host">
+      {/* animated grid */}
+      <div className="wa-anim-grid" style={{ position:"absolute", inset:0 }}/>
+      <div className="wa-scanline"/>
+      {/* radial vignette */}
+      <div style={{
+        position:"absolute", inset:0,
+        background: "radial-gradient(60% 50% at 50% 40%, transparent, rgba(10,13,10,.9) 80%)",
+      }}/>
+      {/* reticle graphics, parallax */}
+      <Reticle style={{ position:"absolute", top: 80, [lang==='ar'?'right':'left']: 80, opacity:.25 }} size={160} data-parallax="0.25"/>
+      <Reticle style={{ position:"absolute", bottom: 120, [lang==='ar'?'left':'right']: 100, opacity:.18, animationDelay:"-2s" }} size={220} data-parallax="-0.18"/>
+
+      {/* corner HUD */}
+      <HUDCorner corner="tl"/>
+      <HUDCorner corner="tr"/>
+      <HUDCorner corner="bl"/>
+      <HUDCorner corner="br"/>
+
+      {/* content */}
+      <div style={{
+        position: "relative", zIndex: 2,
+        maxWidth: 1320, margin: "0 auto",
+        padding: "96px 24px 120px",
+        display: "grid", gridTemplateColumns: "1.1fr .9fr", gap: 48, alignItems:"center",
+      }}>
+        <div>
+          <div style={{ animation:"wa-fadein-up 600ms ease .05s both", display:"flex", alignItems:"center", gap:12 }}>
+            <span className="wa-tag"><Icon.pin size={12}/> {t("heroKicker")}</span>
+            <span className="wa-tag wa-tag--neutral wa-mono" style={{fontSize:10}}>OPEN · 6PM—9PM</span>
+          </div>
+
+          <h1 className="wa-h-display" style={{ marginTop: 20, fontSize: "clamp(64px, 10vw, 150px)" }}>
+            <span style={{ display:"block", animation:"wa-fadein-up 700ms cubic-bezier(.2,1.1,.2,1) .15s both" }}>
+              {t("heroLine1")}
+            </span>
+            <span style={{
+              display:"block",
+              color: "var(--wa-green)",
+              animation:"wa-fadein-up 700ms cubic-bezier(.2,1.1,.2,1) .3s both",
+              textShadow: "0 0 32px rgba(143,224,74,.35)",
+            }}>
+              {t("heroLine2")}
+            </span>
+            <span style={{
+              display:"block",
+              animation:"wa-fadein-up 700ms cubic-bezier(.2,1.1,.2,1) .45s both",
+              WebkitTextStroke: "2px var(--wa-green)",
+              color: "transparent",
+            }}>
+              {t("heroLine3")}
+            </span>
+          </h1>
+
+          <p style={{
+            marginTop: 28, fontSize: 18, lineHeight: 1.5, color: "var(--wa-text-dim)", maxWidth: 520,
+            animation:"wa-fadein-up 700ms ease .6s both",
+          }}>
+            {t("heroSub")}
+          </p>
+
+          <div style={{ display:"flex", gap: 14, marginTop: 36, flexWrap:"wrap",
+            animation:"wa-fadein-up 700ms ease .75s both" }}>
+            <span className="wa-cta">
+              <button className="wa-btn" onClick={onBook}>
+                <Icon.bolt size={16}/> {t("reserveSlot")}
+              </button>
+            </span>
+            <button className="wa-btn wa-btn--ghost">
+              <Icon.target size={16}/> {t("viewPricing")}
+            </button>
+          </div>
+
+          {/* stat strip */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap: 24, marginTop: 52,
+            animation:"wa-fadein-up 700ms ease .9s both", maxWidth: 560 }}>
+            {[
+              ["30 MIN", "Exclusive slot"],
+              ["6 MAX", "Players per booking"],
+              ["2 MODES", "Laser · Gel"],
+            ].map(([k,v],i)=>(
+              <div key={i} style={{ borderTop:"1px solid var(--wa-line-hot)", paddingTop: 10 }}>
+                <div className="wa-h-display" style={{ fontSize: 22, color:"var(--wa-green)" }}>{k}</div>
+                <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-mute)", letterSpacing:".15em", textTransform:"uppercase" }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* right: tactical composition */}
+        <HeroRightPanel/>
+      </div>
+
+      {/* bottom marquee */}
+      <div style={{
+        position: "relative", zIndex: 2,
+        background: "var(--wa-green)", color:"#0a0d0a",
+        padding: "10px 0", overflow:"hidden",
+        borderTop:"1px solid #000",
+      }}>
+        <div className="wa-marquee">
+          {Array.from({length: 2}).map((_,i)=>(
+            <div key={i} style={{ display:"flex", gap:48, paddingInlineEnd:48 }}>
+              {["LASER TAG", "GEL BLASTERS", "LIVE ARENA", "HELIOPOLIS", "30-MIN SLOTS", "UP TO 6 PLAYERS", "OPEN NIGHTLY", "BIRTHDAY OPS"].map((s, j)=>(
+                <span key={j} className="wa-h-display" style={{ fontSize: 14, letterSpacing:".2em", whiteSpace:"nowrap" }}>
+                  <span style={{display:"inline-block", width:6, height:6, background:"#0a0d0a", marginInlineEnd:16, transform:"translateY(-3px) rotate(45deg)"}}/>
+                  {s}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Reticle({ size=160, style={}, ...rest }) {
+  return (
+    <div style={{ width: size, height: size, animation:"wa-drift 8s ease-in-out infinite", ...style }} {...rest}>
+      <svg viewBox="0 0 200 200" style={{ width:"100%", height:"100%", animation:"wa-target-spin 40s linear infinite" }}>
+        <g stroke="var(--wa-green)" strokeWidth="0.6" fill="none">
+          <circle cx="100" cy="100" r="95"/>
+          <circle cx="100" cy="100" r="70"/>
+          <circle cx="100" cy="100" r="45"/>
+          <path d="M100 5 L100 40 M100 160 L100 195 M5 100 L40 100 M160 100 L195 100" strokeWidth="1"/>
+          <path d="M70 10 L130 10 M10 70 L10 130 M70 190 L130 190 M190 70 L190 130" strokeWidth="0.4"/>
+        </g>
+        <g fill="var(--wa-green)">
+          <circle cx="100" cy="100" r="2"/>
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function HUDCorner({ corner }) {
+  const pos = {
+    tl: { top: 18, left: 18, borders: { borderTop: "2px solid var(--wa-green)", borderLeft: "2px solid var(--wa-green)" } },
+    tr: { top: 18, right: 18, borders: { borderTop: "2px solid var(--wa-green)", borderRight: "2px solid var(--wa-green)" } },
+    bl: { bottom: 58, left: 18, borders: { borderBottom: "2px solid var(--wa-green)", borderLeft: "2px solid var(--wa-green)" } },
+    br: { bottom: 58, right: 18, borders: { borderBottom: "2px solid var(--wa-green)", borderRight: "2px solid var(--wa-green)" } },
+  }[corner];
+  const { borders, ...p } = pos;
+  return <div style={{ position:"absolute", width: 26, height: 26, ...borders, ...p, zIndex: 3 }}/>;
+}
+
+function HeroRightPanel() {
+  return (
+    <div style={{ position: "relative", height: 520 }}>
+      {/* main tactical card */}
+      <div className="wa-panel wa-panel--clip wa-brackets" style={{
+        position:"absolute", inset: 0, padding: 24,
+        animation:"wa-fadein-up 900ms ease .5s both",
+      }}>
+        <div style={{ position:"relative", width:"100%", height:"100%" }}>
+          <GamePlaceholder variant="laser" label="[ ARENA LIVE FEED · DROP HERO PHOTO ]"/>
+          {/* live ping */}
+          <div style={{
+            position:"absolute", top: 14, left: 14,
+            display:"flex", alignItems:"center", gap:8,
+            background:"rgba(0,0,0,.6)", padding:"6px 10px", border:"1px solid var(--wa-line)",
+          }}>
+            <span style={{ width:8, height:8, borderRadius:"50%", background:"var(--wa-red)", animation:"wa-blink 1.2s infinite" }}/>
+            <span className="wa-mono" style={{ fontSize: 11, letterSpacing:".15em", color:"#fff" }}>LIVE · ARENA 01</span>
+          </div>
+          {/* reticle overlay */}
+          <div style={{
+            position:"absolute", top:"50%", left:"50%",
+            width: 120, height: 120,
+            transform:"translate(-50%,-50%)",
+            animation:"wa-reticle-bob 2.4s ease-in-out infinite",
+          }}>
+            <svg viewBox="0 0 120 120" fill="none" stroke="#fff" strokeWidth="1.2">
+              <circle cx="60" cy="60" r="50" opacity=".9"/>
+              <path d="M60 5 V30 M60 90 V115 M5 60 H30 M90 60 H115"/>
+              <circle cx="60" cy="60" r="3" fill="#fff"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* stat badge */}
+      <div className="wa-panel wa-panel--clip" style={{
+        position:"absolute", top: -14, right: -14, padding:"10px 14px",
+        background:"var(--wa-green)", color:"#0a0d0a",
+        animation:"wa-count 800ms ease 1s both",
+      }}>
+        <div className="wa-mono" style={{ fontSize: 10, letterSpacing:".18em" }}>NEXT SLOT</div>
+        <div className="wa-h-display" style={{ fontSize: 22 }}>7:00 PM</div>
+      </div>
+
+      {/* side tape */}
+      <div style={{
+        position:"absolute", bottom: 28, left: -24,
+        animation:"wa-fadein-up 800ms ease 1.1s both",
+      }}>
+        <div className="wa-tape wa-tape--orange">GEL · BLASTERS · LASER · TAG</div>
+      </div>
+    </div>
+  );
+}
+
+// ------- GAMES SECTION --------------------------------------------------
+function GamesSection({ onBook }) {
+  const { t } = useI18n();
+  return (
+    <section id="public" style={{ padding: "120px 24px 80px", position:"relative" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <SectionHeader kicker="01 · LINEUP" title={t("games")} line="Choose your loadout. Every slot is yours — venue-wide exclusive."/>
+        <div style={{
+          marginTop: 48,
+          display:"grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20,
+        }}>
+          {GAMES.map((g,i)=>(
+            <GameCard key={g.id} game={g} index={i} onBook={onBook}/>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SectionHeader({ kicker, title, line }) {
+  return (
+    <div style={{ display:"flex", alignItems:"end", justifyContent:"space-between", gap: 40, flexWrap:"wrap" }}>
+      <div>
+        <div className="wa-mono" style={{ color:"var(--wa-green)", fontSize: 12, letterSpacing:".2em", marginBottom: 12 }}>{kicker}</div>
+        <h2 className="wa-h-display" style={{ fontSize:"clamp(40px, 6vw, 72px)", margin: 0 }}>{title}</h2>
+      </div>
+      <p style={{ maxWidth: 440, color:"var(--wa-text-dim)", fontSize: 16, marginBottom: 6 }}>{line}</p>
+    </div>
+  );
+}
+
+function GameCard({ game, index, onBook }) {
+  const [hover, setHover] = useState(false);
+  const { t } = useI18n();
+  return (
+    <div
+      className="wa-panel wa-panel--clip wa-brackets"
+      onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
+      style={{
+        padding: 0, overflow: "hidden", position:"relative",
+        transform: hover ? "translateY(-4px)" : "translateY(0)",
+        transition:"transform 200ms ease, box-shadow 200ms ease",
+        boxShadow: hover ? "0 20px 60px rgba(143,224,74,.12), var(--wa-green-glow)" : "none",
+      }}
+    >
+      <div style={{ aspectRatio: "4 / 3", position:"relative", borderBottom:"1px solid var(--wa-line)" }}>
+        <GamePlaceholder variant={game.variant} label={`[ ${game.name.toUpperCase()} ]`}/>
+        <div style={{ position:"absolute", top:12, left: 12 }}>
+          <span className={`wa-tag ${game.type==='gel'?'wa-tag--orange':''}`}>
+            {game.type === 'laser' ? <Icon.bolt size={12}/> : <Icon.target size={12}/>}
+            {game.type === 'laser' ? t('laserTag').toUpperCase() : t('gelBlasters').toUpperCase()}
+          </span>
+        </div>
+        <div style={{ position:"absolute", top:12, right: 12 }} className="wa-mono">
+          <span style={{ fontSize: 11, color:"var(--wa-text)", background:"rgba(0,0,0,.6)", padding:"4px 8px", border:"1px solid var(--wa-line)" }}>
+            {String(index + 1).padStart(2, '0')} / 0{GAMES.length}
+          </span>
+        </div>
+      </div>
+      <div style={{ padding: 24 }}>
+        <h3 className="wa-h-display" style={{ fontSize: 28, margin: 0 }}>{game.name}</h3>
+        <p style={{ color:"var(--wa-text-dim)", fontSize:14, lineHeight:1.5, marginTop: 10 }}>{game.blurb}</p>
+
+        <div style={{ display:"flex", alignItems:"end", justifyContent:"space-between", marginTop: 22 }}>
+          <div>
+            <div className="wa-mono" style={{ color:"var(--wa-text-mute)", fontSize: 10, letterSpacing:".15em", textTransform:"uppercase" }}>{t("startingAt")}</div>
+            <div className="wa-h-display" style={{ fontSize: 32, color:"var(--wa-green)" }}>
+              {fmt(game.price)} <span style={{ fontSize: 14, color:"var(--wa-text-dim)" }}>EGP {t("perPlayer")}</span>
+            </div>
+          </div>
+          <div className="wa-mono" style={{ color:"var(--wa-text-dim)", fontSize: 12 }}>
+            <Icon.clock size={14} style={{ verticalAlign:"middle", marginInlineEnd: 4 }}/>
+            {game.duration}M
+          </div>
+        </div>
+
+        <button className="wa-btn wa-btn-sm" style={{ width:"100%", marginTop: 18 }} onClick={()=>onBook(game)}>
+          {t("bookNow")} <Icon.arrow size={14}/>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ------- BUNDLES SECTION ------------------------------------------------
+function BundlesSection({ onBook }) {
+  const { t } = useI18n();
+  return (
+    <section id="bundles" style={{ padding: "80px 24px", background: "linear-gradient(180deg, transparent, #0d110e)" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <SectionHeader kicker="02 · FIRE TEAMS" title={t("bundles")} line="Bring the squad. Save the ammo budget. Two pricing modes — per-player or fixed-team."/>
+        <div style={{ marginTop: 48, display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap: 20 }}>
+          {BUNDLES.map((b,i)=><BundleCard key={b.id} bundle={b} i={i} onBook={onBook}/>)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BundleCard({ bundle, i, onBook }) {
+  const { t } = useI18n();
+  const perPlayer = bundle.mode === "per_player";
+  const total = perPlayer ? bundle.price * bundle.players : bundle.price;
+  return (
+    <div className="wa-panel wa-panel--clip" style={{ padding: 26, position:"relative", overflow:"hidden" }}>
+      {/* watermark num */}
+      <div className="wa-h-display" style={{
+        position:"absolute", top:-10, right:-6, fontSize: 130, color:"rgba(143,224,74,.06)", pointerEvents:"none",
+      }}>{String(i+1).padStart(2, '0')}</div>
+
+      <div style={{ display:"flex", alignItems:"center", gap: 8 }}>
+        <span className="wa-tag wa-tag--orange"><Icon.spark size={12}/> BUNDLE</span>
+        <span className="wa-tag wa-tag--neutral">{perPlayer ? "PER PLAYER" : "FIXED TOTAL"}</span>
+      </div>
+
+      <h3 className="wa-h-display" style={{ fontSize: 36, marginTop: 16 }}>{bundle.name}</h3>
+
+      {/* pricing block — the two variants */}
+      <div style={{ marginTop: 18, paddingBlock: 16, borderTop:"1px dashed var(--wa-line-hot)", borderBottom:"1px dashed var(--wa-line-hot)" }}>
+        {perPlayer ? (
+          <div>
+            <div className="wa-h-display" style={{ fontSize: 42, color:"var(--wa-green)" }}>
+              {fmt(bundle.price)} <span style={{ fontSize: 14, color:"var(--wa-text-dim)" }}>EGP / PLAYER</span>
+            </div>
+            <div className="wa-mono" style={{ color:"var(--wa-text-dim)", fontSize: 13, marginTop: 6 }}>
+              × {bundle.players} players &nbsp;=&nbsp;
+              <span style={{ color:"var(--wa-text)" }}>{fmt(total)} EGP total</span>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div className="wa-h-display" style={{ fontSize: 42, color:"var(--wa-orange)" }}>
+              {fmt(bundle.price)} <span style={{ fontSize: 14, color:"var(--wa-text-dim)" }}>EGP TOTAL</span>
+            </div>
+            <div className="wa-mono" style={{ color:"var(--wa-text-dim)", fontSize: 13, marginTop: 6 }}>
+              for the group &nbsp;·&nbsp; up to {bundle.players} players
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginTop: 16, display:"flex", flexDirection:"column", gap: 6 }}>
+        {bundle.includes.map((inc,j)=>(
+          <div key={j} style={{ display:"flex", alignItems:"center", gap: 10, color:"var(--wa-text-dim)", fontSize: 14 }}>
+            <Icon.check size={14} style={{ color:"var(--wa-green)" }}/> {inc}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display:"flex", gap: 14, marginTop: 22, color:"var(--wa-text-dim)" }} className="wa-mono">
+        <span style={{ fontSize: 12 }}><Icon.users size={13} style={{verticalAlign:"middle"}}/> {bundle.players} PL</span>
+        <span style={{ fontSize: 12 }}><Icon.clock size={13} style={{verticalAlign:"middle"}}/> {bundle.duration}M</span>
+      </div>
+
+      <button className="wa-btn wa-btn-sm" style={{ width:"100%", marginTop: 20 }} onClick={()=>onBook(bundle)}>
+        {t("select")} <Icon.arrow size={14}/>
+      </button>
+    </div>
+  );
+}
+
+// ------- HOW IT WORKS ---------------------------------------------------
+function HowItWorks() {
+  const steps = [
+    { n:"01", t:"Pick a Game", d:"Laser Tag or Gel Blasters. 30 or 60 minutes. Solo drop-in or full squad." },
+    { n:"02", t:"Lock a Slot", d:"Every slot is venue-wide exclusive. If you book 7:00 PM, the arena is yours." },
+    { n:"03", t:"Pay 50%", d:"Drop a deposit via WhatsApp or InstaPay. We hold your slot. No deposit, no reservation." },
+    { n:"04", t:"Show Up & Win", d:"Arrive 15 minutes early for gear-up. Bring your A-game. Leave sweaty." },
+  ];
+  return (
+    <section id="how" style={{ padding: "80px 24px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <SectionHeader kicker="03 · PROTOCOL" title="How it works" line="Four moves. No hidden steps."/>
+        <div style={{ marginTop: 48, display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap: 16 }}>
+          {steps.map((s,i)=>(
+            <div key={i} className="wa-panel" style={{ padding: 24, position:"relative" }}>
+              <div className="wa-h-display" style={{ fontSize: 56, color:"var(--wa-green)", lineHeight: 1 }}>{s.n}</div>
+              <div style={{ height: 1, background:"var(--wa-line-hot)", margin:"14px 0" }}/>
+              <div className="wa-h-display" style={{ fontSize: 20 }}>{s.t}</div>
+              <p style={{ color:"var(--wa-text-dim)", fontSize: 14, lineHeight: 1.5, marginTop: 8 }}>{s.d}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ------- GALLERY / NOTICE / FAQ / LOCATION / FOOTER ---------------------
+function Gallery() {
+  return (
+    <section style={{ padding: "80px 24px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <SectionHeader kicker="04 · FROM THE ARENA" title="In the field" line="Real photos go here. Placeholders shown for handoff."/>
+        <div style={{
+          marginTop: 40,
+          display:"grid", gridTemplateColumns:"repeat(6, 1fr)", gridTemplateRows:"220px 220px", gap: 12,
+        }}>
+          {[
+            { c:"span 3", r:"span 2", v:"laser", l:"HERO · LANDSCAPE" },
+            { c:"span 2", r:"span 1", v:"gel", l:"GEAR CLOSEUP" },
+            { c:"span 1", r:"span 1", v:"bundle", l:"TEAM · PORTRAIT" },
+            { c:"span 1", r:"span 1", v:"laser", l:"REACTION" },
+            { c:"span 2", r:"span 1", v:"gel", l:"ARENA WIDE" },
+          ].map((g,i)=>(
+            <div key={i} className="wa-panel" style={{ gridColumn:g.c, gridRow:g.r, overflow:"hidden" }}>
+              <GamePlaceholder variant={g.v} label={g.l}/>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ParkNotice() {
+  return (
+    <section style={{ padding: "40px 24px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
+        <div className="wa-panel" style={{
+          padding: 28, display:"flex", alignItems:"center", gap: 20,
+          borderColor: "rgba(255,122,26,.3)",
+          background: "linear-gradient(90deg, rgba(255,122,26,.06), transparent)",
+        }}>
+          <div style={{ width: 52, height: 52, display:"grid", placeItems:"center", color:"var(--wa-orange)", border:"1px solid var(--wa-orange)" }}>
+            <Icon.shield size={22}/>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-orange)", letterSpacing:".2em" }}>HEADS UP · PARK ENTRY FEE</div>
+            <div style={{ fontSize: 15, color:"var(--wa-text)", marginTop: 4, lineHeight: 1.5 }}>
+              Warriors Arena lives inside Family Park. A small <b>park entrance fee</b> is paid at the gate and is <b>not included</b> in your booking.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FAQ() {
+  const [open, setOpen] = useState(0);
+  const sectionRef = useRef(null);
+  const qs = [
+    { q: "What happens if we're late?", a: "Your slot starts on the clock. We'll hold gear but the timer runs — that's how exclusivity stays fair for the next team." },
+    { q: "Minimum players?", a: "Two. Below that, Laser Tag stops being fun. For fixed-total bundles, the price doesn't change — you still get the full arena." },
+    { q: "Can I bring my own gear?", a: "For safety and liability, only Warriors Arena gear is used inside the arena. Sorry, super soldier." },
+    { q: "Age limits?", a: "7+ for Gel Blasters, 10+ for Laser Tag — supervised. IDs required for group-organizer role." },
+    { q: "How do I cancel?", a: "Up to 24 hours before your slot, full deposit back. Inside 24 hours, deposit is forfeit." },
+  ];
+  // Scroll-progressive reveal: as the FAQ section scrolls through the viewport,
+  // auto-open items in sequence and update the vertical progress rail.
+  useEffect(() => {
+    const onScroll = () => {
+      const el = sectionRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      // 0 when top of section enters bottom of viewport, 1 when bottom exits top
+      const total = rect.height + vh;
+      const p = Math.max(0, Math.min(1, (vh - rect.top) / total));
+      el.style.setProperty("--wa-faq-progress", `${Math.round(p * 100)}%`);
+      const idx = Math.min(qs.length - 1, Math.max(0, Math.floor(p * qs.length * 1.15)));
+      setOpen(idx);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return (
+    <section id="faq" ref={sectionRef} style={{ padding: "80px 24px", position:"relative" }}>
+      <div className="wa-faq-rail"/>
+      <div style={{ maxWidth: 1020, margin: "0 auto" }}>
+        <SectionHeader kicker="05 · INTEL" title="FAQ" line=""/>
+        <div style={{ marginTop: 40, display:"flex", flexDirection:"column", gap: 6 }}>
+          {qs.map((x,i)=>(
+            <div key={i} className="wa-panel" style={{
+              padding: "18px 22px", cursor:"pointer",
+              borderColor: open===i ? "var(--wa-green)" : undefined,
+              transition:"border-color 240ms ease",
+            }} onClick={()=>setOpen(open===i?-1:i)}>
+              <div style={{ display:"flex", alignItems:"center", gap: 14 }}>
+                <span className="wa-mono" style={{ fontSize: 12, color: open===i ? "var(--wa-orange)" : "var(--wa-green)", transition:"color 240ms" }}>0{i+1}</span>
+                <div style={{ flex: 1, fontFamily:"var(--ff-display)", fontSize: 18, textTransform:"uppercase", letterSpacing:".02em" }}>{x.q}</div>
+                <div style={{ color:"var(--wa-green)", transform:`rotate(${open===i?45:0}deg)`, transition:"transform 240ms" }}>
+                  <Icon.plus size={18}/>
+                </div>
+              </div>
+              <div style={{
+                overflow:"hidden",
+                maxHeight: open===i ? 300 : 0,
+                opacity: open===i ? 1 : 0,
+                transition:"max-height 400ms ease, opacity 300ms ease",
+              }}>
+                <div style={{ color:"var(--wa-text-dim)", fontSize: 15, lineHeight: 1.6, paddingTop: 14, paddingInlineStart: 32 }}>
+                  {x.a}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LocationSection() {
+  return (
+    <section id="location" style={{ padding: "80px 24px" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto", display:"grid", gridTemplateColumns:"1fr 1fr", gap: 32 }}>
+        <div>
+          <SectionHeader kicker="06 · RALLY POINT" title="Heliopolis" line=""/>
+          <div style={{ marginTop: 40, display:"flex", flexDirection:"column", gap: 20 }}>
+            {[
+              ["ADDRESS", "Family Park · Heliopolis, Cairo"],
+              ["HOURS", "Daily · 6:00 PM — 9:00 PM (last slot 8:30 PM)"],
+              ["WHATSAPP", "+20 122 655 7592"],
+              ["INSTAGRAM", "@warriors.arena.egy"],
+            ].map(([k,v])=>(
+              <div key={k}>
+                <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-green)", letterSpacing:".2em" }}>{k}</div>
+                <div style={{ fontSize: 20, marginTop: 4 }}>{v}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display:"flex", gap: 12, marginTop: 32 }}>
+            <button className="wa-btn"><Icon.whatsapp size={16}/> WHATSAPP</button>
+            <button className="wa-btn wa-btn--ghost"><Icon.pin size={16}/> GET DIRECTIONS</button>
+          </div>
+        </div>
+        <div className="wa-panel wa-panel--clip" style={{ height: 420, position:"relative", overflow:"hidden" }}>
+          {/* faux tactical map */}
+          <div style={{
+            position:"absolute", inset: 0,
+            background:"#0d1410",
+            backgroundImage:
+              "linear-gradient(rgba(143,224,74,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(143,224,74,.1) 1px, transparent 1px)",
+            backgroundSize: "30px 30px",
+          }}/>
+          {/* roads */}
+          <svg viewBox="0 0 400 300" style={{ position:"absolute", inset:0, width:"100%", height:"100%" }}>
+            <path d="M0 160 Q 150 140 280 180 T 400 200" stroke="var(--wa-line-hot)" strokeWidth="8" fill="none"/>
+            <path d="M0 160 Q 150 140 280 180 T 400 200" stroke="#0d1410" strokeWidth="2" strokeDasharray="8 10" fill="none"/>
+            <path d="M180 0 L 220 300" stroke="var(--wa-line-hot)" strokeWidth="6" fill="none"/>
+            <path d="M180 0 L 220 300" stroke="#0d1410" strokeWidth="1.5" strokeDasharray="6 10" fill="none"/>
+            {/* pin */}
+            <g transform="translate(210 160)">
+              <circle r="26" fill="var(--wa-green)" opacity=".18"/>
+              <circle r="14" fill="var(--wa-green)" opacity=".35"/>
+              <circle r="5" fill="var(--wa-green)"/>
+            </g>
+          </svg>
+          <div style={{ position:"absolute", top: 16, left: 16, display:"flex", gap: 8 }}>
+            <span className="wa-tag"><Icon.pin size={12}/> 30.0906°N · 31.3381°E</span>
+          </div>
+          <div style={{ position:"absolute", bottom: 16, left: 16, right: 16, display:"flex", justifyContent:"space-between" }}>
+            <span className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)" }}>TACTICAL MAP · 1:500</span>
+            <span className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)" }}>[ EMBED GOOGLE MAP ]</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Footer() {
+  return (
+    <footer style={{ borderTop:"1px solid var(--wa-line)", padding:"40px 24px", background:"#080a08" }}>
+      <div style={{ maxWidth: 1320, margin:"0 auto", display:"flex", justifyContent:"space-between", alignItems:"center", gap: 20, flexWrap:"wrap" }}>
+        <Logo/>
+        <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-mute)", letterSpacing:".15em" }}>
+          © WARRIORS ARENA · HELIOPOLIS · DESIGNED FOR WAR — PLAYED FOR FUN
+        </div>
+        <div style={{ display:"flex", gap:12 }}>
+          <a href="#" style={{ color:"var(--wa-text-dim)", fontSize: 12 }} className="wa-mono">PRIVACY</a>
+          <a href="#" style={{ color:"var(--wa-text-dim)", fontSize: 12 }} className="wa-mono">TERMS</a>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+Object.assign(window, {
+  TopNav, Hero, GamesSection, BundlesSection, HowItWorks,
+  Gallery, ParkNotice, FAQ, LocationSection, Footer,
+  SectionHeader,
+});
+
+</script>
+<script type="text/babel" data-presets="react">
+/* global React, Icon, GAMES, BUNDLES, TIME_SLOTS, fmt, genCode, useI18n, useState, useEffect, useMemo */
+
+// ==========================================================================
+// RESERVATION WIZARD — 5 steps + success
+// ==========================================================================
+
+function Wizard({ onClose, seedItem }) {
+  const { t, lang } = useI18n();
+  const [step, setStep] = useState(1);
+  const [pick, setPick] = useState(seedItem?.duration ? { kind: seedItem.players ? "bundle" : "game", item: seedItem } : null);
+  const [players, setPlayers] = useState(seedItem?.players || 4);
+  const [duration, setDuration] = useState(seedItem?.duration || 30);
+  const [date, setDate] = useState(null);
+  const [time, setTime] = useState(null);
+  const [info, setInfo] = useState({ name:"", phone:"", email:"" });
+  const [confirmed, setConfirmed] = useState(null);
+
+  const maxPlayers = 6;
+
+  const livePrice = useMemo(() => {
+    if (!pick) return 0;
+    if (pick.kind === "bundle") {
+      return pick.item.mode === "per_player"
+        ? pick.item.price * Math.max(players, pick.item.players)
+        : pick.item.price;
+    }
+    // game
+    const basePerPlayer = duration === 60 ? pick.item.price * 1.6 : pick.item.price;
+    return Math.round(basePerPlayer * players);
+  }, [pick, players, duration]);
+
+  const next = () => setStep(s => Math.min(5, s+1));
+  const back = () => setStep(s => Math.max(1, s-1));
+
+  function submit() {
+    setConfirmed({ code: genCode(), price: livePrice, pick, players, duration, date, time, info });
+  }
+
+  // pre-seed: if we came from a bundle, lock players/duration
+  useEffect(()=> {
+    if (seedItem) {
+      if (seedItem.players) {
+        setPick({ kind:"bundle", item: seedItem });
+        setPlayers(seedItem.players);
+        setDuration(seedItem.duration);
+      } else {
+        setPick({ kind:"game", item: seedItem });
+        setDuration(seedItem.duration);
+      }
+      setStep(2);
+    }
+  }, [seedItem]);
+
+  if (confirmed) return <SuccessScreen data={confirmed} onClose={onClose}/>;
+
+  return (
+    <div style={{
+      position:"fixed", inset: 0, zIndex: 100,
+      background:"rgba(5,7,5,.92)", backdropFilter:"blur(8px)",
+      overflow:"auto",
+      animation:"wa-fadein-up 300ms ease",
+    }}>
+      <div style={{ maxWidth: 1080, margin:"0 auto", padding: "32px 24px" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom: 24 }}>
+          <div>
+            <div className="wa-mono" style={{ fontSize:11, color:"var(--wa-green)", letterSpacing:".25em" }}>// RESERVATION</div>
+            <div className="wa-h-display" style={{ fontSize: 32, marginTop: 4 }}>BOOKING PROTOCOL</div>
+          </div>
+          <button onClick={onClose} className="wa-btn wa-btn--ghost wa-btn-sm" aria-label="close">
+            <Icon.x size={16}/> CLOSE
+          </button>
+        </div>
+
+        <StepIndicator step={step}/>
+
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 320px", gap: 20, marginTop: 24, alignItems:"start" }}>
+          <div className="wa-panel wa-panel--clip" style={{ padding: 28, minHeight: 500 }}>
+            {step === 1 && <StepGame value={pick} onChange={setPick}/>}
+            {step === 2 && <StepConfigure pick={pick} players={players} setPlayers={setPlayers} duration={duration} setDuration={setDuration} maxPlayers={maxPlayers}/>}
+            {step === 3 && <StepDate value={date} onChange={setDate}/>}
+            {step === 4 && <StepTime value={time} onChange={setTime}/>}
+            {step === 5 && <StepInfo info={info} setInfo={setInfo}/>}
+
+            <div style={{ display:"flex", gap: 12, marginTop: 28, justifyContent:"space-between" }}>
+              <button className="wa-btn wa-btn--ghost wa-btn-sm" onClick={back} disabled={step===1} style={{ opacity: step===1?.3:1 }}>
+                <Icon.arrowL size={14}/> {t("back")}
+              </button>
+              {step < 5 ? (
+                <button className="wa-btn" onClick={next}
+                  disabled={(step===1 && !pick) || (step===3 && !date) || (step===4 && !time)}
+                  style={{ opacity: ((step===1 && !pick) || (step===3 && !date) || (step===4 && !time))?.4:1 }}>
+                  {t("next")} <Icon.arrow size={14}/>
+                </button>
+              ) : (
+                <button className="wa-btn" onClick={submit} disabled={!info.name || !info.phone}>
+                  <Icon.lock size={14}/> {t("confirm")}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <OrderSummary pick={pick} players={players} duration={duration} date={date} time={time} price={livePrice}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StepIndicator({ step }) {
+  const { t } = useI18n();
+  const labels = [t("chooseGame"), t("configure"), t("selectDate"), t("selectTime"), t("yourInfo")];
+  return (
+    <div className="wa-panel" style={{ padding: "14px 20px", display:"flex", alignItems:"center", gap: 0 }}>
+      {labels.map((label, i)=>{
+        const n = i+1;
+        const active = n === step;
+        const done = n < step;
+        return (
+          <React.Fragment key={i}>
+            <div style={{ display:"flex", alignItems:"center", gap: 10, opacity: active||done?1:.5, flex: 1 }}>
+              <div style={{
+                width: 32, height: 32,
+                display:"grid", placeItems:"center",
+                background: done ? "var(--wa-green)" : active ? "transparent" : "transparent",
+                color: done ? "#0a0d0a" : active ? "var(--wa-green)" : "var(--wa-text-mute)",
+                border: active ? "1px solid var(--wa-green)" : done ? "1px solid var(--wa-green)" : "1px solid var(--wa-line)",
+                fontFamily:"var(--ff-display)", fontSize: 13,
+                clipPath: "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))",
+              }}>
+                {done ? <Icon.check size={14}/> : String(n).padStart(2,"0")}
+              </div>
+              <div>
+                <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)", letterSpacing:".15em" }}>{t("step")} {n}</div>
+                <div className="wa-ui" style={{ fontSize: 12, color: active?"var(--wa-green)":"var(--wa-text)" }}>{label}</div>
+              </div>
+            </div>
+            {i < labels.length-1 && (
+              <div style={{ width: 20, height: 1, background: done?"var(--wa-green)":"var(--wa-line)", flexShrink: 0, marginInline: 4 }}/>
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+function StepGame({ value, onChange }) {
+  const { t } = useI18n();
+  return (
+    <div>
+      <Heading kicker="01 / 05" title={t("chooseGame")} sub="Pick a game or jump straight into a pre-built bundle."/>
+
+      <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-mute)", marginTop: 24, marginBottom: 10, letterSpacing:".15em" }}>// SINGLE GAMES</div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap: 12 }}>
+        {GAMES.map(g=>(
+          <PickCard key={g.id}
+            active={value?.kind==='game' && value.item.id===g.id}
+            onClick={()=>onChange({ kind:"game", item: g })}
+            icon={g.type==='laser'?<Icon.bolt size={18}/>:<Icon.target size={18}/>}
+            title={g.name}
+            price={`${fmt(g.price)} EGP`}
+            meta={`${g.duration}M · ${t("perPlayer").toUpperCase()}`}
+          />
+        ))}
+      </div>
+
+      <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-mute)", marginTop: 28, marginBottom: 10, letterSpacing:".15em" }}>// BUNDLES</div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap: 12 }}>
+        {BUNDLES.map(b=>(
+          <PickCard key={b.id}
+            active={value?.kind==='bundle' && value.item.id===b.id}
+            onClick={()=>onChange({ kind:"bundle", item: b })}
+            icon={<Icon.spark size={18}/>}
+            title={b.name}
+            price={b.mode==='per_player' ? `${fmt(b.price)} EGP/PL` : `${fmt(b.price)} EGP`}
+            meta={`${b.players} PL · ${b.duration}M`}
+            orange
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PickCard({ active, onClick, icon, title, price, meta, orange }) {
+  return (
+    <button onClick={onClick}
+      className="wa-panel"
+      style={{
+        padding: 18, textAlign:"start", cursor:"pointer", color:"var(--wa-text)",
+        borderColor: active ? (orange?"var(--wa-orange)":"var(--wa-green)") : "var(--wa-line)",
+        boxShadow: active ? (orange?"0 0 0 1px var(--wa-orange), 0 0 24px rgba(255,122,26,.18)":"var(--wa-green-glow)") : "none",
+        background: active ? "rgba(143,224,74,.05)" : "var(--wa-panel)",
+        transition: "all 150ms",
+      }}>
+      <div style={{ color: orange?"var(--wa-orange)":"var(--wa-green)" }}>{icon}</div>
+      <div className="wa-h-display" style={{ fontSize: 18, marginTop: 10 }}>{title}</div>
+      <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-mute)", marginTop: 4, letterSpacing:".12em" }}>{meta}</div>
+      <div className="wa-h-display" style={{ fontSize: 20, color: orange?"var(--wa-orange)":"var(--wa-green)", marginTop: 12 }}>{price}</div>
+    </button>
+  );
+}
+
+function StepConfigure({ pick, players, setPlayers, duration, setDuration, maxPlayers }) {
+  const { t } = useI18n();
+  const isBundle = pick?.kind === "bundle";
+  const lockedPlayers = isBundle && pick.item.mode === "fixed_total";
+  return (
+    <div>
+      <Heading kicker="02 / 05" title={t("configure")} sub={isBundle ? "Bundle config — some knobs are locked." : "Tune the squad size and run length."}/>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap: 20, marginTop: 20 }}>
+        <div className="wa-panel" style={{ padding: 20 }}>
+          <div className="wa-label">{t("players")}</div>
+          <div style={{ display:"flex", alignItems:"center", gap: 14, marginTop: 10 }}>
+            <IconRoundBtn onClick={()=>!lockedPlayers && setPlayers(Math.max(2, players-1))} disabled={lockedPlayers}><Icon.minus size={18}/></IconRoundBtn>
+            <div style={{ flex: 1, textAlign:"center" }}>
+              <div className="wa-h-display" style={{ fontSize: 58, color:"var(--wa-green)", lineHeight:1 }}>{players}</div>
+              <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-mute)", letterSpacing:".2em", marginTop: 6 }}>MAX {maxPlayers} · MIN 2</div>
+            </div>
+            <IconRoundBtn onClick={()=>!lockedPlayers && setPlayers(Math.min(maxPlayers, players+1))} disabled={lockedPlayers}><Icon.plus size={18}/></IconRoundBtn>
+          </div>
+          {lockedPlayers && <div className="wa-tag wa-tag--orange" style={{marginTop:14}}><Icon.lock size={12}/> FIXED-TEAM BUNDLE · Locked to {pick.item.players}</div>}
+        </div>
+
+        <div className="wa-panel" style={{ padding: 20 }}>
+          <div className="wa-label">{t("duration")}</div>
+          <div style={{ display:"flex", gap: 10, marginTop: 10 }}>
+            {[30, 60].map(d=>(
+              <button key={d} onClick={()=>!isBundle && setDuration(d)} disabled={isBundle}
+                className="wa-panel"
+                style={{
+                  flex:1, padding:"22px 14px", cursor: isBundle?"not-allowed":"pointer",
+                  color: duration===d ? "#0a0d0a" : "var(--wa-text)",
+                  background: duration===d ? "var(--wa-green)" : "var(--wa-panel)",
+                  borderColor: duration===d ? "var(--wa-green)" : "var(--wa-line)",
+                  opacity: isBundle && duration!==d ? .3 : 1,
+                }}>
+                <div className="wa-h-display" style={{ fontSize: 36, lineHeight: 1 }}>{d}</div>
+                <div className="wa-mono" style={{ fontSize: 10, letterSpacing:".18em", opacity:.7 }}>MINUTES</div>
+              </button>
+            ))}
+          </div>
+          {isBundle && <div className="wa-tag" style={{marginTop:14}}><Icon.lock size={12}/> BUNDLE SETS DURATION</div>}
+        </div>
+      </div>
+
+      {pick?.kind==='bundle' && pick.item.mode==='per_player' && players < pick.item.players && (
+        <div className="wa-panel" style={{ marginTop: 16, padding: 14, borderColor:"rgba(255,192,67,.4)", background:"rgba(255,192,67,.06)" }}>
+          <div className="wa-mono" style={{ fontSize:11, color:"var(--wa-amber)", letterSpacing:".15em" }}>
+            ⚠ BUNDLE MIN · Billing will use {pick.item.players} players minimum ({fmt(pick.item.price * pick.item.players)} EGP)
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IconRoundBtn({ children, onClick, disabled }) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      style={{
+        width: 44, height: 44, border:"1px solid var(--wa-line-hot)",
+        background: disabled ? "var(--wa-panel)" : "var(--wa-panel-2)",
+        color: disabled?"var(--wa-text-mute)":"var(--wa-green)",
+        cursor: disabled?"not-allowed":"pointer",
+        display:"grid", placeItems:"center",
+      }}>{children}</button>
+  );
+}
+
+function StepDate({ value, onChange }) {
+  const { t } = useI18n();
+  const today = new Date();
+  const [monthOffset, setMonthOffset] = useState(0);
+  const view = new Date(today.getFullYear(), today.getMonth()+monthOffset, 1);
+  const monthName = view.toLocaleString("en-US", { month:"long", year:"numeric" });
+  const firstDay = view.getDay();
+  const daysInMonth = new Date(view.getFullYear(), view.getMonth()+1, 0).getDate();
+  const cells = [];
+  for (let i=0;i<firstDay;i++) cells.push(null);
+  for (let d=1;d<=daysInMonth;d++) cells.push(d);
+
+  function isPast(d) {
+    if (!d) return true;
+    const cand = new Date(view.getFullYear(), view.getMonth(), d);
+    const today0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return cand < today0;
+  }
+  function isClosed(d) {
+    // pretend Mondays are closed-day overrides
+    if (!d) return false;
+    return new Date(view.getFullYear(), view.getMonth(), d).getDay() === 1;
+  }
+
+  return (
+    <div>
+      <Heading kicker="03 / 05" title={t("selectDate")} sub="Pick a day. Mondays closed for maintenance."/>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop: 20, marginBottom: 14 }}>
+        <button className="wa-btn wa-btn--ghost wa-btn-sm" onClick={()=>setMonthOffset(monthOffset-1)} disabled={monthOffset<=0} style={{opacity:monthOffset<=0?.3:1}}>
+          <Icon.arrowL size={14}/>
+        </button>
+        <div className="wa-h-display" style={{ fontSize: 24 }}>{monthName}</div>
+        <button className="wa-btn wa-btn--ghost wa-btn-sm" onClick={()=>setMonthOffset(monthOffset+1)}>
+          <Icon.arrow size={14}/>
+        </button>
+      </div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(7, 1fr)", gap: 4 }}>
+        {["S","M","T","W","T","F","S"].map((d,i)=>(
+          <div key={i} className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-mute)", letterSpacing:".2em", textAlign:"center", paddingBlock: 8 }}>{d}</div>
+        ))}
+        {cells.map((d,i)=>{
+          if (d===null) return <div key={i}/>;
+          const closed = isClosed(d);
+          const past = isPast(d);
+          const disabled = past || closed;
+          const selected = value && value.d===d && value.m===view.getMonth() && value.y===view.getFullYear();
+          return (
+            <button key={i} disabled={disabled}
+              onClick={()=>onChange({ d, m: view.getMonth(), y: view.getFullYear() })}
+              className="wa-panel"
+              style={{
+                aspectRatio: "1", padding: 0, position:"relative",
+                cursor: disabled?"not-allowed":"pointer",
+                opacity: past?.35:1,
+                background: selected ? "var(--wa-green)" : closed ? "#0e110f" : "var(--wa-panel)",
+                color: selected ? "#0a0d0a" : closed ? "#3a3e3a" : "var(--wa-text)",
+                borderColor: selected ? "var(--wa-green)" : "var(--wa-line)",
+                fontFamily: "var(--ff-mono)", fontSize: 14,
+              }}>
+              {d}
+              {closed && !past && <div style={{ position:"absolute", bottom: 4, left: 0, right: 0, fontSize: 8, letterSpacing:".15em" }}>CLOSED</div>}
+            </button>
+          );
+        })}
+      </div>
+
+      <Legend/>
+    </div>
+  );
+}
+
+function Legend() {
+  const items = [
+    ["var(--wa-green)","Selected"],
+    ["var(--wa-panel)","Available"],
+    ["#0e110f","Closed day"],
+  ];
+  return (
+    <div style={{ display:"flex", gap: 18, marginTop: 18 }}>
+      {items.map(([c,l])=>(
+        <div key={l} style={{ display:"flex", alignItems:"center", gap: 8 }}>
+          <div style={{ width: 14, height: 14, background: c, border:"1px solid var(--wa-line)" }}/>
+          <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-dim)", letterSpacing:".1em" }}>{l}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StepTime({ value, onChange }) {
+  const { t } = useI18n();
+  // fake statuses
+  const statuses = { "6:00 PM":"available", "6:30 PM":"booked", "7:00 PM":"available", "7:30 PM":"available", "8:00 PM":"booked", "8:30 PM":"available", "9:00 PM":"closing" };
+  return (
+    <div>
+      <Heading kicker="04 / 05" title={t("selectTime")} sub="Each slot is venue-wide exclusive — only one team on the field."/>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap: 10, marginTop: 20 }}>
+        {TIME_SLOTS.map(slot=>{
+          const status = statuses[slot];
+          const selected = value === slot;
+          const cls = selected ? "wa-slot wa-slot--selected" : `wa-slot wa-slot--${status}`;
+          return (
+            <button key={slot} className={cls} onClick={()=>status==='available' && onChange(slot)} style={{ padding: "18px 8px" }}>
+              <div className="wa-h-display" style={{ fontSize: 22 }}>{slot}</div>
+              <div className="wa-mono" style={{ fontSize: 10, letterSpacing:".15em", marginTop: 6, opacity:.7 }}>
+                {status === 'available' && (selected ? "LOCKED" : "AVAILABLE")}
+                {status === 'booked' && "BOOKED"}
+                {status === 'closing' && "CLOSING"}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ display:"flex", gap: 14, marginTop: 22, flexWrap:"wrap" }}>
+        {[
+          ["available","Available","var(--wa-green)"],
+          ["booked","Booked","var(--wa-red)"],
+          ["closing","Closing soon","var(--wa-amber)"],
+          ["closed","Closed day","var(--wa-text-mute)"],
+        ].map(([k,l,c])=>(
+          <div key={k} style={{ display:"flex", alignItems:"center", gap: 8 }}>
+            <div className={`wa-slot wa-slot--${k}`} style={{ width: 22, height: 22, padding: 0 }}/>
+            <div className="wa-mono" style={{ fontSize: 11, color:c, letterSpacing:".1em" }}>{l}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StepInfo({ info, setInfo }) {
+  const { t } = useI18n();
+  return (
+    <div>
+      <Heading kicker="05 / 05" title={t("yourInfo")} sub="Just enough to hold your slot."/>
+      <div style={{ display:"flex", flexDirection:"column", gap: 14, marginTop: 20, maxWidth: 520 }}>
+        <div>
+          <label className="wa-label">{t("fullName")} *</label>
+          <input className="wa-input" value={info.name} onChange={e=>setInfo({...info, name:e.target.value})} placeholder="Cpt. Warrior"/>
+        </div>
+        <div>
+          <label className="wa-label">{t("phone")} *</label>
+          <input className="wa-input" value={info.phone} onChange={e=>setInfo({...info, phone:e.target.value})} placeholder="+20 122 xxx xxxx"/>
+        </div>
+        <div>
+          <label className="wa-label">{t("email")}</label>
+          <input className="wa-input" value={info.email} onChange={e=>setInfo({...info, email:e.target.value})} placeholder="you@warriors.egy"/>
+        </div>
+        <div className="wa-panel" style={{ padding: 14, marginTop: 8, borderColor:"rgba(255,122,26,.3)" }}>
+          <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-orange)", letterSpacing:".18em", marginBottom: 6 }}>⚠ DEPOSIT REQUIRED</div>
+          <div style={{ fontSize: 13, color:"var(--wa-text-dim)", lineHeight: 1.5 }}>
+            50% deposit confirms your slot. We'll send InstaPay / WhatsApp instructions after you confirm.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Heading({ kicker, title, sub }) {
+  return (
+    <div>
+      <div className="wa-mono" style={{ fontSize:11, color:"var(--wa-green)", letterSpacing:".25em" }}>{kicker}</div>
+      <div className="wa-h-display" style={{ fontSize: 36, marginTop: 4 }}>{title}</div>
+      {sub && <p style={{ color:"var(--wa-text-dim)", fontSize: 15, marginTop: 8, maxWidth: 560, lineHeight: 1.5 }}>{sub}</p>}
+    </div>
+  );
+}
+
+function OrderSummary({ pick, players, duration, date, time, price }) {
+  const { t } = useI18n();
+  return (
+    <div className="wa-panel wa-panel--clip wa-brackets" style={{ padding: 22, position:"sticky", top: 20 }}>
+      <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-green)", letterSpacing:".25em" }}>// ORDER RECEIPT</div>
+      <div className="wa-h-display" style={{ fontSize: 22, marginTop: 6 }}>YOUR BOOKING</div>
+
+      <div style={{ marginTop: 18, display:"flex", flexDirection:"column", gap: 10 }}>
+        <SummaryRow k="GAME" v={pick?.item?.name || "—"}/>
+        <SummaryRow k="PLAYERS" v={players}/>
+        <SummaryRow k="DURATION" v={`${duration}M`}/>
+        <SummaryRow k="DATE" v={date ? `${String(date.m+1).padStart(2,'0')}/${String(date.d).padStart(2,'0')}/${date.y}` : "—"}/>
+        <SummaryRow k="TIME" v={time || "—"}/>
+      </div>
+
+      <div style={{ borderTop:"1px dashed var(--wa-line-hot)", margin:"18px 0 14px" }}/>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"end" }}>
+        <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-mute)", letterSpacing:".2em" }}>{t("totalPrice").toUpperCase()}</div>
+        <div className="wa-h-display" style={{ fontSize: 32, color:"var(--wa-green)" }}>
+          {price ? fmt(price) : "—"} <span style={{ fontSize: 12, color:"var(--wa-text-dim)" }}>EGP</span>
+        </div>
+      </div>
+      <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)", textAlign:"end", marginTop: 2 }}>
+        50% DEPOSIT · {price ? fmt(Math.round(price/2)) : "—"} EGP DUE NOW
+      </div>
+    </div>
+  );
+}
+
+function SummaryRow({ k, v }) {
+  return (
+    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap: 10 }}>
+      <span className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-mute)", letterSpacing:".15em" }}>{k}</span>
+      <span style={{ fontSize: 14, color:"var(--wa-text)", textAlign:"end" }}>{v}</span>
+    </div>
+  );
+}
+
+// ------- SUCCESS SCREEN -------------------------------------------------
+function SuccessScreen({ data, onClose }) {
+  const { t } = useI18n();
+  const [showConfetti, setShowConfetti] = useState(true);
+  useEffect(() => {
+    const id = setTimeout(() => setShowConfetti(false), 5500);
+    return () => clearTimeout(id);
+  }, []);
+  return (
+    <div style={{
+      position:"fixed", inset: 0, zIndex: 200,
+      background:"#0a0d0a",
+      overflow:"auto",
+    }}>
+      {showConfetti && <Confetti/>}
+      {/* animated background */}
+      <div className="wa-anim-grid" style={{ position:"absolute", inset:0, opacity:.6 }}/>
+      <div className="wa-scanline"/>
+      <div style={{ position:"absolute", inset:0,
+        background:"radial-gradient(50% 40% at 50% 40%, rgba(143,224,74,.12), transparent 70%)" }}/>
+
+      <div style={{ position:"relative", zIndex: 2, maxWidth: 760, margin:"0 auto", padding:"60px 24px" }}>
+        <div style={{ textAlign:"center" }}>
+          <div style={{
+            width: 96, height: 96, margin:"0 auto",
+            display:"grid", placeItems:"center",
+            background:"var(--wa-green)", color:"#0a0d0a",
+            clipPath:"polygon(50% 0, 100% 30%, 100% 100%, 0 100%, 0 30%)",
+            animation:"wa-count 700ms ease both",
+          }}>
+            <Icon.check size={48}/>
+          </div>
+          <div className="wa-mono" style={{ fontSize: 12, color:"var(--wa-green)", letterSpacing:".3em", marginTop: 22, animation:"wa-fadein-up 700ms ease .2s both" }}>
+            // TRANSMISSION RECEIVED
+          </div>
+          <h1 className="wa-h-display" style={{ fontSize:"clamp(56px, 10vw, 110px)", marginTop: 8, lineHeight:.9,
+            animation:"wa-fadein-up 700ms cubic-bezier(.2,1.1,.2,1) .3s both" }}>
+            YOU'RE<br/><span style={{ color:"var(--wa-green)" }}>{t("locked")}</span>
+          </h1>
+        </div>
+
+        <div className="wa-panel wa-panel--clip wa-brackets wa-ticket" style={{ padding: 30, marginTop: 44,
+          animation:"wa-fadein-up 800ms ease .5s both" }}>
+          <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-mute)", letterSpacing:".25em" }}>{t("reservationCode").toUpperCase()}</div>
+          <div className="wa-h-display" style={{
+            fontSize: "clamp(42px, 8vw, 64px)", color:"var(--wa-green)",
+            letterSpacing:".08em", marginTop: 6, wordBreak:"break-all",
+            textShadow:"0 0 24px rgba(143,224,74,.4)",
+          }}>
+            {data.code}
+          </div>
+
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap: 16, marginTop: 28, paddingBlock: 18, borderTop:"1px dashed var(--wa-line-hot)", borderBottom:"1px dashed var(--wa-line-hot)" }}>
+            <SuccessStat k="GAME" v={data.pick?.item?.name || "—"}/>
+            <SuccessStat k="PLAYERS" v={data.players}/>
+            <SuccessStat k="DATE" v={data.date ? `${data.date.m+1}/${data.date.d}` : "—"}/>
+            <SuccessStat k="TIME" v={data.time || "—"}/>
+          </div>
+
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap: 14, marginTop: 20, flexWrap:"wrap" }}>
+            <div>
+              <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)", letterSpacing:".2em" }}>TOTAL · 50% DEPOSIT DUE</div>
+              <div className="wa-h-display" style={{ fontSize: 28, color:"var(--wa-green)", marginTop: 2 }}>
+                {fmt(Math.round(data.price/2))} / {fmt(data.price)} EGP
+              </div>
+            </div>
+            <div style={{ display:"flex", gap: 10, flexWrap:"wrap" }}>
+              <button className="wa-btn"><Icon.whatsapp size={16}/> {t("sendWhatsapp")}</button>
+              <button className="wa-btn wa-btn--ghost"><Icon.download size={16}/> {t("downloadReceipt")}</button>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 28, paddingTop: 18, borderTop:"1px dashed var(--wa-line-hot)" }}>
+            <Barcode value={data.code}/>
+          </div>
+        </div>
+
+        <div className="wa-panel" style={{ padding: 20, marginTop: 18, display:"flex", alignItems:"center", gap: 14,
+          borderColor:"rgba(255,122,26,.3)", animation:"wa-fadein-up 800ms ease .7s both" }}>
+          <Icon.shield size={22} style={{ color:"var(--wa-orange)" }}/>
+          <div style={{ fontSize: 14, color:"var(--wa-text-dim)" }}>
+            {t("parkFee")}
+          </div>
+        </div>
+
+        <button onClick={onClose} className="wa-btn wa-btn--ghost" style={{ marginTop: 24 }}>
+          <Icon.arrowL size={14}/> BACK TO SITE
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SuccessStat({ k, v }) {
+  return (
+    <div>
+      <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)", letterSpacing:".2em" }}>{k}</div>
+      <div className="wa-h-display" style={{ fontSize: 20, marginTop: 4 }}>{v}</div>
+    </div>
+  );
+}
+
+// Confetti explosion — 100 particles, neon brand palette
+function Confetti() {
+  const pieces = useMemo(() => {
+    const colors = ["#8FE04A","#b2f066","#FF7A1A","#FFC043","#ffffff","#CFFF3D"];
+    return Array.from({ length: 90 }).map((_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      dx: (Math.random() - 0.5) * 80,
+      color: colors[i % colors.length],
+      delay: Math.random() * 1.2,
+      dur: 2.6 + Math.random() * 2.2,
+      w: 4 + Math.random() * 6,
+      h: 10 + Math.random() * 8,
+      rot: Math.random() * 360,
+    }));
+  }, []);
+  return (
+    <div className="wa-confetti" aria-hidden="true">
+      {pieces.map(p => (
+        <i key={p.id} style={{
+          left: `${p.left}%`,
+          width: p.w, height: p.h,
+          background: p.color,
+          transform: `rotate(${p.rot}deg)`,
+          animationDuration: `${p.dur}s`,
+          animationDelay: `${p.delay}s`,
+          "--dx": `${p.dx}vw`,
+        }}/>
+      ))}
+    </div>
+  );
+}
+
+// Deterministic barcode from a string — stable bar widths based on char codes
+function Barcode({ value }) {
+  const bars = useMemo(() => {
+    const seed = (value || "").split("").reduce((a,c)=>((a<<5)-a)+c.charCodeAt(0), 0);
+    const rnd = (s) => { const x = Math.sin(s) * 10000; return x - Math.floor(x); };
+    return Array.from({ length: 58 }, (_, i) => {
+      const r = rnd(seed + i);
+      return r > 0.7 ? 3 : r > 0.4 ? 2 : 1.2;
+    });
+  }, [value]);
+  const spacing = 1.4;
+  const totalW = bars.reduce((a,b) => a + b + spacing, 0) - spacing;
+  const svgW = 300;
+  const svgH = 70;
+  let x = (svgW - totalW) / 2;
+  return (
+    <div className="wa-barcode">
+      <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`}>
+        {bars.map((w, i) => {
+          const r = <rect key={i} x={x} y={8} width={w} height={54} fill="var(--wa-text)"/>;
+          x += w + spacing;
+          return r;
+        })}
+      </svg>
+      <div className="wa-barcode-num">{value}</div>
+    </div>
+  );
+}
+
+Object.assign(window, {
+  Wizard, SuccessScreen, StepIndicator,
+});
+
+</script>
+<script type="text/babel" data-presets="react">
+/* global React, Icon, GAMES, BUNDLES, TIME_SLOTS, fmt, useState, useMemo */
+
+// ==========================================================================
+// ADMIN DASHBOARD
+// ==========================================================================
+
+const ADMIN_NAV = [
+  { id:"home", label:"Dashboard", icon:"crosshair" },
+  { id:"ops",  label:"Control Center", icon:"target" },
+  { id:"rev",  label:"Revenue", icon:"bolt" },
+  { id:"slots",label:"Slot Management", icon:"clock" },
+  { id:"price",label:"Pricing", icon:"shield" },
+  { id:"bund", label:"Bundles", icon:"spark" },
+];
+
+function Admin({ onExit }) {
+  const [authed, setAuthed] = useState(false);
+  const [route, setRoute] = useState("home");
+
+  if (!authed) return <AdminLogin onAuth={()=>setAuthed(true)} onExit={onExit}/>;
+
+  return (
+    <div style={{ display:"flex", minHeight:"100vh", background:"var(--wa-bg)" }}>
+      <AdminSidebar route={route} setRoute={setRoute} onExit={onExit}/>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <AdminTopbar/>
+        <main style={{ padding: 28, maxWidth: 1400, margin:"0 auto" }}>
+          {route === "home"  && <AdminHome setRoute={setRoute}/>}
+          {route === "ops"   && <ControlCenter/>}
+          {route === "rev"   && <RevenuePage/>}
+          {route === "slots" && <SlotMgmt/>}
+          {route === "price" && <PricingPage/>}
+          {route === "bund"  && <BundlesMgmt/>}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function AdminLogin({ onAuth, onExit }) {
+  return (
+    <div style={{ minHeight:"100vh", display:"grid", placeItems:"center", padding: 24, position:"relative" }}>
+      <div className="wa-anim-grid" style={{ position:"absolute", inset:0, opacity:.5 }}/>
+      <div style={{ position:"absolute", inset:0, background:"radial-gradient(40% 40% at 50% 40%, rgba(143,224,74,.08), transparent 70%)" }}/>
+
+      <div className="wa-panel wa-panel--clip wa-brackets" style={{ position:"relative", width: 420, padding: 34, zIndex: 2 }}>
+        <div style={{ display:"flex", alignItems:"center", gap: 10 }}>
+          <div style={{ width:36, height:36, background:"var(--wa-green)", display:"grid", placeItems:"center",
+            clipPath:"polygon(50% 0, 100% 30%, 100% 100%, 0 100%, 0 30%)", color:"#0a0d0a" }}>
+            <Icon.crosshair size={20}/>
+          </div>
+          <div>
+            <div className="wa-h-display" style={{ fontSize: 18 }}>WARRIORS ARENA</div>
+            <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-green)", letterSpacing:".3em" }}>// COMMAND CONSOLE</div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 28, display:"flex", flexDirection:"column", gap: 14 }}>
+          <div>
+            <label className="wa-label">OPERATOR EMAIL</label>
+            <input className="wa-input" defaultValue="ops@warriors.arena" />
+          </div>
+          <div>
+            <label className="wa-label">PASSCODE</label>
+            <input className="wa-input" type="password" defaultValue="**********"/>
+          </div>
+          <label style={{ display:"flex", alignItems:"center", gap: 10, color:"var(--wa-text-dim)", fontSize: 13, marginTop: 4 }}>
+            <input type="checkbox" defaultChecked/> Remember this terminal
+          </label>
+          <button className="wa-btn" onClick={onAuth} style={{ marginTop: 6 }}>
+            <Icon.lock size={14}/> ENGAGE
+          </button>
+          <button onClick={onExit} className="wa-mono" style={{ background:"none", border:0, color:"var(--wa-text-mute)", fontSize: 11, letterSpacing:".2em", cursor:"pointer" }}>
+            ← BACK TO PUBLIC SITE
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminSidebar({ route, setRoute, onExit }) {
+  return (
+    <aside style={{
+      width: 230, background:"#0d110e", borderRight:"1px solid var(--wa-line)",
+      padding: "22px 14px", display:"flex", flexDirection:"column", gap: 4,
+      position:"sticky", top: 0, height:"100vh",
+    }}>
+      <div style={{ display:"flex", alignItems:"center", gap: 10, padding:"2px 6px 22px", borderBottom:"1px solid var(--wa-line)" }}>
+        <div style={{ width:32, height:32, background:"var(--wa-green)", display:"grid", placeItems:"center",
+          clipPath:"polygon(50% 0, 100% 30%, 100% 100%, 0 100%, 0 30%)", color:"#0a0d0a" }}>
+          <Icon.crosshair size={18}/>
+        </div>
+        <div style={{ lineHeight: 1 }}>
+          <div className="wa-h-display" style={{ fontSize: 14 }}>WARRIORS</div>
+          <div className="wa-mono" style={{ fontSize: 9, color:"var(--wa-green)", letterSpacing:".25em", marginTop: 2 }}>OPS · v2.1</div>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 14, display:"flex", flexDirection:"column", gap: 3 }}>
+        {ADMIN_NAV.map(n=>{
+          const active = route===n.id;
+          const Ico = Icon[n.icon];
+          return (
+            <button key={n.id} onClick={()=>setRoute(n.id)}
+              style={{
+                display:"flex", alignItems:"center", gap: 10, padding:"10px 12px",
+                background: active ? "rgba(143,224,74,.08)" : "transparent",
+                border: 0, borderLeft: active ? "2px solid var(--wa-green)" : "2px solid transparent",
+                color: active ? "var(--wa-green)" : "var(--wa-text-dim)",
+                fontFamily:"var(--ff-ui)", fontSize: 13, letterSpacing:".05em", textTransform:"uppercase",
+                cursor:"pointer", textAlign:"start",
+              }}>
+              <Ico size={16}/> {n.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ marginTop:"auto", paddingTop: 14, borderTop:"1px solid var(--wa-line)" }}>
+        <button onClick={onExit} style={{ display:"flex", alignItems:"center", gap: 8, background:"none", border:0, color:"var(--wa-text-mute)", fontSize: 11, letterSpacing:".2em", cursor:"pointer", fontFamily:"var(--ff-mono)" }}>
+          ← EXIT TO SITE
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function AdminTopbar() {
+  return (
+    <div style={{
+      display:"flex", alignItems:"center", gap: 14, padding:"14px 28px",
+      borderBottom:"1px solid var(--wa-line)", background:"#0b0e0c",
+    }}>
+      <div style={{ position:"relative", flex: 1, maxWidth: 360 }}>
+        <div style={{ position:"absolute", left: 12, top:"50%", transform:"translateY(-50%)", color:"var(--wa-text-mute)" }}>
+          <Icon.search size={16}/>
+        </div>
+        <input className="wa-input" style={{ paddingInlineStart: 36, fontSize: 14 }} placeholder="Search bookings, codes, customers…"/>
+      </div>
+      <div style={{ flex: 1 }}/>
+      <div className="wa-tag"><span style={{width:6,height:6,background:"var(--wa-green)",borderRadius:"50%",animation:"wa-blink 1.4s infinite"}}/>SYSTEM · LIVE</div>
+      <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-dim)" }}>CAIRO · {new Date().toLocaleDateString()}</div>
+      <div style={{ width: 34, height: 34, background:"var(--wa-panel-2)", border:"1px solid var(--wa-line-hot)", display:"grid", placeItems:"center", fontFamily:"var(--ff-display)", fontSize: 12, color:"var(--wa-green)" }}>
+        OM
+      </div>
+    </div>
+  );
+}
+
+function PageHeader({ kicker, title, actions }) {
+  return (
+    <div style={{ display:"flex", alignItems:"end", justifyContent:"space-between", marginBottom: 22, gap: 18, flexWrap:"wrap" }}>
+      <div>
+        <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-green)", letterSpacing:".25em" }}>{kicker}</div>
+        <div className="wa-h-display" style={{ fontSize: 34, marginTop: 4 }}>{title}</div>
+      </div>
+      <div style={{ display:"flex", gap: 10 }}>{actions}</div>
+    </div>
+  );
+}
+
+function AdminHome({ setRoute }) {
+  return (
+    <div>
+      <PageHeader kicker="// TODAY · APR 20" title="Command Dashboard"
+        actions={<>
+          <button className="wa-btn wa-btn-sm"><Icon.plus size={14}/> NEW BOOKING</button>
+          <button className="wa-btn wa-btn--ghost wa-btn-sm"><Icon.download size={14}/> EXPORT DAY</button>
+        </>}/>
+
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap: 14 }}>
+        <Metric label="TODAY'S BOOKINGS" value="9" sub="+3 vs yesterday" tone="green"/>
+        <Metric label="CONFIRMED REVENUE" value="6,840" unit="EGP" sub="7 confirmed · 2 pending" tone="green"/>
+        <Metric label="UTILIZATION" value="78%" sub="7 of 9 slots filled" tone="neutral"/>
+        <Metric label="NEXT SLOT" value="7:00 PM" sub="in 42 min · Khaled A." tone="orange" pulse/>
+      </div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1.4fr 1fr", gap: 16, marginTop: 16 }}>
+        <div className="wa-panel" style={{ padding: 22 }}>
+          <SectionTitle kicker="// AGENDA" title="Today's reservations"/>
+          <div style={{ marginTop: 16, display:"flex", flexDirection:"column", gap: 6 }}>
+            {[
+              { t:"6:00 PM", name:"Omar & Co.", game:"Laser · 30", players: 5, status:"confirmed", total: 600 },
+              { t:"6:30 PM", name:"Birthday · Dina", game:"Bundle · FIRE TEAM", players: 6, status:"confirmed", total: 1500, bundle:true },
+              { t:"7:00 PM", name:"Khaled A.", game:"Gel · 30", players: 4, status:"pending", total: 600 },
+              { t:"7:30 PM", name:"Nour M.", game:"Laser · 60", players: 4, status:"confirmed", total: 1280 },
+              { t:"8:00 PM", name:"—", game:"—", players: 0, status:"empty", total: 0 },
+              { t:"8:30 PM", name:"Yousef T.", game:"Laser · 30", players: 3, status:"confirmed", total: 360 },
+            ].map((b,i)=>(
+              <BookingRow key={i} b={b}/>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display:"flex", flexDirection:"column", gap: 16 }}>
+          <div className="wa-panel" style={{ padding: 22 }}>
+            <SectionTitle kicker="// QUICK JUMP" title="Actions"/>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap: 8, marginTop: 14 }}>
+              <QuickBtn icon={<Icon.target size={16}/>} label="Control Center" onClick={()=>setRoute('ops')}/>
+              <QuickBtn icon={<Icon.plus size={16}/>} label="New booking"/>
+              <QuickBtn icon={<Icon.bolt size={16}/>} label="Revenue" onClick={()=>setRoute('rev')}/>
+              <QuickBtn icon={<Icon.clock size={16}/>} label="Edit slots" onClick={()=>setRoute('slots')}/>
+            </div>
+          </div>
+
+          <div className="wa-panel" style={{ padding: 22, borderColor:"rgba(255,122,26,.3)" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <Icon.shield size={18} style={{color:"var(--wa-orange)"}}/>
+              <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-orange)", letterSpacing:".2em" }}>// UPCOMING · 42 MIN</div>
+            </div>
+            <div className="wa-h-display" style={{ fontSize: 22, marginTop: 10 }}>7:00 PM · Khaled A.</div>
+            <div style={{ color:"var(--wa-text-dim)", fontSize: 13, marginTop: 4 }}>Gel Blasters · 30M · 4 players · pending deposit</div>
+            <div style={{ display:"flex", gap: 8, marginTop: 14 }}>
+              <button className="wa-btn wa-btn-sm"><Icon.whatsapp size={14}/> NUDGE</button>
+              <button className="wa-btn wa-btn--ghost wa-btn-sm">MARK PAID</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Metric({ label, value, unit, sub, tone = "neutral", pulse }) {
+  const color = tone === "green" ? "var(--wa-green)" : tone === "orange" ? "var(--wa-orange)" : "var(--wa-text)";
+  return (
+    <div className="wa-panel" style={{ padding: 20, position:"relative", overflow:"hidden" }}>
+      <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)", letterSpacing:".25em" }}>{label}</div>
+      <div style={{ display:"flex", alignItems:"baseline", gap: 8, marginTop: 8 }}>
+        <div className="wa-h-display" style={{ fontSize: 40, color, animation: pulse ? "wa-pulse-glow 2s infinite" : undefined }}>
+          {value}
+        </div>
+        {unit && <div className="wa-mono" style={{ color:"var(--wa-text-dim)", fontSize: 12 }}>{unit}</div>}
+      </div>
+      {sub && <div style={{ color:"var(--wa-text-dim)", fontSize: 12, marginTop: 6 }}>{sub}</div>}
+      {/* corner glyph */}
+      <div className="wa-h-display" style={{ position:"absolute", top: -4, right: 6, fontSize: 56, color:"rgba(255,255,255,.02)" }}>{label[0]}</div>
+    </div>
+  );
+}
+
+function SectionTitle({ kicker, title }) {
+  return (
+    <div>
+      <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-green)", letterSpacing:".25em" }}>{kicker}</div>
+      <div className="wa-h-display" style={{ fontSize: 22, marginTop: 4 }}>{title}</div>
+    </div>
+  );
+}
+
+function BookingRow({ b }) {
+  const statusColor = b.status === "confirmed" ? "var(--wa-green)" : b.status === "pending" ? "var(--wa-amber)" : "var(--wa-text-mute)";
+  if (b.status === "empty") {
+    return (
+      <div style={{ display:"grid", gridTemplateColumns:"80px 1fr 1fr 80px 100px 40px", gap: 12, alignItems:"center",
+        padding:"10px 12px", background:"#0e110f", border:"1px dashed var(--wa-line)" }}>
+        <div className="wa-mono" style={{ fontSize: 13, color:"var(--wa-text-mute)" }}>{b.t}</div>
+        <div style={{ color:"var(--wa-text-mute)", fontSize: 13 }}>— empty slot —</div>
+        <div/><div/><div/>
+        <button className="wa-btn wa-btn-sm wa-btn--ghost" style={{ padding:"6px 10px" }}><Icon.plus size={12}/></button>
+      </div>
+    );
+  }
+  return (
+    <div style={{
+      display:"grid", gridTemplateColumns:"80px 1fr 1fr 80px 100px 40px", gap: 12, alignItems:"center",
+      padding:"12px", background:"var(--wa-panel-2)", borderLeft: b.bundle ? "3px solid var(--wa-orange)" : "3px solid transparent",
+      border:"1px solid var(--wa-line)",
+    }}>
+      <div className="wa-mono" style={{ fontSize: 13, color:"var(--wa-green)" }}>{b.t}</div>
+      <div style={{ fontSize: 14 }}>{b.name}</div>
+      <div className="wa-mono" style={{ fontSize: 12, color:"var(--wa-text-dim)" }}>{b.game}</div>
+      <div style={{ fontSize: 13 }}><Icon.users size={13} style={{verticalAlign:"middle", color:"var(--wa-text-mute)"}}/> {b.players}</div>
+      <div style={{ textAlign:"end" }}>
+        <div className="wa-mono" style={{ fontSize: 13 }}>{fmt(b.total)} EGP</div>
+        <div className="wa-mono" style={{ fontSize: 10, color: statusColor, letterSpacing:".15em", textTransform:"uppercase" }}>{b.status}</div>
+      </div>
+      <button style={{ background:"transparent", border:0, color:"var(--wa-text-dim)", cursor:"pointer" }}><Icon.dots size={16}/></button>
+    </div>
+  );
+}
+
+function QuickBtn({ icon, label, onClick }) {
+  return (
+    <button onClick={onClick} className="wa-panel" style={{
+      padding:"14px 12px", display:"flex", alignItems:"center", gap: 10,
+      color:"var(--wa-text)", cursor:"pointer", textAlign:"start",
+    }}>
+      <div style={{ color:"var(--wa-green)" }}>{icon}</div>
+      <div className="wa-ui" style={{ fontSize: 12 }}>{label}</div>
+    </button>
+  );
+}
+
+// -------- CONTROL CENTER --------------------------------------------------
+function ControlCenter() {
+  const [selected, setSelected] = useState(null);
+  const [dayOffset, setDayOffset] = useState(0);
+  const days = useMemo(()=> Array.from({length: 7}, (_,i) => {
+    const d = new Date(); d.setDate(d.getDate()+i);
+    return d;
+  }), []);
+
+  // mock grid data: 7 days × 7 slots
+  const grid = useMemo(()=> {
+    const data = {};
+    TIME_SLOTS.forEach((t, ti)=> days.forEach((d, di)=> {
+      const hash = (ti * 13 + di * 7) % 100;
+      let status, booking = null;
+      if (di === 1) status = "closed"; // Mon
+      else if (hash < 45) { status = "booked"; booking = mockBooking(ti, di); }
+      else if (hash < 55 && ti >= 4) status = "closing";
+      else status = "available";
+      data[`${di}-${ti}`] = { status, booking };
+    }));
+    return data;
+  }, [days]);
+
+  function mockBooking(ti, di) {
+    const names = ["Omar A.", "Dina M.", "Khaled F.", "Nour S.", "Yousef T.", "Mariam H.", "Tamer K.", "Laila O."];
+    const games = [{name:"Laser · 30", type:"laser"}, {name:"Gel · 30", type:"gel"}, {name:"Laser · 60", type:"laser"}, {name:"FIRE TEAM", type:"bundle"}];
+    const g = games[(ti+di) % games.length];
+    return {
+      name: names[(ti*3+di) % names.length],
+      game: g.name, type: g.type,
+      bundle: g.type === "bundle",
+      players: 2 + ((ti+di) % 5),
+      total: 120 + ((ti*di) % 12) * 100,
+      status: (ti+di) % 4 === 0 ? "pending" : "confirmed",
+      phone: "+20 12" + String(20000000 + (ti*di*7919)%79999999),
+      code: `WA-${(ti*31+di*7+100).toString(36).toUpperCase()}-${(ti*13+di).toString(36).toUpperCase()}`,
+    };
+  }
+
+  return (
+    <div>
+      <PageHeader kicker="// OPERATIONS" title="Reservation Control Center"
+        actions={<>
+          <div className="wa-panel" style={{ display:"flex", alignItems:"center", padding: 4, gap: 2 }}>
+            <button className="wa-btn wa-btn--ghost wa-btn-sm" onClick={()=>setDayOffset(Math.max(0, dayOffset-1))} style={{padding:"6px 10px", border: 0}}><Icon.arrowL size={14}/></button>
+            <span className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-dim)", paddingInline: 10, letterSpacing:".15em" }}>APR 20 — 26</span>
+            <button className="wa-btn wa-btn--ghost wa-btn-sm" onClick={()=>setDayOffset(dayOffset+1)} style={{padding:"6px 10px", border: 0}}><Icon.arrow size={14}/></button>
+          </div>
+          <button className="wa-btn wa-btn-sm"><Icon.plus size={14}/> MANUAL BOOKING</button>
+        </>}/>
+
+      <div className="wa-panel wa-panel--clip" style={{ padding: 18 }}>
+        {/* legend */}
+        <div style={{ display:"flex", gap: 18, marginBottom: 14, flexWrap:"wrap" }}>
+          {[
+            ["available","AVAILABLE","var(--wa-green)"],
+            ["booked","BOOKED","var(--wa-red)"],
+            ["closing","CLOSING","var(--wa-amber)"],
+            ["closed","CLOSED","var(--wa-text-mute)"],
+            ["bundle","BUNDLE","var(--wa-orange)"],
+          ].map(([k,l,c])=>(
+            <div key={k} style={{ display:"flex", alignItems:"center", gap: 8 }}>
+              <div className={k === "bundle" ? "" : `wa-slot wa-slot--${k}`}
+                style={k === "bundle" ? { width: 16, height: 16, border:"2px solid var(--wa-orange)", background:"transparent" } : { width: 16, height: 16, padding: 0 }}/>
+              <span className="wa-mono" style={{ fontSize: 10, color:c, letterSpacing:".18em" }}>{l}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* grid */}
+        <div style={{ display:"grid", gridTemplateColumns:`80px repeat(7, 1fr)`, gap: 4 }}>
+          <div/>
+          {days.map((d,i)=>(
+            <div key={i} style={{ textAlign:"center", padding: "10px 4px", borderBottom:"1px solid var(--wa-line)" }}>
+              <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)", letterSpacing:".2em" }}>
+                {d.toLocaleString("en-US", { weekday: "short" }).toUpperCase()}
+              </div>
+              <div className="wa-h-display" style={{ fontSize: 18, marginTop: 2, color: i===0 ? "var(--wa-green)" : "var(--wa-text)" }}>
+                {d.getDate()}
+              </div>
+            </div>
+          ))}
+
+          {TIME_SLOTS.map((slot, ti)=>(
+            <React.Fragment key={ti}>
+              <div style={{ padding: 10, borderRight:"1px solid var(--wa-line)" }}>
+                <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-green)" }}>{slot}</div>
+              </div>
+              {days.map((d, di)=>{
+                const cell = grid[`${di}-${ti}`];
+                return <GridCell key={di} cell={cell} onClick={()=>setSelected({ ti, di, slot, day: d, cell })}/>;
+              })}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+
+      {selected && <SlideOver sel={selected} onClose={()=>setSelected(null)}/>}
+    </div>
+  );
+}
+
+function GridCell({ cell, onClick }) {
+  if (cell.status === "available") {
+    return (
+      <button onClick={onClick} className="wa-slot wa-slot--available"
+        style={{ minHeight: 70, display:"flex", flexDirection:"column", alignItems:"stretch", justifyContent:"center", padding: 8, cursor:"pointer" }}>
+        <div className="wa-mono" style={{ fontSize: 10, letterSpacing:".18em", opacity: .7 }}>OPEN</div>
+        <div className="wa-mono" style={{ fontSize: 11, marginTop: 4, color:"var(--wa-green)" }}>+ ADD</div>
+      </button>
+    );
+  }
+  if (cell.status === "closed") {
+    return (
+      <div className="wa-slot wa-slot--closed" style={{ minHeight: 70, display:"grid", placeItems:"center" }}>
+        <div className="wa-mono" style={{ fontSize: 10, letterSpacing:".2em" }}>CLOSED</div>
+      </div>
+    );
+  }
+  if (cell.status === "closing") {
+    return (
+      <div className="wa-slot wa-slot--closing" style={{ minHeight: 70, display:"grid", placeItems:"center" }}>
+        <div className="wa-mono" style={{ fontSize: 10, letterSpacing:".2em" }}>CLOSING</div>
+      </div>
+    );
+  }
+  // booked
+  const b = cell.booking;
+  return (
+    <button onClick={onClick} className="wa-slot wa-slot--booked"
+      style={{
+        minHeight: 70, padding: 8, textAlign:"start",
+        borderLeft: b.bundle ? "3px solid var(--wa-orange)" : undefined,
+        background: b.bundle ? "repeating-linear-gradient(-45deg, #2a1808 0 6px, #1a100e 6px 10px)" : undefined,
+      }}>
+      <div className="wa-mono" style={{ fontSize: 10, color:"#fff", letterSpacing:".1em" }}>{b.game}</div>
+      <div className="wa-ui" style={{ fontSize: 11, color:"#fff", marginTop: 2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{b.name}</div>
+      <div className="wa-mono" style={{ fontSize: 10, color: b.status === "pending" ? "var(--wa-amber)" : "var(--wa-green)", marginTop: 4 }}>
+        <Icon.users size={10} style={{verticalAlign:"middle"}}/> {b.players} · {b.status.toUpperCase()}
+      </div>
+    </button>
+  );
+}
+
+function SlideOver({ sel, onClose }) {
+  const isEmpty = sel.cell.status === "available" || sel.cell.status === "closing";
+  const b = sel.cell.booking;
+  const [cancelling, setCancelling] = useState(false);
+  return (
+    <div style={{ position:"fixed", inset: 0, zIndex: 80, display:"flex", justifyContent:"flex-end" }}>
+      <div onClick={onClose} style={{ position:"absolute", inset: 0, background:"rgba(0,0,0,.6)", backdropFilter:"blur(4px)", animation:"wa-fadein-up 200ms" }}/>
+      <div style={{
+        position:"relative", width: 480, background:"#0c100d",
+        borderLeft:"1px solid var(--wa-line-hot)", padding: 28, overflow:"auto",
+        animation:"wa-fadein-up 260ms ease",
+      }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-green)", letterSpacing:".25em" }}>// SLOT DETAIL</div>
+          <button onClick={onClose} style={{ background:"transparent", border:0, color:"var(--wa-text-dim)", cursor:"pointer" }}><Icon.x size={20}/></button>
+        </div>
+        <div className="wa-h-display" style={{ fontSize: 28, marginTop: 8 }}>
+          {sel.slot} · {sel.day.toLocaleString("en-US", { month:"short", day:"numeric" }).toUpperCase()}
+        </div>
+
+        {!isEmpty && !cancelling && (
+          <div style={{ marginTop: 24, display:"flex", flexDirection:"column", gap: 14 }}>
+            <div className="wa-panel" style={{ padding: 18, borderLeft: b.bundle ? "3px solid var(--wa-orange)" : undefined }}>
+              <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-mute)", letterSpacing:".2em" }}>{b.bundle ? "BUNDLE · " : ""}{b.game.toUpperCase()}</div>
+              <div className="wa-h-display" style={{ fontSize: 22, marginTop: 4 }}>{b.name}</div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap: 10, marginTop: 14, paddingTop: 12, borderTop:"1px dashed var(--wa-line-hot)" }}>
+                <Stat k="PLAYERS" v={b.players}/>
+                <Stat k="TOTAL" v={`${fmt(b.total)} EGP`}/>
+                <Stat k="STATUS" v={b.status.toUpperCase()} color={b.status==="confirmed"?"var(--wa-green)":"var(--wa-amber)"}/>
+              </div>
+              <div style={{ marginTop: 14, display:"flex", flexDirection:"column", gap: 6 }}>
+                <InfoRow k="PHONE" v={b.phone}/>
+                <InfoRow k="CODE" v={b.code}/>
+                <InfoRow k="DEPOSIT" v={b.status==="confirmed" ? `${fmt(b.total/2)} RECEIVED` : "PENDING"}/>
+              </div>
+            </div>
+
+            <div style={{ display:"flex", gap: 8, flexWrap:"wrap" }}>
+              <button className="wa-btn wa-btn-sm"><Icon.whatsapp size={14}/> MESSAGE</button>
+              <button className="wa-btn wa-btn-sm wa-btn--ghost"><Icon.check size={14}/> MARK PAID</button>
+              <button className="wa-btn wa-btn-sm wa-btn--ghost"><Icon.edit size={14}/> EDIT</button>
+              <button onClick={()=>setCancelling(true)} className="wa-btn wa-btn-sm wa-btn--ghost" style={{ borderColor:"rgba(255,61,61,.4)", color:"var(--wa-red)" }}>
+                <Icon.trash size={14}/> CANCEL
+              </button>
+            </div>
+
+            <div className="wa-panel" style={{ padding: 14, marginTop: 8 }}>
+              <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)", letterSpacing:".2em" }}>// AUDIT TRAIL</div>
+              <div style={{ marginTop: 10, display:"flex", flexDirection:"column", gap: 8 }}>
+                {[
+                  { t: "16:02", e:"Booking created via public site", u:"system" },
+                  { t: "16:04", e:"WhatsApp confirmation sent", u:"system" },
+                  { t: "17:18", e:"Deposit 50% marked received", u:"ops@warriors" },
+                ].map((a,i)=>(
+                  <div key={i} style={{ display:"flex", gap: 10, fontSize: 12 }}>
+                    <span className="wa-mono" style={{ color:"var(--wa-green)", width: 44 }}>{a.t}</span>
+                    <span style={{ color:"var(--wa-text-dim)", flex: 1 }}>{a.e}</span>
+                    <span className="wa-mono" style={{ color:"var(--wa-text-mute)", fontSize: 10 }}>{a.u}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {cancelling && (
+          <div style={{ marginTop: 24 }}>
+            <div className="wa-panel" style={{ padding: 22, borderColor:"rgba(255,61,61,.4)" }}>
+              <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-red)", letterSpacing:".25em" }}>// CANCEL RESERVATION</div>
+              <div className="wa-h-display" style={{ fontSize: 22, marginTop: 6 }}>Choose reason</div>
+              <div style={{ marginTop: 14, display:"flex", flexDirection:"column", gap: 8 }}>
+                {["Customer request","No-show","Venue closure","Duplicate booking","Payment failure"].map((r,i)=>(
+                  <label key={i} className="wa-panel" style={{ padding: "12px 14px", display:"flex", alignItems:"center", gap: 10, cursor:"pointer" }}>
+                    <input type="radio" name="reason"/> <span style={{ fontSize: 14 }}>{r}</span>
+                  </label>
+                ))}
+              </div>
+              <textarea className="wa-input" style={{ marginTop: 10, minHeight: 70, fontFamily:"var(--ff-ui)" }} placeholder="Optional note for audit log…"/>
+              <div style={{ display:"flex", gap: 10, marginTop: 14 }}>
+                <button className="wa-btn wa-btn-sm" style={{ background:"var(--wa-red)", color:"#fff" }}><Icon.trash size={14}/> CONFIRM CANCEL</button>
+                <button onClick={()=>setCancelling(false)} className="wa-btn wa-btn--ghost wa-btn-sm">BACK</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isEmpty && (
+          <div style={{ marginTop: 24 }}>
+            <div className="wa-panel" style={{ padding: 22 }}>
+              <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-green)", letterSpacing:".25em" }}>// MANUAL BOOKING</div>
+              <div className="wa-h-display" style={{ fontSize: 22, marginTop: 6 }}>Create reservation</div>
+              <div style={{ display:"grid", gap: 10, marginTop: 16 }}>
+                <div>
+                  <label className="wa-label">CUSTOMER NAME</label>
+                  <input className="wa-input" placeholder="Full name"/>
+                </div>
+                <div>
+                  <label className="wa-label">PHONE</label>
+                  <input className="wa-input" placeholder="+20 ..."/>
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap: 10 }}>
+                  <div>
+                    <label className="wa-label">GAME</label>
+                    <select className="wa-input">
+                      <option>Laser · 30</option><option>Laser · 60</option><option>Gel · 30</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="wa-label">PLAYERS</label>
+                    <input className="wa-input" type="number" defaultValue={4} min={2} max={6}/>
+                  </div>
+                </div>
+              </div>
+              <button className="wa-btn wa-btn-sm" style={{ width:"100%", marginTop: 16 }}>
+                <Icon.lock size={14}/> LOCK SLOT
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Stat({ k, v, color }) {
+  return (
+    <div>
+      <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)", letterSpacing:".2em" }}>{k}</div>
+      <div className="wa-h-display" style={{ fontSize: 18, color: color || "var(--wa-text)", marginTop: 4 }}>{v}</div>
+    </div>
+  );
+}
+function InfoRow({ k, v }) {
+  return (
+    <div style={{ display:"flex", justifyContent:"space-between", gap: 10, fontSize: 12 }}>
+      <span className="wa-mono" style={{ color:"var(--wa-text-mute)", letterSpacing:".15em" }}>{k}</span>
+      <span className="wa-mono" style={{ color:"var(--wa-text)" }}>{v}</span>
+    </div>
+  );
+}
+
+// -------- REVENUE PAGE ---------------------------------------------------
+function RevenuePage() {
+  const hourly = [
+    { t:"6:00", v: 700 }, { t:"6:30", v: 1500 }, { t:"7:00", v: 600 },
+    { t:"7:30", v: 1280 }, { t:"8:00", v: 0 }, { t:"8:30", v: 360 }, { t:"9:00", v: 0 },
+  ];
+  const max = Math.max(...hourly.map(h=>h.v), 1);
+  const week = [ 3200, 4100, 3600, 5200, 7800, 9400, 6100 ];
+  return (
+    <div>
+      <PageHeader kicker="// FINANCIAL" title="Revenue"
+        actions={<>
+          <button className="wa-btn wa-btn--ghost wa-btn-sm"><Icon.download size={14}/> PDF</button>
+          <button className="wa-btn wa-btn-sm"><Icon.download size={14}/> XLSX</button>
+        </>}/>
+
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap: 14 }}>
+        <Metric label="CONFIRMED REVENUE" value="6,840" unit="EGP" sub="Today" tone="green"/>
+        <Metric label="REALIZED (MTD)" value="128,450" unit="EGP" sub="+18% vs last month" tone="green"/>
+        <Metric label="CANCELLATION RATE" value="4.2%" sub="9 of 214 bookings" tone="orange"/>
+        <Metric label="AVG BOOKING VALUE" value="780" unit="EGP" sub="+40 vs last week" tone="neutral"/>
+      </div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1.3fr 1fr", gap: 16, marginTop: 16 }}>
+        <div className="wa-panel" style={{ padding: 22 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <SectionTitle kicker="// TODAY" title="Revenue by slot"/>
+            <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-dim)" }}>EGP</div>
+          </div>
+          <div style={{ display:"flex", alignItems:"end", gap: 10, marginTop: 26, height: 220 }}>
+            {hourly.map((h,i)=>{
+              const height = h.v ? (h.v / max) * 200 : 6;
+              return (
+                <div key={i} style={{ flex: 1, display:"flex", flexDirection:"column", alignItems:"center", gap: 8 }}>
+                  <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-green)" }}>{h.v ? fmt(h.v) : ""}</div>
+                  <div style={{ width:"100%", height: `${height}px`,
+                    background: h.v ? "linear-gradient(180deg, var(--wa-green), var(--wa-green-dim))" : "var(--wa-line)",
+                    borderTop: h.v ? "2px solid var(--wa-green-2)" : "none",
+                    boxShadow: h.v ? "0 0 12px rgba(143,224,74,.2)" : "none",
+                  }}/>
+                  <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)" }}>{h.t}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="wa-panel" style={{ padding: 22 }}>
+          <SectionTitle kicker="// WEEK" title="Trend"/>
+          <svg viewBox="0 0 340 200" style={{ width:"100%", height: 220, marginTop: 14 }}>
+            {[0,50,100,150,200].map(y=>(
+              <line key={y} x1="20" x2="340" y1={y} y2={y} stroke="var(--wa-line)" strokeWidth="0.5"/>
+            ))}
+            {(() => {
+              const maxW = Math.max(...week);
+              const pts = week.map((v,i)=>[20 + i*(320/(week.length-1)), 200 - (v/maxW)*180]);
+              const d = pts.map((p,i)=> `${i===0?'M':'L'} ${p[0]} ${p[1]}`).join(" ");
+              return (
+                <>
+                  <path d={`${d} L 340 200 L 20 200 Z`} fill="rgba(143,224,74,.12)"/>
+                  <path d={d} stroke="var(--wa-green)" strokeWidth="2" fill="none"/>
+                  {pts.map((p,i)=>(
+                    <g key={i}>
+                      <circle cx={p[0]} cy={p[1]} r="4" fill="var(--wa-green)"/>
+                      <circle cx={p[0]} cy={p[1]} r="8" fill="var(--wa-green)" opacity=".25"/>
+                    </g>
+                  ))}
+                </>
+              );
+            })()}
+          </svg>
+          <div style={{ display:"flex", justifyContent:"space-between", marginTop: 4 }}>
+            {["Mo","Tu","We","Th","Fr","Sa","Su"].map(d=>(
+              <span key={d} className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)" }}>{d}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="wa-panel" style={{ padding: 22, marginTop: 16 }}>
+        <SectionTitle kicker="// MONTHLY BREAKDOWN" title="By product"/>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap: 14, marginTop: 16 }}>
+          {[
+            { k:"Laser · 30", v: 32200, p: 42 },
+            { k:"Laser · 60", v: 48900, p: 63 },
+            { k:"Gel · 30", v: 24100, p: 31 },
+            { k:"Bundles", v: 23250, p: 18 },
+          ].map((x,i)=>(
+            <div key={i}>
+              <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-dim)", letterSpacing:".15em" }}>{x.k}</div>
+              <div className="wa-h-display" style={{ fontSize: 24, color:"var(--wa-green)", marginTop: 4 }}>{fmt(x.v)}</div>
+              <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)" }}>{x.p} bookings</div>
+              <div style={{ height: 6, background:"var(--wa-line)", marginTop: 8, position:"relative" }}>
+                <div style={{ position:"absolute", inset: 0, width: `${(x.v/48900)*100}%`, background:"var(--wa-green)" }}/>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// -------- SLOT MANAGEMENT -----------------------------------------------
+function SlotMgmt() {
+  return (
+    <div>
+      <PageHeader kicker="// SCHEDULE" title="Slot Management" actions={<button className="wa-btn wa-btn-sm"><Icon.plus size={14}/> ADD OVERRIDE</button>}/>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1.5fr 1fr", gap: 16 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap: 16 }}>
+          <div className="wa-panel" style={{ padding: 22 }}>
+            <SectionTitle kicker="// LEVEL 1" title="Default hours"/>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 80px 80px", gap: 10, marginTop: 14, alignItems:"center" }}>
+              <div>
+                <label className="wa-label">OPENS</label>
+                <input className="wa-input" defaultValue="6:00 PM"/>
+              </div>
+              <div>
+                <label className="wa-label">CLOSES</label>
+                <input className="wa-input" defaultValue="9:00 PM"/>
+              </div>
+              <div>
+                <label className="wa-label">SLOT</label>
+                <input className="wa-input" defaultValue="30"/>
+              </div>
+              <div>
+                <label className="wa-label">MAX PL</label>
+                <input className="wa-input" defaultValue="6"/>
+              </div>
+            </div>
+          </div>
+
+          <div className="wa-panel" style={{ padding: 22 }}>
+            <SectionTitle kicker="// LEVEL 2" title="Day-of-week overrides"/>
+            <div style={{ marginTop: 14, display:"flex", flexDirection:"column", gap: 4 }}>
+              {[
+                { d:"Monday", open:"CLOSED", close:"—" },
+                { d:"Tuesday", open:"6:00 PM", close:"9:00 PM" },
+                { d:"Wednesday", open:"6:00 PM", close:"9:00 PM" },
+                { d:"Thursday", open:"5:30 PM", close:"10:00 PM" },
+                { d:"Friday", open:"4:00 PM", close:"11:00 PM" },
+                { d:"Saturday", open:"4:00 PM", close:"11:00 PM" },
+                { d:"Sunday", open:"6:00 PM", close:"9:00 PM" },
+              ].map((d,i)=>(
+                <div key={i} style={{ display:"grid", gridTemplateColumns:"120px 1fr 1fr 32px", gap: 10, alignItems:"center", padding: 10, background:"var(--wa-panel-2)", border:"1px solid var(--wa-line)" }}>
+                  <div style={{ fontFamily:"var(--ff-display)", fontSize: 13 }}>{d.d.toUpperCase()}</div>
+                  <div className="wa-mono" style={{ fontSize: 13, color: d.open==="CLOSED" ? "var(--wa-red)" : "var(--wa-green)" }}>{d.open}</div>
+                  <div className="wa-mono" style={{ fontSize: 13, color:"var(--wa-text-dim)" }}>{d.close}</div>
+                  <button style={{ background:"transparent", border:0, color:"var(--wa-text-dim)", cursor:"pointer" }}><Icon.edit size={14}/></button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="wa-panel" style={{ padding: 22 }}>
+            <SectionTitle kicker="// LEVEL 3" title="Exact date overrides"/>
+            <div style={{ marginTop: 14, display:"flex", flexDirection:"column", gap: 6 }}>
+              {[
+                { d:"Apr 25", reason:"Private event — corporate buyout", hours:"CLOSED TO PUBLIC" },
+                { d:"May 01", reason:"Labour Day — extended hours", hours:"12:00 PM — 11:00 PM" },
+                { d:"Jun 16", reason:"Eid al-Adha · day 1", hours:"CLOSED" },
+              ].map((o,i)=>(
+                <div key={i} className="wa-panel" style={{ padding: 14, borderLeft:"3px solid var(--wa-orange)" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <div className="wa-h-display" style={{ fontSize: 16 }}>{o.d.toUpperCase()}</div>
+                    <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-orange)" }}>{o.hours}</div>
+                  </div>
+                  <div style={{ color:"var(--wa-text-dim)", fontSize: 13, marginTop: 4 }}>{o.reason}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="wa-panel wa-panel--clip wa-brackets" style={{ padding: 22, position:"sticky", top: 20, alignSelf:"start" }}>
+          <SectionTitle kicker="// PREVIEW" title="Resolved for today"/>
+          <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-text-mute)", marginTop: 8, letterSpacing:".18em" }}>SUN · APR 20 · 2026</div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap: 4, marginTop: 14 }}>
+            {TIME_SLOTS.map((s,i)=>(
+              <div key={i} className="wa-slot wa-slot--available" style={{ padding: "10px 4px" }}>
+                <div className="wa-mono" style={{ fontSize: 11 }}>{s}</div>
+              </div>
+            ))}
+          </div>
+          <div className="wa-panel" style={{ marginTop: 14, padding: 12, background:"var(--wa-bg)" }}>
+            <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)", letterSpacing:".2em" }}>// APPLIED RULES</div>
+            <ol style={{ margin: "10px 0 0", paddingInlineStart: 18, color:"var(--wa-text-dim)", fontSize: 12, lineHeight: 1.7 }}>
+              <li>Default hours (6:00 PM — 9:00 PM)</li>
+              <li>Sunday weekly override (no change)</li>
+              <li>No date override for this date</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// -------- PRICING --------------------------------------------------------
+function PricingPage() {
+  const [changes, setChanges] = useState(0);
+  const [confirm, setConfirm] = useState(false);
+  const rows = [
+    { g:"Laser Tag", d: 30, p: 120 },
+    { g:"Laser Tag", d: 60, p: 200 },
+    { g:"Gel Blasters", d: 30, p: 150 },
+  ];
+  return (
+    <div>
+      <PageHeader kicker="// CATALOG" title="Pricing"
+        actions={<>
+          <span className="wa-tag wa-tag--orange">{changes} UNSAVED</span>
+          <button className="wa-btn wa-btn-sm" disabled={!changes} style={{opacity:changes?1:.3}} onClick={()=>setConfirm(true)}>APPLY CHANGES</button>
+        </>}/>
+
+      <div className="wa-panel" style={{ padding: 22 }}>
+        <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)", letterSpacing:".2em", marginBottom: 14 }}>// HISTORICAL PRICING IS IMMUTABLE — EXISTING BOOKINGS KEEP THEIR ORIGINAL PRICE.</div>
+
+        <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 120px", gap: 2, background:"var(--wa-line)" }}>
+          {["GAME","DURATION","PRICE (EGP)",""].map((h,i)=>(
+            <div key={i} className="wa-mono" style={{ padding: "10px 14px", background:"#0c100d", fontSize: 10, color:"var(--wa-text-mute)", letterSpacing:".22em" }}>{h}</div>
+          ))}
+          {rows.map((r,i)=>(
+            <React.Fragment key={i}>
+              <div style={{ padding: "14px", background:"var(--wa-panel-2)", fontFamily:"var(--ff-display)", fontSize: 15 }}>{r.g}</div>
+              <div style={{ padding: "14px", background:"var(--wa-panel-2)", color:"var(--wa-text-dim)", fontFamily:"var(--ff-mono)", fontSize: 13 }}>{r.d} minutes</div>
+              <div style={{ padding: "10px", background:"var(--wa-panel-2)" }}>
+                <input className="wa-input" defaultValue={r.p} style={{ padding: "8px 12px", fontFamily:"var(--ff-mono)" }} onChange={()=>setChanges(c=>c+1)}/>
+              </div>
+              <div style={{ padding: "14px", background:"var(--wa-panel-2)", display:"flex", gap: 8, justifyContent:"end" }}>
+                <button style={{ background:"transparent", border:0, color:"var(--wa-text-dim)", cursor:"pointer" }}><Icon.edit size={14}/></button>
+                <button style={{ background:"transparent", border:0, color:"var(--wa-text-dim)", cursor:"pointer" }}><Icon.dots size={14}/></button>
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+
+      {confirm && (
+        <div style={{ position:"fixed", inset:0, zIndex: 100, background:"rgba(0,0,0,.7)", display:"grid", placeItems:"center" }}>
+          <div className="wa-panel wa-panel--clip wa-brackets" style={{ width: 440, padding: 28, background:"var(--wa-panel)" }}>
+            <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-orange)", letterSpacing:".25em" }}>⚠ CONFIRM CHANGE</div>
+            <div className="wa-h-display" style={{ fontSize: 22, marginTop: 6 }}>APPLY NEW PRICES?</div>
+            <p style={{ color:"var(--wa-text-dim)", fontSize: 14, marginTop: 10 }}>
+              New prices take effect for future bookings only. Existing bookings keep their original pricing.
+            </p>
+            <div style={{ display:"flex", gap: 10, marginTop: 16 }}>
+              <button className="wa-btn wa-btn-sm" onClick={()=>{ setConfirm(false); setChanges(0); }}>APPLY</button>
+              <button className="wa-btn wa-btn--ghost wa-btn-sm" onClick={()=>setConfirm(false)}>CANCEL</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// -------- BUNDLES MGMT ---------------------------------------------------
+function BundlesMgmt() {
+  const [mode, setMode] = useState("per_player");
+  const [price, setPrice] = useState(150);
+  const [players, setPlayers] = useState(4);
+  const [duration, setDuration] = useState(60);
+  const [name, setName] = useState("SQUAD RUN");
+
+  const total = mode === "per_player" ? price * players : price;
+
+  return (
+    <div>
+      <PageHeader kicker="// OFFERS" title="Bundles"
+        actions={<button className="wa-btn wa-btn-sm"><Icon.plus size={14}/> NEW BUNDLE</button>}/>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1.3fr 1fr", gap: 16 }}>
+        <div className="wa-panel" style={{ padding: 24 }}>
+          <SectionTitle kicker="// CREATE" title="Bundle builder"/>
+          <div style={{ display:"grid", gap: 14, marginTop: 18 }}>
+            <div>
+              <label className="wa-label">NAME</label>
+              <input className="wa-input" value={name} onChange={e=>setName(e.target.value)}/>
+            </div>
+
+            <div>
+              <label className="wa-label">PRICING MODE</label>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap: 8, marginTop: 6 }}>
+                {[
+                  { k:"per_player", l:"PER-PLAYER", d:"Price × headcount" },
+                  { k:"fixed_total", l:"FIXED TOTAL", d:"Flat team price" },
+                ].map(m=>(
+                  <button key={m.k} onClick={()=>setMode(m.k)} className="wa-panel" style={{
+                    padding: 14, textAlign:"start", cursor:"pointer",
+                    borderColor: mode===m.k ? "var(--wa-green)" : "var(--wa-line)",
+                    background: mode===m.k ? "rgba(143,224,74,.06)" : "var(--wa-panel)",
+                    color:"var(--wa-text)",
+                  }}>
+                    <div className="wa-h-display" style={{ fontSize: 14, color: mode===m.k ? "var(--wa-green)" : "var(--wa-text)" }}>{m.l}</div>
+                    <div style={{ fontSize: 12, color:"var(--wa-text-dim)", marginTop: 4 }}>{m.d}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* the dynamic price input — label + helper changes */}
+            <div>
+              <label className="wa-label">
+                {mode === "per_player" ? "PRICE PER PLAYER (EGP)" : "TOTAL BUNDLE PRICE (EGP)"}
+              </label>
+              <input className="wa-input" type="number" value={price} onChange={e=>setPrice(Number(e.target.value)||0)}/>
+              <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-text-mute)", letterSpacing:".15em", marginTop: 6 }}>
+                {mode === "per_player"
+                  ? `× ${players} PLAYERS = ${fmt(total)} EGP TOTAL`
+                  : `FLAT · ${fmt(total)} EGP FOR GROUP`}
+              </div>
+            </div>
+
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap: 10 }}>
+              <div>
+                <label className="wa-label">PLAYERS</label>
+                <input className="wa-input" type="number" value={players} onChange={e=>setPlayers(Number(e.target.value)||2)} min={2} max={6}/>
+              </div>
+              <div>
+                <label className="wa-label">DURATION (M)</label>
+                <select className="wa-input" value={duration} onChange={e=>setDuration(Number(e.target.value))}>
+                  <option value={30}>30 minutes</option>
+                  <option value={60}>60 minutes</option>
+                  <option value={90}>90 minutes</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display:"flex", gap: 10, marginTop: 4 }}>
+              <button className="wa-btn wa-btn-sm"><Icon.check size={14}/> PUBLISH</button>
+              <button className="wa-btn wa-btn--ghost wa-btn-sm">SAVE DRAFT</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="wa-panel wa-panel--clip wa-brackets" style={{ padding: 22, position:"sticky", top: 20 }}>
+            <div className="wa-mono" style={{ fontSize: 11, color:"var(--wa-green)", letterSpacing:".25em" }}>// LIVE PREVIEW</div>
+            <div className="wa-h-display" style={{ fontSize: 14, marginTop: 4, color:"var(--wa-text-mute)" }}>AS CUSTOMERS WILL SEE IT</div>
+
+            {/* replicate BundleCard preview */}
+            <div className="wa-panel wa-panel--clip" style={{ padding: 22, marginTop: 16, background:"var(--wa-panel-2)" }}>
+              <div style={{ display:"flex", alignItems:"center", gap: 8 }}>
+                <span className="wa-tag wa-tag--orange"><Icon.spark size={12}/> BUNDLE</span>
+                <span className="wa-tag wa-tag--neutral">{mode==="per_player"?"PER PLAYER":"FIXED TOTAL"}</span>
+              </div>
+              <div className="wa-h-display" style={{ fontSize: 28, marginTop: 14 }}>{name || "UNTITLED"}</div>
+
+              <div style={{ marginTop: 14, paddingBlock: 14, borderTop:"1px dashed var(--wa-line-hot)", borderBottom:"1px dashed var(--wa-line-hot)" }}>
+                {mode==="per_player" ? (
+                  <>
+                    <div className="wa-h-display" style={{ fontSize: 32, color:"var(--wa-green)" }}>
+                      {fmt(price)} <span style={{ fontSize: 12, color:"var(--wa-text-dim)" }}>EGP / PLAYER</span>
+                    </div>
+                    <div className="wa-mono" style={{ fontSize: 12, color:"var(--wa-text-dim)", marginTop: 4 }}>
+                      × {players} players = <span style={{ color:"var(--wa-text)" }}>{fmt(total)} EGP total</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="wa-h-display" style={{ fontSize: 32, color:"var(--wa-orange)" }}>
+                      {fmt(price)} <span style={{ fontSize: 12, color:"var(--wa-text-dim)" }}>EGP TOTAL</span>
+                    </div>
+                    <div className="wa-mono" style={{ fontSize: 12, color:"var(--wa-text-dim)", marginTop: 4 }}>
+                      for the group · up to {players} players
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div style={{ display:"flex", gap: 12, marginTop: 14, color:"var(--wa-text-dim)" }} className="wa-mono">
+                <span style={{ fontSize: 11 }}><Icon.users size={12} style={{verticalAlign:"middle"}}/> {players}</span>
+                <span style={{ fontSize: 11 }}><Icon.clock size={12} style={{verticalAlign:"middle"}}/> {duration}M</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, {
+  Admin, AdminLogin, AdminHome, ControlCenter, RevenuePage,
+  SlotMgmt, PricingPage, BundlesMgmt,
+});
+
+</script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentGreen": "#8FE04A",
+  "accentOrange": "#FF7A1A",
+  "heroVariant": "grid",
+  "defaultView": "public"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [lang, setLang] = useState('en');
+  const [view, setView] = useState(TWEAK_DEFAULTS.defaultView || 'public');
+  const [wizardSeed, setWizardSeed] = useState(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
+  const [tweaksOpen, setTweaksOpen] = useState(false);
+
+  // apply tweaks to CSS vars
+  useEffect(()=> {
+    document.documentElement.style.setProperty('--wa-green', tweaks.accentGreen);
+    document.documentElement.style.setProperty('--wa-orange', tweaks.accentOrange);
+  }, [tweaks]);
+
+  // RTL
+  useEffect(()=> {
+    document.body.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  }, [lang]);
+
+  // edit-mode wiring
+  useEffect(()=> {
+    const onMsg = (e) => {
+      if (!e.data) return;
+      if (e.data.type === '__activate_edit_mode') setTweaksOpen(true);
+      else if (e.data.type === '__deactivate_edit_mode') setTweaksOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  function updateTweak(k, v) {
+    const next = { ...tweaks, [k]: v };
+    setTweaks(next);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [k]: v } }, '*');
+  }
+
+  const openWizard = (seedItem) => {
+    setWizardSeed(seedItem || null);
+    setWizardOpen(true);
+  };
+  const closeWizard = () => { setWizardOpen(false); setWizardSeed(null); };
+
+  const i18n = {
+    lang,
+    setLang,
+    t: (k) => (window.STRINGS[lang] && window.STRINGS[lang][k]) || window.STRINGS.en[k] || k,
+  };
+
+  return (
+    <window.I18nContext.Provider value={i18n}>
+      {view === 'admin' ? (
+        <window.Admin onExit={()=>setView('public')}/>
+      ) : (
+        <>
+          <window.TopNav onBook={()=>openWizard()} view={view} setView={setView}/>
+          <window.Hero onBook={()=>openWizard()}/>
+          <window.GamesSection onBook={openWizard}/>
+          <window.BundlesSection onBook={openWizard}/>
+          <window.HowItWorks/>
+          <window.Gallery/>
+          <window.ParkNotice/>
+          <window.FAQ/>
+          <window.LocationSection/>
+          <window.Footer/>
+        </>
+      )}
+
+      {wizardOpen && <window.Wizard onClose={closeWizard} seedItem={wizardSeed}/>}
+
+      {tweaksOpen && (
+        <div style={{
+          position:"fixed", bottom: 20, right: 20, zIndex: 500,
+          width: 280, background:"#0b0e0c", border:"1px solid var(--wa-line-hot)",
+          padding: 18, fontFamily:"var(--ff-ui)",
+          boxShadow: "0 20px 60px rgba(0,0,0,.6)",
+        }}>
+          <div className="wa-mono" style={{ fontSize: 10, color:"var(--wa-green)", letterSpacing:".25em" }}>// TWEAKS</div>
+          <div className="wa-h-display" style={{ fontSize: 18, marginTop: 4 }}>LIVE CONTROLS</div>
+
+          <div style={{ marginTop: 14, display:"flex", flexDirection:"column", gap: 12 }}>
+            <div>
+              <label className="wa-label">PRIMARY ACCENT</label>
+              <div style={{ display:"flex", gap: 6, marginTop: 4 }}>
+                {["#8FE04A","#00E5A8","#CFFF3D","#59D2FF","#FF3D7F"].map(c=>(
+                  <button key={c} onClick={()=>updateTweak('accentGreen', c)}
+                    style={{ width: 28, height: 28, background:c, border: tweaks.accentGreen===c?"2px solid #fff":"1px solid var(--wa-line)", cursor:"pointer" }}/>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="wa-label">SECONDARY ACCENT</label>
+              <div style={{ display:"flex", gap: 6, marginTop: 4 }}>
+                {["#FF7A1A","#FFC043","#FF3D3D","#D946FF","#7A5AF8"].map(c=>(
+                  <button key={c} onClick={()=>updateTweak('accentOrange', c)}
+                    style={{ width: 28, height: 28, background:c, border: tweaks.accentOrange===c?"2px solid #fff":"1px solid var(--wa-line)", cursor:"pointer" }}/>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="wa-label">VIEW</label>
+              <div style={{ display:"flex", gap: 4, marginTop: 4 }}>
+                {["public","admin"].map(v=>(
+                  <button key={v} onClick={()=>setView(v)}
+                    className="wa-mono"
+                    style={{
+                      flex:1, padding:"8px", cursor:"pointer", fontSize: 11, letterSpacing:".15em",
+                      background: view===v?"var(--wa-green)":"transparent",
+                      color: view===v?"#0a0d0a":"var(--wa-text-dim)",
+                      border:"1px solid var(--wa-line-hot)",
+                    }}>
+                    {v.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="wa-label">LANGUAGE</label>
+              <div style={{ display:"flex", gap: 4, marginTop: 4 }}>
+                {[["en","EN · LTR"],["ar","AR · RTL"]].map(([v,l])=>(
+                  <button key={v} onClick={()=>setLang(v)}
+                    className="wa-mono"
+                    style={{
+                      flex:1, padding:"8px", cursor:"pointer", fontSize: 11, letterSpacing:".15em",
+                      background: lang===v?"var(--wa-orange)":"transparent",
+                      color: lang===v?"#180800":"var(--wa-text-dim)",
+                      border:"1px solid var(--wa-line-hot)",
+                    }}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="wa-label">JUMP TO WIZARD</label>
+              <button onClick={()=>{ setView('public'); openWizard(); }} className="wa-btn wa-btn-sm" style={{ width:"100%", marginTop: 4 }}>
+                OPEN BOOKING FLOW
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* view jump chip (subtle, always visible) */}
+      {!tweaksOpen && (
+        <div style={{
+          position:"fixed", bottom: 16, right: 16, zIndex: 400,
+          display:"flex", gap: 6,
+        }}>
+          <button onClick={()=>setView(view==='admin'?'public':'admin')}
+            className="wa-mono"
+            style={{
+              padding:"8px 12px", fontSize: 10, letterSpacing:".2em",
+              background:"rgba(12,16,13,.9)", color:"var(--wa-text-dim)",
+              border:"1px solid var(--wa-line-hot)", cursor:"pointer",
+              backdropFilter:"blur(8px)",
+            }}>
+            {view==='admin' ? '← PUBLIC' : 'ADMIN →'}
+          </button>
+        </div>
+      )}
+    </window.I18nContext.Provider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

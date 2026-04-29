@@ -4,5 +4,11 @@
       "path": "/api/cron/mark-completed-bookings",
       "schedule": "*/10 * * * *"
     }
-  ]
+  ],
+  "functions": {
+    "src/app/api/v1/bookings/[code]/receipt/route.ts": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  }
 }
