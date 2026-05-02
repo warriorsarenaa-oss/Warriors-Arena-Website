@@ -14,6 +14,38 @@ import {
 import { WAButton } from "../UI/WAButton";
 import { useBooking } from "@/contexts/BookingContext";
 
+function CircularGauge({ name, value, color = '#8FE04A' }: { name: string; value: number; color?: string }) {
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (value / 100) * circumference;
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative w-24 h-24">
+        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+          {/* Track */}
+          <circle cx="50" cy="50" r={radius} fill="none"
+            stroke="#8FE04A15" strokeWidth="6" />
+          {/* Progress */}
+          <circle cx="50" cy="50" r={radius} fill="none"
+            stroke={color} strokeWidth="6"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round" 
+            className="transition-all duration-1000 ease-out"
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-xl font-bold text-wa-green">{value}%</span>
+        </div>
+      </div>
+      <span className="text-xs font-bold text-wa-text-dim uppercase tracking-wider text-center">
+        {name}
+      </span>
+    </div>
+  );
+}
+
 interface GameData {
   id: string;
   name: string;
@@ -186,35 +218,18 @@ export const GameShowcase: React.FC<GameShowcaseProps> = ({ games, locale = "en"
 
                 {/* Feature Artifacts */}
                 <motion.div variants={itemVars} className="w-full space-y-6 bg-wa-panel-2/30 p-8 border border-wa-line wa-panel-clip">
-                  {current.features.map((f, i) => (
-                    <div key={f.label} className="group">
-                      <div className={`flex items-center justify-between mb-3 ${isAlt ? "flex-row-reverse" : "flex-row"}`}>
-                        <div className="flex items-center gap-3 text-wa-text font-archivo tracking-wider uppercase text-sm">
-                          {(() => {
-                            const iconMap = {
-                              zap: Zap,
-                              target: Target,
-                              activity: Activity,
-                              users: Users,
-                              shield: ShieldCheck
-                            };
-                            const Icon = iconMap[f.icon as keyof typeof iconMap] || Target;
-                            return <Icon size={18} className="text-wa-green" />;
-                          })()}
-                          {f.label}
-                        </div>
-                        <span className="font-mono text-[11px] text-wa-text-mute">{f.value}%</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-wa-bg-2 overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${f.value}%` }}
-                          transition={{ duration: 1, delay: 0.3 + i * 0.1 }}
-                          className="h-full bg-wa-green shadow-[0_0_10px_rgba(143,224,74,0.5)]"
-                        />
-                      </div>
-                    </div>
-                  ))}
+                  <div className="flex justify-center gap-6 md:gap-12 w-full py-4">
+                    {current.features.map((f, i) => (
+                      <motion.div 
+                        key={f.label}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.2 + (i * 0.1) }}
+                      >
+                        <CircularGauge name={f.label} value={f.value} />
+                      </motion.div>
+                    ))}
+                  </div>
 
                   <div className={`pt-6 flex ${isAlt ? "justify-end" : "justify-start"}`}>
                     <WAButton variant="primary" size="lg" onClick={() => openWizard({ kind: "game", id: current.id })}>

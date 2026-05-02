@@ -8,6 +8,7 @@ import {
   ShieldCheck, 
   Activity 
 } from "lucide-react";
+import { SectionHeader } from "../UI/SectionHeader";
 
 /**
  * GamesShowcaseWrapper — Server Component
@@ -27,6 +28,13 @@ export const GamesShowcaseWrapper = async ({ locale }: { locale: string }) => {
       description_ar,
       hero_image_url,
       display_order,
+      stat1_name,
+      stat1_value,
+      stat2_name,
+      stat2_value,
+      stat3_name,
+      stat3_value,
+      max_players,
       game_pricing(price_per_player)
     `)
     .eq("is_active", true)
@@ -38,6 +46,20 @@ export const GamesShowcaseWrapper = async ({ locale }: { locale: string }) => {
         <p className="text-sm uppercase tracking-widest">{isRtl ? "المهمات غير متصلة" : "Missions Offline"}</p>
       </div>
     );
+  }
+
+  // Fetch CMS for header
+  let headerContent = { heading: "CHOOSE YOUR WEAPON", subheading: "Two game modes. One winner. Pick your loadout and own the arena." };
+  try {
+    const { data: cmsData } = await supabaseAnon.from('cms_content').select('*').eq('section', 'lineup');
+    if (cmsData) {
+      const headingItem = cmsData.find(item => item.key === 'heading');
+      const subheadingItem = cmsData.find(item => item.key === 'subheading');
+      if (headingItem) headerContent.heading = (isRtl ? headingItem.value_ar : headingItem.value_en) || headingItem.value_en;
+      if (subheadingItem) headerContent.subheading = (isRtl ? subheadingItem.value_ar : subheadingItem.value_en) || subheadingItem.value_en;
+    }
+  } catch (err) {
+    console.error("Failed to fetch lineup CMS", err);
   }
 
   // Map to Showcase format with rich stat generation (since DB is lean)
@@ -60,29 +82,34 @@ export const GamesShowcaseWrapper = async ({ locale }: { locale: string }) => {
         intensity: isLaser 
           ? (isRtl ? "حرج" : "CRITICAL") 
           : (isRtl ? "مرتفع" : "HIGH"),
-        capacity: isLaser 
-          ? (isRtl ? "حتى ١٢ فرد" : "UP TO 12 SQUAD") 
+        capacity: game.max_players 
+          ? (isRtl ? `حتى ${game.max_players} أفراد` : `UP TO ${game.max_players} SQUAD`)
           : (isRtl ? "حتى ٨ أفراد" : "UP TO 8 SQUAD")
       },
       features: [
         { 
-          label: isRtl ? "الكثافة" : "Intensity", 
-          value: isLaser ? 92 : 84, 
+          label: (game.stat1_name as string) || (isRtl ? "الكثافة" : "Intensity"), 
+          value: (game.stat1_value as number) || (isLaser ? 92 : 84), 
           icon: "zap" 
         },
         { 
-          label: isRtl ? "العمق التكتيكي" : "Tactical Depth", 
-          value: isLaser ? 78 : 95, 
+          label: (game.stat2_name as string) || (isRtl ? "العمق التكتيكي" : "Tactical Depth"), 
+          value: (game.stat2_value as number) || (isLaser ? 78 : 95), 
           icon: "target" 
         },
         { 
-          label: isRtl ? "الأدرينالين" : "Adrenaline", 
-          value: isLaser ? 88 : 94, 
+          label: (game.stat3_name as string) || (isRtl ? "الأدرينالين" : "Adrenaline"), 
+          value: (game.stat3_value as number) || (isLaser ? 88 : 94), 
           icon: "activity" 
         }
       ]
     };
   });
 
-  return <GameShowcase games={games} locale={locale} />;
+  return (
+    <div>
+      <SectionHeader title={headerContent.heading} line={headerContent.subheading} />
+      <GameShowcase games={games} locale={locale} />
+    </div>
+  );
 };

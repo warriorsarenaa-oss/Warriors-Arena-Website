@@ -26,6 +26,7 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
   const isRtl = locale === "ar";
   const { openWizard } = useBooking();
   const [operatingHours, setOperatingHours] = React.useState("6 PM - 9 PM");
+  const [cms, setCms] = React.useState<any>(null);
 
   React.useEffect(() => {
     const fetchHours = async () => {
@@ -37,8 +38,22 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
         console.error("Hero: Failed to fetch hours", err);
       }
     };
+    
+    const fetchCms = async () => {
+      try {
+        const res = await fetch('/api/v1/cms/hero');
+        const data = await res.json();
+        setCms(isRtl ? data.ar : data.en);
+      } catch (err) {
+        console.error("Hero: Failed to fetch CMS", err);
+      }
+    };
+
     fetchHours();
-  }, []);
+    fetchCms();
+  }, [isRtl]);
+
+  const getCmsValue = (key: string, fallback: string) => cms?.[key] || fallback;
 
   return (
     <section className="relative overflow-hidden border-b border-wa-line bg-wa-bg wa-noise">
@@ -71,7 +86,7 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
           >
             <span className="wa-tag text-[11px]">
               <span className="w-2 h-2 bg-wa-green rounded-full inline-block" />
-              {t("kicker")}
+              {getCmsValue('location_badge', t("kicker"))}
             </span>
             <span className="wa-tag wa-tag--neutral font-mono text-[10px]">
               {operatingHours}
@@ -89,7 +104,7 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
             >
-              {t("line1")}
+              {getCmsValue('slogan_line1', t("line1"))}
             </motion.span>
             <motion.span
               className="block text-wa-green"
@@ -98,16 +113,7 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
             >
-              {t("line2")}
-            </motion.span>
-            <motion.span
-              className="block"
-              style={{ WebkitTextStroke: "2px var(--color-wa-green)", color: "transparent" }}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {t("line3")}
+              {getCmsValue('slogan_line2', t("line2"))}
             </motion.span>
           </h1>
 
@@ -118,7 +124,7 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
-            {t("subtitle")}
+            {getCmsValue('subtitle', t("subtitle"))}
           </motion.p>
 
           {/* CTAs */}
@@ -154,9 +160,9 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
             transition={{ duration: 0.7, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
           >
             {[
-              { val: t("stat1Value"), label: t("stat1Label") },
-              { val: t("stat2Value"), label: t("stat2Label") },
-              { val: t("stat3Value"), label: t("stat3Label") },
+              { val: getCmsValue('stat1_value', t("stat1Value")), label: getCmsValue('stat1_label', t("stat1Label")) },
+              { val: getCmsValue('stat2_value', t("stat2Value")), label: getCmsValue('stat2_label', t("stat2Label")) },
+              { val: getCmsValue('stat3_value', t("stat3Value")), label: getCmsValue('stat3_label', t("stat3Label")) },
             ].map((s, i) => (
               <div key={i} className="border-t border-wa-line-hot pt-3">
                 <div className="font-archivo text-xl md:text-2xl text-wa-green leading-none uppercase">
@@ -181,7 +187,7 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
             style={{ clipPath: "polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))" }}>
             {/* Immersive Action Shot */}
             <img 
-              src="https://images.unsplash.com/photo-1552072092-7f9b8d63efcb?auto=format&fit=crop&w=1200" 
+              src={getCmsValue('hero_image_url', "https://images.unsplash.com/photo-1552072092-7f9b8d63efcb?auto=format&fit=crop&w=1200")} 
               alt="Arena Tactical" 
               className="absolute inset-0 w-full h-full object-cover grayscale brightness-50"
             />

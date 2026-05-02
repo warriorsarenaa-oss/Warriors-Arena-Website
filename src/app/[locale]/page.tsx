@@ -9,6 +9,7 @@ import { LocationSection } from '@/components/Landing/LocationSection';
 import { ParkNotice } from '@/components/Landing/ParkNotice';
 import { Footer } from '@/components/Landing/Footer';
 import { Navbar } from '@/components/Landing/Navbar';
+import { SectionHeader } from '@/components/UI/SectionHeader';
 
 export const metadata = {
   title: 'Warriors Arena — Laser Tag & Gel Blasters · Heliopolis, Cairo',
@@ -28,11 +29,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
         {/* ── GAMES ─────────────────────────────────── */}
         <section id="games">
-          <SectionHeader
-            kicker="01 · LINEUP"
-            title={t("gamesTitle")}
-            line={t("gamesLine")}
-          />
           <GamesShowcaseWrapper locale={locale} />
         </section>
 
@@ -48,32 +44,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
         {/* ── HOW IT WORKS ──────────────────────────── */}
         <section id="how">
-          <SectionHeader
-            kicker="03 · PROTOCOL"
-            title={t("howItWorksTitle")}
-            line={t("howItWorksLine")}
-          />
-          <HowItWorks />
+          <HowItWorks locale={locale} />
         </section>
 
         {/* ── GALLERY ───────────────────────────────── */}
         <section id="field">
-          <SectionHeader
-            kicker="04 · FROM THE ARENA"
-            title={t("galleryTitle")}
-            line={t("galleryLine")}
-          />
-          <Gallery />
+          <Gallery locale={locale} />
         </section>
 
         {/* ── FAQ ───────────────────────────────────── */}
         <section id="faq">
-          <SectionHeader
-            kicker="05 · INTEL"
-            title={t("faqTitle")}
-            line={t("faqLine")}
-          />
-          <FAQ />
+          <FAQ locale={locale} />
         </section>
 
         {/* ── PARK NOTICE ───────────────────────────── */}
@@ -81,12 +62,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
         {/* ── LOCATION ──────────────────────────────── */}
         <section id="location">
-          <SectionHeader
-            kicker="06 · RALLY POINT"
-            title={t("locationTitle")}
-            line={t("locationLine")}
-          />
-          <LocationSection />
+          <LocationSection locale={locale} />
         </section>
 
       </div>
@@ -96,31 +72,4 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   );
 }
 
-function SectionHeader({
-  kicker,
-  title,
-  line,
-}: {
-  kicker: string;
-  title: string;
-  line: string;
-}) {
-  return (
-    <div className="flex items-end justify-between gap-10 flex-wrap mb-12">
-      <div>
-        <div className="font-mono text-wa-green text-[12px] tracking-[0.2em] mb-3 uppercase">
-          {kicker}
-        </div>
-        <h2
-          className="font-archivo uppercase m-0 leading-none"
-          style={{ fontSize: "clamp(40px, 6vw, 72px)" }}
-        >
-          {title}
-        </h2>
-      </div>
-      {line && (
-        <p className="max-w-[440px] text-wa-text-dim text-base mb-1.5">{line}</p>
-      )}
-    </div>
-  );
-}
+

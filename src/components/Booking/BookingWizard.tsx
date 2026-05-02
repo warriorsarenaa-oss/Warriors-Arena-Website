@@ -993,10 +993,12 @@ function SuccessScreen({
   data,
   onClose,
   t,
+  isRtl,
 }: {
   data: ConfirmedBooking;
   onClose: () => void;
   t: (key: string) => string;
+  isRtl: boolean;
 }) {
   const whatsappMessage = encodeURIComponent(
     `Hi Warriors Arena! I have booking code ${data.code}. ` +
@@ -1161,9 +1163,9 @@ function SuccessScreen({
         <button
           type="button"
           onClick={onClose}
-          className="wa-btn wa-btn--ghost mt-6"
+          className="wa-btn wa-btn--ghost mt-6 flex items-center gap-2 mx-auto"
         >
-          {locale === 'ar' ? <ArrowRight size={14} /> : <ArrowLeft size={14} />}
+          {isRtl ? <ArrowRight size={14} /> : <ArrowLeft size={14} />}
           {t("backToSite")}
         </button>
       </div>
@@ -1339,7 +1341,7 @@ function WizardContent() {
   if (!isOpen) return null;
 
   if (confirmed) {
-    return <SuccessScreen data={confirmed} onClose={closeWizard} t={t} />;
+    return <SuccessScreen data={confirmed} onClose={closeWizard} t={t} isRtl={isRtl} />;
   }
 
   return (
