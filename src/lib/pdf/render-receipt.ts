@@ -91,10 +91,10 @@ export async function generateReceipt(
           headless: true,
         }
       : {
-          args: chromium.args,
-          defaultViewport: chromium.defaultViewport,
-          executablePath: await chromium.executablePath(),
-          headless: chromium.headless,
+          args: (chromium as any).args,
+          defaultViewport: (chromium as any).defaultViewport || { width: 1280, height: 720 },
+          executablePath: await (chromium as any).executablePath(),
+          headless: (chromium as any).headless,
           ignoreHTTPSErrors: true,
         };
 
