@@ -54,22 +54,22 @@ function formatTime(timeStr: string): string {
  */
 export function buildWhatsAppConfirmationMessage(data: BookingConfirmationData): string {
   const lines: string[] = [
-    '🎯 Booking Confirmation — Warriors Arena',
+    '🚀 Booking Confirmation — Warriors Arena',
     '',
     `🎮 Game: ${data.game_name}`,
-    `🗓 Date: ${formatDate(data.booking_date)}`,
+    `📅 Date: ${formatDate(data.booking_date)}`,
     `⏰ Time: ${formatTime(data.start_time)} — ${formatTime(data.end_time)}`,
     `👥 Players: ${data.player_count}`,
   ];
 
   if (data.mission_name) {
-    lines.push(`🎯 Mission: ${data.mission_name}`);
+    lines.push(`🚀 Mission: ${data.mission_name}`);
   }
 
   lines.push(`💰 Total: ${data.total_amount} EGP`);
   lines.push('');
-  lines.push(`👤 Name: ${data.customer_name}`);
-  lines.push(`📱 Phone: ${data.customer_phone}`);
+  lines.push(`👤 Name: ${data.customer_name || 'Not provided'}`);
+  lines.push(`📱 Phone: ${data.customer_phone || 'Not provided'}`);
   lines.push('');
   lines.push('Please confirm my booking and send deposit instructions. 🙏');
 
@@ -81,14 +81,11 @@ export function buildWhatsAppConfirmationMessage(data: BookingConfirmationData):
  * Opens WhatsApp with pre-filled message to admin number
  */
 export function buildWhatsAppLink(message: string): string {
-  const adminPhone = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER;
+  const rawAdminPhone = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER || "201226557592";
+  
+  // Strip all non-digits to ensure the link works (no +, no spaces)
+  const cleanAdminPhone = rawAdminPhone.replace(/\D/g, '');
 
-  if (!adminPhone) {
-    console.error('[WhatsApp] Missing NEXT_PUBLIC_ADMIN_WHATSAPP_NUMBER env var');
-    // Fallback: open WhatsApp without pre-selecting contact
-    return `https://wa.me/?text=${encodeURIComponent(message)}`;
-  }
-
-  // wa.me link format — works on mobile (opens app) and desktop (opens web)
-  return `https://wa.me/${adminPhone}?text=${encodeURIComponent(message)}`;
+  // Using api.whatsapp.com/send is more universal than wa.me in some environments
+  return `https://api.whatsapp.com/send?phone=${cleanAdminPhone}&text=${encodeURIComponent(message)}`;
 }

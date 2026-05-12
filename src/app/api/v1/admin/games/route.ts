@@ -147,6 +147,14 @@ export const POST = requirePermission(async (request: Request, { user }) => {
       console.warn("Audit logging failed (non-critical):", auditErr);
     }
 
+    // Force revalidate landing page
+    const { revalidatePath } = await import('next/cache');
+    try {
+      revalidatePath('/', 'layout');
+    } catch (revalidateErr) {
+      console.warn("Revalidation failed:", revalidateErr);
+    }
+
     return NextResponse.json(newGame, { status: 201 });
   } catch (error) {
     console.error("[ADMIN_GAMES_POST_ERROR]", error);

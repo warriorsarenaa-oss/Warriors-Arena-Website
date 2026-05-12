@@ -35,6 +35,13 @@ export const PUT = requirePermission(
         request,
       });
 
+      const { revalidatePath } = await import('next/cache');
+      try {
+        revalidatePath('/', 'layout');
+      } catch (err) {
+        console.error('Revalidation error:', err);
+      }
+
       return NextResponse.json(data);
     } catch (error) {
       console.error("[ADMIN_MISSION_PUT_ERROR]", error);
@@ -83,6 +90,13 @@ export const DELETE = requirePermission(
         before_state: before,
         request,
       });
+
+      const { revalidatePath } = await import('next/cache');
+      try {
+        revalidatePath('/', 'layout');
+      } catch (err) {
+        console.error('Revalidation error:', err);
+      }
 
       return NextResponse.json({ success: true });
     } catch (error) {

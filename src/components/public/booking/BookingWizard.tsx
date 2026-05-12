@@ -316,7 +316,10 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
           {draft.currentStep === 5 && (
             <Step5Customer 
               defaultValues={draft}
-              onSubmit={() => goToStep(6)}
+              onSubmit={(data) => {
+                updateDraft(data);
+                goToStep(6);
+              }}
               onValidationChange={setIsStep5Valid}
               isSubmitting={isSubmitting}
             />

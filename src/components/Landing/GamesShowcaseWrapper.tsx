@@ -10,11 +10,17 @@ import {
 } from "lucide-react";
 import { SectionHeader } from "../UI/SectionHeader";
 
+import { unstable_noStore as noStore } from 'next/cache';
+
 /**
  * GamesShowcaseWrapper — Server Component
  * Fetches real game data and maps it to the Impeccable Showcase UI.
  */
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const GamesShowcaseWrapper = async ({ locale }: { locale: string }) => {
+  noStore();
   const isRtl = locale === "ar";
   
   const { data, error } = await supabaseAnon
