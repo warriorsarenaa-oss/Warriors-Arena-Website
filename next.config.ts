@@ -21,6 +21,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  serverExternalPackages: ["@sparticuz/chromium"],
 };
 
 export default withNextIntl(nextConfig);
