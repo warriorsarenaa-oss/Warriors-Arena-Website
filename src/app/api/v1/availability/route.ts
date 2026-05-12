@@ -219,8 +219,10 @@ export async function GET(request: Request) {
     });
   }
 
-
-    }
+  return NextResponse.json({
+    date: dateStr,
+    slots,
+    venue_status: "operational"
   }, {
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',

@@ -188,8 +188,6 @@ export const DELETE = requirePermission(async (request: Request, { user, params 
       console.warn("Audit logging failed (non-critical):", auditErr);
     }
 
-    }
-
     // After successful delete, revalidate public pages
     try {
       revalidatePath('/', 'layout');
