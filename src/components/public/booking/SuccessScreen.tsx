@@ -65,7 +65,17 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({
     
     try {
       const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to download receipt');
+      
+      if (!response.ok) {
+        let errorMessage = "Failed to download receipt";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          errorMessage = `Server Error: ${response.status}`;
+        }
+        throw new Error(errorMessage);
+      }
       
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
@@ -90,7 +100,7 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({
       setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
     } catch (error: any) {
       console.error('Receipt download failed:', error);
-      alert(error.message || "Failed to download receipt. Please try again later.");
+      alert(`Download Error: ${error.message}`);
     }
   };
 

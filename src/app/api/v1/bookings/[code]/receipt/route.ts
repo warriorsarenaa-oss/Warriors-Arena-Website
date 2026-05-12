@@ -66,11 +66,10 @@ export async function GET(
         'Pragma': 'no-cache',
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('PDF Generation Error:', error);
-    // TODO: Log to Sentry
     return NextResponse.json(
-      { error: 'Receipt temporarily unavailable — please contact us.' },
+      { error: `Receipt Generation Error: ${error.message || 'Unknown error'}` },
       { status: 500 }
     );
   }
