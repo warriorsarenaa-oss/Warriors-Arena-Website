@@ -24,7 +24,7 @@ export const GET = requirePermission(async (request: Request) => {
     if (error) throw error;
 
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_EXPENSES_GET_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -56,7 +56,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
 
     if (error) {
       console.error("Supabase Insert Error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
     }
 
     // Audit Log
@@ -71,8 +71,8 @@ export const POST = requirePermission(async (request: Request, { user }) => {
     });
 
     return NextResponse.json({ success: true, expense: data });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_EXPENSES_POST_ERROR]", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
   }
 }, "manage_financials");

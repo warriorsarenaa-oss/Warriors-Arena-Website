@@ -5,8 +5,8 @@ import { supabaseService } from "@/lib/db/supabase-service";
 import { logAuditAction } from "@/lib/admin/audit-log";
 
 const UpdateUserSchema = z.object({
-  commission_percentage: z.number().min(0).max(100).optional(),
-  fixed_monthly_salary: z.number().min(0).optional(),
+  commission_rate: z.number().min(0).optional(),
+  hourly_rate: z.number().min(0).optional(),
   is_active: z.boolean().optional(),
   permissions: z.array(z.string()).optional(),
 });
@@ -32,7 +32,7 @@ export const PATCH = requirePermission(async (request: Request, context: any) =>
 
     if (fetchError) return NextResponse.json({ error: "User Not found" }, { status: 404 });
 
-    if (user.id === id && userUpdates.commission_percentage !== undefined && userUpdates.commission_percentage !== Number(existingUser.commission_percentage)) {
+    if (user.id === id && userUpdates.commission_rate !== undefined && userUpdates.commission_rate !== Number(existingUser.commission_rate)) {
        return NextResponse.json({ error: "Cannot change your own commission" }, { status: 400 });
     }
 
@@ -82,8 +82,8 @@ export const PATCH = requirePermission(async (request: Request, context: any) =>
     });
 
     return NextResponse.json(updatedUser);
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_USERS_PATCH_ERROR]", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
   }
 }, "manage_users");

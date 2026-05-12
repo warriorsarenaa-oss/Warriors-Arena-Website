@@ -24,9 +24,11 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
     customerPhone: "",
     customerEmail: "",
     notes: "",
+    specialMissionId: "",
   });
 
   const [games, setGames] = useState<any[]>([]);
+  const [missions, setMissions] = useState<any[]>([]);
   const [availableSlots, setAvailableSlots] = useState<any[]>([]); // ✅ Always initialize as array
   const [loading, setLoading] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -37,17 +39,71 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
 
   // ✅ Fetch Games on mount
   useEffect(() => {
-    fetch("/api/v1/games?locale=en&active=all")
-      .then(res => res.json())
-      .then(data => {
+    async function fetchGames() {
+      try {
+        const res = await fetch("/api/v1/games?locale=en&active=all");
+        const data = await res.json();
         const gamesArray = Array.isArray(data) ? data : [];
         setGames(gamesArray);
-        if (gamesArray.length > 0) {
-          setFormData(prev => ({ ...prev, gameId: gamesArray[0].id }));
-        }
-      })
-      .catch(err => console.error("Failed to load games", err));
+      } catch (err) {
+        console.error("Failed to load games", err);
+      }
+    }
+    
+    fetchGames();
+
+    fetch("/api/v1/missions")
+      .then(res => res.json())
+      .then(data => setMissions(Array.isArray(data) ? data : []))
+      .catch(err => console.error("Failed to load missions", err));
   }, []);
+
+  // ✅ New: Filter games based on date availability
+  const [availableGames, setAvailableGames] = useState<any[]>([]);
+  const [loadingGames, setLoadingGames] = useState(false);
+
+  useEffect(() => {
+    if (!formData.date || games.length === 0) {
+      setAvailableGames(games);
+      return;
+    }
+
+    async function checkAvailability() {
+      setLoadingGames(true);
+      try {
+        const res = await fetch(`/api/v1/availability/games?date=${formData.date}`);
+        if (res.ok) {
+          const availabilityData = await res.json();
+          // availabilityData is [{ game_id, is_available }]
+          const filtered = games.map(game => {
+            const avail = availabilityData.find((a: any) => a.game_id === game.id);
+            return {
+              ...game,
+              is_restricted: avail ? !avail.is_available : false
+            };
+          });
+          setAvailableGames(filtered);
+          
+          // If current game becomes restricted, select the first unrestricted one
+          const currentGame = filtered.find(g => g.id === formData.gameId);
+          if (currentGame?.is_restricted) {
+            const firstValid = filtered.find(g => !g.is_restricted);
+            if (firstValid) setFormData(prev => ({ ...prev, gameId: firstValid.id }));
+          } else if (!formData.gameId && filtered.length > 0) {
+             const firstValid = filtered.find(g => !g.is_restricted) || filtered[0];
+             setFormData(prev => ({ ...prev, gameId: firstValid.id }));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to check game availability", err);
+        setAvailableGames(games);
+      } finally {
+        setLoadingGames(false);
+      }
+    }
+
+    checkAvailability();
+  }, [formData.date, games]);
 
   // ✅ Fetch slots when date or duration changes
   useEffect(() => {
@@ -58,9 +114,6 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
 
     const fetchSlots = async () => {
       try {
-        console.log("=== FETCHING SLOTS FOR ADMIN ===");
-        console.log("Date:", formData.date);
-
         // ✅ Pass admin=true to see today's past slots
         const response = await fetch(`/api/v1/availability?date=${formData.date}&duration_minutes=${formData.duration}&admin=true`);
         
@@ -70,23 +123,9 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
 
         const data = await response.json();
         
-        console.log("API Response:", data);
-        console.log("Meta:", data.meta);
-
         // Handle both old array format and new object format safely
         const slotsArray = Array.isArray(data) ? data : (Array.isArray(data?.slots) ? data.slots : []);
         
-        // ✅ CRITICAL: Verify each slot's booking status
-        console.log("Slot status breakdown:");
-        slotsArray.forEach((slot: any, index: number) => {
-          console.log(`  ${index + 1}. ${slot.start_time || slot.slot_time}: ${slot.is_booked ? "❌ BOOKED" : "✅ AVAILABLE"}`);
-          if (slot.is_booked && slot.bookings) {
-            slot.bookings.forEach((b: any) => {
-              console.log(`     └─ ${b.code} (${b.status}) - ${b.customer}`);
-            });
-          }
-        });
-
         setAvailableSlots(slotsArray);
         // Only reset if the current startTime is not available in the new slots
         setFormData(prev => {
@@ -107,17 +146,6 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
 
   // ✅ Validate date on change
   const handleDateChange = (dateStr: string) => {
-    const selectedDate = new Date(dateStr);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (isNaN(selectedDate.getTime())) {
-      setError("Invalid date format.");
-      return;
-    }
-
-    // Admins can book past dates, but we should warn or restrict if needed.
-    // For now, let's allow it but restrict the picker's max range.
     setError(null);
     setFormData({ ...formData, date: dateStr, startTime: "" });
   };
@@ -125,25 +153,32 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
   // ✅ Safe pricing calculation
   const calculatePricing = () => {
     if (!games || games.length === 0 || !formData.gameId) {
-      return { pricePerPlayer: 0, total: 0, deposit: 0 };
+      return { pricePerPlayer: 0, total: 0 };
     }
 
     const game = games.find(g => g.id === formData.gameId);
     // ✅ Fix: use 'pricing' as returned by public API
     const pricingData = game?.pricing || game?.game_pricing;
-    if (!game || !pricingData) return { pricePerPlayer: 0, total: 0, deposit: 0 };
+    if (!game || !pricingData) return { pricePerPlayer: 0, total: 0 };
 
     const pricingTier = pricingData.find((p: any) => p.duration_minutes === formData.duration);
-    if (!pricingTier) return { pricePerPlayer: 0, total: 0, deposit: 0 };
+    if (!pricingTier) return { pricePerPlayer: 0, total: 0 };
 
     const pricePerPlayer = pricingTier.price_per_player || 0;
-    const total = pricePerPlayer * (formData.playerCount || 0);
-    const deposit = Math.round(total * 0.25);
+    
+    // Mission Price
+    let missionPrice = 0;
+    if (formData.specialMissionId) {
+      const mission = missions.find(m => m.id === formData.specialMissionId);
+      missionPrice = parseFloat(mission?.additional_price_per_player) || 0;
+    }
 
-    return { pricePerPlayer, total, deposit };
+    const total = (pricePerPlayer + missionPrice) * (formData.playerCount || 0);
+
+    return { pricePerPlayer, total };
   };
 
-  const { pricePerPlayer, total, deposit } = calculatePricing();
+  const { pricePerPlayer, total } = calculatePricing();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,6 +191,14 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
       setShowErrorModal(true);
       return;
     }
+    
+    const selectedGame = availableGames.find(g => g.id === formData.gameId);
+    if (selectedGame?.is_restricted) {
+      setError("This game is not available on the selected date.");
+      setShowErrorModal(true);
+      return;
+    }
+
     if (!formData.date) {
       setError("Please select a date.");
       setShowErrorModal(true);
@@ -198,18 +241,14 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
         customer_phone: formData.customerPhone.trim(),
         customer_email: formData.customerEmail?.trim() || undefined,
         customer_notes: formData.notes?.trim() || undefined,
+        special_mission_id: formData.specialMissionId || null,
       };
-
-      console.log("=== SUBMITTING BOOKING ===");
-      console.log("Payload:", JSON.stringify(payload, null, 2));
 
       const res = await fetch("/api/v1/admin/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
-      console.log("Response status:", res.status);
 
       const responseText = await res.text();
       let responseData;
@@ -218,8 +257,6 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
       } catch (e) {
         throw new Error(`Server returned invalid JSON: ${responseText.substring(0, 100)}`);
       }
-
-      console.log("Response data:", responseData);
 
       if (!res.ok) {
         const errorMsg = responseData.error || responseData.message || `Server error: ${res.status}`;
@@ -244,7 +281,6 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
       }, 2000);
 
     } catch (err: any) {
-      console.error("=== BOOKING ERROR ===", err);
       setError("Failed to create booking");
       setErrorDetails(err.message || "Unknown error");
       setShowErrorModal(true);
@@ -255,212 +291,274 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-wa-bg border border-wa-green/50 p-6 rounded-lg max-w-2xl w-full relative my-8">
-        <button onClick={onClose} className="absolute top-4 right-4 text-wa-text/50 hover:text-wa-text">
-          <X className="w-5 h-5" />
-        </button>
-
-        <div className="mb-6">
-          <h2 className="text-xl font-bold uppercase tracking-widest font-heading text-wa-green">
-            New Manual Booking
-          </h2>
-          <p className="text-xs text-wa-text/60 uppercase mt-1">Admin Override Protocol</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          {error && !showErrorModal && (
-            <div className="bg-wa-error/10 border border-wa-error text-wa-error p-3 text-sm">
-              <p className="font-bold">{error}</p>
-              {errorDetails && <pre className="text-xs opacity-80 mt-1">{errorDetails}</pre>}
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+        <div className="bg-wa-bg border border-wa-green/50 rounded-lg max-w-4xl w-full relative max-h-[95vh] flex flex-col shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="p-4 sm:p-6 border-b border-wa-green/20 flex justify-between items-center bg-wa-bg/50 backdrop-blur-md z-10">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold uppercase tracking-widest font-heading text-wa-green">
+                New Manual Booking
+              </h2>
+              <p className="text-[10px] text-wa-text/40 uppercase tracking-tighter mt-1">Admin Override Protocol</p>
             </div>
-          )}
+            <button onClick={onClose} className="text-wa-text/50 hover:text-wa-text transition-colors p-2 hover:bg-white/5 rounded-full">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <label className="text-xs uppercase tracking-widest opacity-70">Game</label>
-              <select
-                value={formData.gameId}
-                onChange={(e) => setFormData({ ...formData, gameId: e.target.value })}
-                className="bg-wa-bg border border-wa-text/20 p-2 rounded outline-none focus:border-wa-green"
-                required
-              >
-                {games.map(g => <option key={g.id} value={g.id}>{g.name_en}</option>)}
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-xs uppercase tracking-widest opacity-70">Date</label>
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) => handleDateChange(e.target.value)}
-                min={format(new Date(), "yyyy-MM-dd")}
-                max={format(addDays(new Date(), 90), "yyyy-MM-dd")}
-                className="bg-wa-bg border border-wa-text/20 p-2 rounded outline-none focus:border-wa-green"
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-xs uppercase tracking-widest opacity-70">Duration</label>
-              <select
-                value={formData.duration}
-                onChange={(e) => setFormData({ ...formData, duration: Number(e.target.value) })}
-                className="bg-wa-bg border border-wa-text/20 p-2 rounded outline-none focus:border-wa-green"
-              >
-                <option value={30}>30 Minutes</option>
-                <option value={60}>60 Minutes</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-xs uppercase tracking-widest opacity-70">Players</label>
-              <input
-                type="number"
-                value={formData.playerCount || ""} // ✅ Prevent NaN warning by using "" if empty
-                onChange={(e) => setFormData({ ...formData, playerCount: parseInt(e.target.value) || 0 })}
-                min={1}
-                max={50}
-                className="bg-wa-bg border border-wa-text/20 p-2 rounded outline-none focus:border-wa-green"
-                required
-              />
-              {formData.playerCount > 6 && (
-                <div className="flex items-center gap-1 text-[10px] text-wa-orange mt-1">
-                  <AlertCircle className="w-3 h-3" /> Override: Up to 50 players allowed
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar bg-gradient-to-b from-wa-bg to-black/20">
+            <form id="manual-booking-form" onSubmit={handleSubmit} className="flex flex-col gap-8">
+              {error && !showErrorModal && (
+                <div className="bg-wa-error/10 border border-wa-error text-wa-error p-4 rounded text-sm flex flex-col gap-2">
+                  <div className="flex items-center gap-2 font-bold uppercase tracking-widest">
+                    <AlertCircle className="w-4 h-4" /> System Alert
+                  </div>
+                  <p>{error}</p>
+                  {errorDetails && <pre className="text-[10px] opacity-60 mt-2 bg-black/40 p-2 rounded overflow-auto">{errorDetails}</pre>}
                 </div>
               )}
-            </div>
-          </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-xs uppercase tracking-widest opacity-70">Time Slot</label>
-            {loadingSlots ? (
-              <div className="text-sm text-wa-text/50 font-mono animate-pulse">SCANNING AVAILABILITY...</div>
-            ) : availableSlots.length === 0 ? (
-              <div className="text-sm text-wa-error border border-wa-error/20 p-3 rounded bg-wa-error/5 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" />
-                No slots available for this configuration.
-              </div>
-            ) : (
-              <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
-                {availableSlots.map((slot: any, index: number) => {
-                  const timeDisplay = (slot.start_time || slot.slot_time || "??:??").substring(0, 5);
-                  
-                  // In admin mode, explicitly check the boolean is_booked
-                  const isBooked = slot.is_booked === true;
-                  const isSelected = formData.startTime === (slot.start_time || slot.slot_time);
+              {/* 1. Session Parameters */}
+              <section className="flex flex-col gap-6">
+                <div className="flex items-center gap-3 border-b border-wa-green/10 pb-2">
+                  <div className="w-2 h-2 bg-wa-green rounded-full shadow-[0_0_8px_#00FF41]" />
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-wa-green">Session Parameters</h3>
+                </div>
 
-                  return (
-                    <button
-                      key={`${slot.start_time || slot.slot_time}-${index}`}
-                      type="button"
-                      disabled={isBooked}
-                      onClick={() => {
-                        if (!isBooked) {
-                          console.log("Selected slot:", slot.start_time || slot.slot_time);
-                          setFormData(prev => ({ ...prev, startTime: slot.start_time || slot.slot_time }));
-                        } else {
-                          console.warn("Attempted to select booked slot:", slot.start_time || slot.slot_time);
-                        }
-                      }}
-                      title={isBooked && slot.bookings?.length > 0 
-                        ? `Booked: ${slot.bookings.map((b: any) => b.code).join(", ")}` 
-                        : isBooked ? "Already booked" : "Available"
-                      }
-                      className={`p-2 border rounded text-xs transition-colors font-mono relative flex flex-col items-center justify-center ${
-                        isBooked 
-                          ? 'bg-wa-error/10 border-wa-error/40 text-wa-error/60 cursor-not-allowed line-through' 
-                          : isSelected 
-                            ? 'border-wa-green bg-wa-green/20 text-wa-green font-bold ring-1 ring-wa-green' 
-                            : 'border-wa-text/20 hover:border-wa-green hover:text-wa-green bg-wa-surface'
-                      }`}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-widest opacity-70 font-bold text-wa-green/60">
+                      Target Game {loadingGames && <Loader2 className="inline w-3 h-3 animate-spin ml-2" />}
+                    </label>
+                    <select
+                      value={formData.gameId}
+                      onChange={(e) => setFormData({ ...formData, gameId: e.target.value })}
+                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green appearance-none cursor-pointer"
+                      required
                     >
-                      <span>{timeDisplay}</span>
-                      {isBooked && (
-                        <span className="text-[8px] uppercase tracking-tighter mt-1 block absolute bottom-0 mb-1 opacity-70">
-                          Booked
-                        </span>
+                      {availableGames.map(g => (
+                        <option key={g.id} value={g.id} disabled={g.is_restricted}>
+                          {g.name_en} {g.is_restricted ? "(RESTRICTED)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-widest opacity-70 font-bold text-wa-green/60">Deployment Date</label>
+                    <input
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => handleDateChange(e.target.value)}
+                      min={format(new Date(), "yyyy-MM-dd")}
+                      max={format(addDays(new Date(), 90), "yyyy-MM-dd")}
+                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-widest opacity-70 font-bold text-wa-green/60">Operational Tier</label>
+                    <select
+                      value={formData.duration}
+                      onChange={(e) => setFormData({ ...formData, duration: Number(e.target.value) })}
+                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green font-mono uppercase text-xs appearance-none cursor-pointer"
+                    >
+                      {(() => {
+                        const game = games.find(g => g.id === formData.gameId);
+                        const pricing = game?.pricing || game?.game_pricing || [];
+                        if (pricing.length === 0) {
+                          return (
+                            <>
+                              <option value={30}>30 MINUTES</option>
+                              <option value={60}>60 MINUTES</option>
+                            </>
+                          );
+                        }
+                        return pricing.map((p: any) => (
+                          <option key={p.duration_minutes} value={p.duration_minutes}>
+                            {p.pricing_type === 'ammo' 
+                              ? `${p.ammo_count} ROUNDS (${p.duration_minutes_display || 'N/A'})` 
+                              : `${p.duration_minutes} MINUTES`
+                            }
+                          </option>
+                        ));
+                      })()}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-widest opacity-70 font-bold text-wa-green/60">Personnel Count</label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="number"
+                        value={formData.playerCount || ""}
+                        onChange={(e) => setFormData({ ...formData, playerCount: parseInt(e.target.value) || 0 })}
+                        min={1}
+                        max={100}
+                        className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green flex-1 font-mono text-wa-green text-lg"
+                        required
+                      />
+                      {formData.playerCount > 6 && (
+                        <div className="flex items-center gap-1 text-[10px] text-wa-orange animate-pulse">
+                          <AlertCircle className="w-3 h-3" /> OVERRIDE ACTIVE
+                        </div>
                       )}
-                    </button>
-                  );
-                })}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:col-span-2">
+                    <label className="text-[10px] uppercase tracking-widest opacity-70 font-bold text-wa-green/60">Special Mission Augmentation</label>
+                    <select
+                      value={formData.specialMissionId}
+                      onChange={(e) => setFormData({ ...formData, specialMissionId: e.target.value })}
+                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green appearance-none cursor-pointer"
+                    >
+                      <option value="">Standard Mission Protocol (No Augmentation)</option>
+                      {missions
+                        .filter(m => !m.compatible_games || m.compatible_games.length === 0 || m.compatible_games.includes(formData.gameId))
+                        .map(m => (
+                          <option key={m.id} value={m.id}>{m.name_en} (+{m.additional_price_per_player} EGP / PAX)</option>
+                        ))
+                      }
+                    </select>
+                  </div>
+                </div>
+              </section>
+
+              {/* 2. Slot Selection Section */}
+              <section className="flex flex-col gap-6">
+                <div className="flex items-center gap-3 border-b border-wa-green/10 pb-2">
+                  <div className="w-2 h-2 bg-wa-green rounded-full shadow-[0_0_8px_#00FF41]" />
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-wa-green">Timeline Assignment</h3>
+                </div>
+
+                {loadingSlots ? (
+                  <div className="h-24 flex items-center justify-center border-2 border-dashed border-wa-green/10 rounded">
+                    <div className="flex items-center gap-3 text-wa-green/50 font-mono text-xs animate-pulse">
+                      <Loader2 className="w-4 h-4 animate-spin" /> SCANNING TEMPORAL SLOTS...
+                    </div>
+                  </div>
+                ) : availableSlots.length === 0 ? (
+                  <div className="p-8 text-center border-2 border-dashed border-wa-error/20 bg-wa-error/5 rounded flex flex-col items-center gap-3">
+                    <AlertCircle className="w-8 h-8 text-wa-error opacity-50" />
+                    <p className="text-xs text-wa-error font-bold uppercase tracking-widest">No Operational Slots Available</p>
+                    <p className="text-[10px] text-wa-text/40">Try adjusting the date or duration parameters</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                    {availableSlots.map((slot: any, index: number) => {
+                      const timeDisplay = (slot.start_time || slot.slot_time || "??:??").substring(0, 5);
+                      const isBooked = slot.is_booked === true;
+                      const isSelected = formData.startTime === (slot.start_time || slot.slot_time);
+
+                      return (
+                        <button
+                          key={`${slot.start_time || slot.slot_time}-${index}`}
+                          type="button"
+                          disabled={isBooked}
+                          onClick={() => setFormData(prev => ({ ...prev, startTime: slot.start_time || slot.slot_time }))}
+                          className={`group h-14 border rounded text-[10px] transition-all font-mono relative flex flex-col items-center justify-center ${
+                            isBooked 
+                              ? 'bg-wa-error/5 border-wa-error/20 text-wa-error/40 cursor-not-allowed' 
+                              : isSelected 
+                                ? 'border-wa-green bg-wa-green/20 text-wa-green font-bold shadow-[0_0_15px_rgba(0,255,65,0.2)]' 
+                                : 'border-wa-green/10 hover:border-wa-green/40 hover:bg-wa-green/5 text-wa-text/60'
+                          }`}
+                        >
+                          <span className="text-sm">{timeDisplay}</span>
+                          {isBooked && (
+                            <span className="text-[7px] uppercase tracking-tighter mt-1 opacity-60">BOOKED</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
+              {/* 3. Customer Intel Section */}
+              <section className="flex flex-col gap-6">
+                <div className="flex items-center gap-3 border-b border-wa-green/10 pb-2">
+                  <div className="w-2 h-2 bg-wa-green rounded-full shadow-[0_0_8px_#00FF41]" />
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-wa-green">Customer Intel</h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-widest opacity-70 font-bold text-wa-green/60">Full Name</label>
+                    <input
+                      type="text"
+                      value={formData.customerName}
+                      onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green placeholder:opacity-20"
+                      placeholder="e.g. John Wick"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-widest opacity-70 font-bold text-wa-green/60">Comms (Phone)</label>
+                    <input
+                      type="text"
+                      value={formData.customerPhone}
+                      onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+                      placeholder="01xxxxxxxxx"
+                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green font-mono"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-widest opacity-70 font-bold text-wa-green/60">Digital Address (Email)</label>
+                    <input
+                      type="email"
+                      value={formData.customerEmail}
+                      onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green placeholder:opacity-20"
+                      placeholder="optional@intel.com"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-widest opacity-70 font-bold text-wa-green/60">Operational Notes</label>
+                    <input
+                      type="text"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green placeholder:opacity-20"
+                      placeholder="Any specific mission requests..."
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* 4. Financial Summary */}
+              <div className="bg-wa-green/5 p-6 rounded-lg border border-wa-green/30 flex justify-center items-center backdrop-blur-sm mt-4">
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-wa-green/60 font-bold mb-1">Total Mission Investment</span>
+                  <span className="font-bold text-wa-green text-3xl font-mono shadow-wa-green/20 drop-shadow-lg">{total} <span className="text-sm">EGP</span></span>
+                </div>
               </div>
-            )}
+            </form>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-wa-green/20">
-            <div className="flex flex-col gap-2">
-              <label className="text-xs uppercase tracking-widest opacity-70">Customer Name</label>
-              <input
-                type="text"
-                value={formData.customerName}
-                onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                className="bg-wa-bg border border-wa-text/20 p-2 rounded outline-none focus:border-wa-green"
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-xs uppercase tracking-widest opacity-70">Phone (+20...)</label>
-              <input
-                type="text"
-                value={formData.customerPhone}
-                onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-                placeholder="01000000000"
-                className="bg-wa-bg border border-wa-text/20 p-2 rounded outline-none focus:border-wa-green"
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-xs uppercase tracking-widest opacity-70">Email (Optional)</label>
-              <input
-                type="email"
-                value={formData.customerEmail}
-                onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                className="bg-wa-bg border border-wa-text/20 p-2 rounded outline-none focus:border-wa-green"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-xs uppercase tracking-widest opacity-70">Notes (Optional)</label>
-              <input
-                type="text"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="bg-wa-bg border border-wa-text/20 p-2 rounded outline-none focus:border-wa-green"
-              />
-            </div>
-          </div>
-
-          <div className="bg-wa-green/5 p-4 rounded border border-wa-green/20 flex justify-between items-center mt-2">
-            <div className="flex flex-col">
-              <span className="text-xs uppercase tracking-widest text-wa-text/60">Total Cost</span>
-              <span className="font-bold text-wa-green text-xl">{total} EGP</span>
-            </div>
-            <div className="flex flex-col text-right">
-              <span className="text-xs uppercase tracking-widest text-wa-text/60">Required Deposit</span>
-              <span className="font-bold text-wa-text">{deposit} EGP</span>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-4 mt-2">
-            <WAButton type="button" variant="ghost" onClick={onClose}>
-              CANCEL
-            </WAButton>
+          {/* Footer Actions */}
+          <div className="p-4 sm:p-6 border-t border-wa-green/20 bg-wa-bg/80 backdrop-blur-md z-10 flex flex-col sm:flex-row justify-end items-center gap-4">
+            <WAButton type="button" variant="ghost" onClick={onClose} className="w-full sm:w-auto text-[10px]">ABORT</WAButton>
             <WAButton 
               type="submit" 
+              form="manual-booking-form"
               disabled={loading || !formData.startTime} 
-              className="bg-wa-green text-wa-bg font-bold px-8 flex items-center gap-2"
+              className="bg-wa-green text-wa-bg font-bold w-full sm:w-auto min-w-[200px] flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(0,255,65,0.2)] hover:shadow-[0_0_30px_rgba(0,255,65,0.4)] text-[10px] tracking-[0.2em]"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {loading ? "SAVING..." : "CONFIRM BOOKING"}
+              {loading ? "TRANSMITTING..." : "CONFIRM MISSION"}
             </WAButton>
           </div>
-        </form>
+        </div>
       </div>
-    </div>
 
     {/* Success Modal */}
     {showSuccessModal && (

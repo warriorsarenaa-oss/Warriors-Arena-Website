@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { DollarSign, TrendingUp, TrendingDown, Plus, X, Trash2, Loader2, AlertCircle, User as UserIcon } from "lucide-react";
+import Link from "next/link";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
 
@@ -52,7 +53,7 @@ export default function FinancialsPage() {
     alert("Delete functionality coming in next phase.");
   };
 
-  const totalPayroll = salaries.reduce((sum, s) => sum + s.total_payout, 0);
+  const totalPayroll = salaries.reduce((sum, s) => sum + s.amount, 0);
 
   return (
     <div className="max-w-6xl mx-auto flex flex-col gap-8 pb-12">
@@ -108,13 +109,13 @@ export default function FinancialsPage() {
         <>
           {activeTab === 'overview' && (
             <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <WAPanel className="p-6 border-wa-green/30 bg-wa-green/5">
                   <div className="flex items-center gap-3 mb-2 opacity-70">
                     <TrendingUp className="w-4 h-4 text-wa-green" />
                     <h3 className="uppercase tracking-widest text-[10px] font-bold">Realized Revenue</h3>
                   </div>
-                  <div className="text-3xl font-bold font-mono text-wa-green">{overview.realized_revenue.toLocaleString()} EGP</div>
+                  <div className="text-2xl font-bold font-mono text-wa-green">{overview.realized_revenue.toLocaleString()} EGP</div>
                 </WAPanel>
                 
                 <WAPanel className="p-6 border-wa-error/30 bg-wa-error/5">
@@ -122,18 +123,37 @@ export default function FinancialsPage() {
                     <TrendingDown className="w-4 h-4 text-wa-error" />
                     <h3 className="uppercase tracking-widest text-[10px] font-bold">Total Expenses</h3>
                   </div>
-                  <div className="text-3xl font-bold font-mono text-wa-error">{overview.total_expenses.toLocaleString()} EGP</div>
+                  <div className="text-2xl font-bold font-mono text-wa-error">{overview.total_expenses.toLocaleString()} EGP</div>
                 </WAPanel>
 
+                <WAPanel className="p-6 border-wa-orange/30 bg-wa-orange/5">
+                  <div className="flex items-center gap-3 mb-2 opacity-70">
+                    <DollarSign className="w-4 h-4 text-wa-orange" />
+                    <h3 className="uppercase tracking-widest text-[10px] font-bold">Paid Salaries</h3>
+                  </div>
+                  <div className="text-2xl font-bold font-mono text-wa-orange">{overview.payroll_expenses.toLocaleString()} EGP</div>
+                </WAPanel>
+                
                 <WAPanel className={`p-6 border ${overview.profit >= 0 ? 'border-wa-green/50 bg-wa-green/10' : 'border-wa-error/50 bg-wa-error/10'}`}>
                   <div className="flex items-center gap-3 mb-2 opacity-70">
                     <DollarSign className={`w-4 h-4 ${overview.profit >= 0 ? 'text-wa-green' : 'text-wa-error'}`} />
                     <h3 className="uppercase tracking-widest text-[10px] font-bold">Net Profit</h3>
                   </div>
-                  <div className={`text-3xl font-bold font-mono ${overview.profit >= 0 ? 'text-wa-green' : 'text-wa-error'}`}>
+                  <div className={`text-2xl font-bold font-mono ${overview.profit >= 0 ? 'text-wa-green' : 'text-wa-error'}`}>
                     {overview.profit.toLocaleString()} EGP
                   </div>
                 </WAPanel>
+              </div>
+
+              {/* Formula explanation */}
+              <div className="flex justify-center mt-4">
+                <div className="bg-wa-panel border border-wa-line px-4 py-2 rounded-full flex items-center gap-3 text-[10px] uppercase font-mono tracking-widest opacity-60">
+                   <span className="text-wa-green">{overview.realized_revenue.toLocaleString()}</span>
+                   <span>-</span>
+                   <span className="text-wa-error">({overview.total_expenses.toLocaleString()} + {overview.payroll_expenses.toLocaleString()})</span>
+                   <span>=</span>
+                   <span className={overview.profit >= 0 ? 'text-wa-green' : 'text-wa-error'}>{overview.profit.toLocaleString()} EGP</span>
+                </div>
               </div>
             </div>
           )}
@@ -162,7 +182,7 @@ export default function FinancialsPage() {
                     </thead>
                     <tbody>
                       {expenses.length === 0 ? (
-                        <tr><td colSpan={4} className="p-12 text-center italic opacity-30">No expenses recorded for this period.</td></tr>
+                        <tr><td colSpan={4} className="p-12 text-center italic opacity-30">No operation expenses recorded for this period.</td></tr>
                       ) : expenses.map(exp => (
                         <tr key={exp.id} className="border-b border-wa-green/5 hover:bg-wa-green/5 transition-colors">
                           <td className="p-4 font-mono opacity-60">{exp.expense_date || exp.date}</td>
@@ -184,91 +204,68 @@ export default function FinancialsPage() {
           {activeTab === 'salaries' && (
             <div className="flex flex-col gap-8 animate-in fade-in duration-300">
                <div className="flex justify-between items-center">
-                 <h2 className="font-bold uppercase tracking-widest text-wa-green text-sm">Payroll & Commissions</h2>
+                 <h2 className="font-bold uppercase tracking-widest text-wa-green text-sm">Settled Payroll & Commissions</h2>
                  <div className="flex gap-4 items-center">
                     <div className="text-right">
-                      <div className="text-[10px] uppercase opacity-40 font-bold">Estimated Period Payout</div>
+                      <div className="text-[10px] uppercase opacity-40 font-bold">Total Settled Payroll</div>
                       <div className="text-lg font-bold font-mono text-wa-green">{totalPayroll.toLocaleString()} EGP</div>
                     </div>
-                    <WAButton 
-                      variant="ghost"
-                      onClick={() => setShowDetailedLogs(!showDetailedLogs)}
-                      className="border border-wa-green/30 text-wa-green font-bold h-10 px-6 text-xs hover:bg-wa-green/10"
-                    >
-                      {showDetailedLogs ? "VIEW SUMMARY" : "DETAILED LOGS"}
-                    </WAButton>
                  </div>
                </div>
 
-               {showDetailedLogs ? (
-                 <div className="flex flex-col gap-6">
-                    <WAPanel className="overflow-hidden border-wa-green/10 bg-wa-bg/30">
-                      <table className="w-full text-left text-xs">
-                        <thead className="bg-wa-green/5 text-wa-green font-bold uppercase tracking-widest border-b border-wa-green/10">
-                          <tr>
-                            <th className="p-4">Staff</th>
-                            <th className="p-4">Booking</th>
-                            <th className="p-4">Customer</th>
-                            <th className="p-4">Earned At</th>
-                            <th className="p-4 text-right">Commission</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {salaries.flatMap(s => s.logs).length === 0 ? (
-                            <tr><td colSpan={5} className="p-12 text-center italic opacity-30">No commission logs found for this period.</td></tr>
-                          ) : salaries.flatMap(s => s.logs.map((log: any) => ({ ...log, username: s.username }))).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(log => (
-                            <tr key={log.id} className="border-b border-wa-green/5 hover:bg-wa-green/5 transition-colors">
-                              <td className="p-4 font-bold text-wa-green uppercase">{log.username}</td>
-                              <td className="p-4 font-mono">{log.booking_code}</td>
-                              <td className="p-4 opacity-70">{log.customer}</td>
-                              <td className="p-4 font-mono opacity-50">{new Date(log.date).toLocaleDateString()}</td>
-                              <td className="p-4 text-right font-bold text-wa-green">+{Number(log.amount).toLocaleString()} EGP</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </WAPanel>
-                 </div>
-               ) : (
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {salaries.map(staff => (
-                      <WAPanel key={staff.id} className="p-6 border-wa-green/10 bg-wa-bg/40 flex flex-col gap-4">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-wa-green/10 rounded-full flex items-center justify-center border border-wa-green/20">
-                              <UserIcon className="w-5 h-5 text-wa-green" />
-                            </div>
-                            <div>
-                              <h3 className="font-bold uppercase tracking-widest text-sm">{staff.username}</h3>
-                              <p className="text-[10px] opacity-40 uppercase">Performance Payout</p>
-                            </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {salaries.map(sal => (
+                    <WAPanel key={sal.id} className="p-6 border-wa-green/10 bg-wa-bg/40 flex flex-col gap-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-wa-green/10 rounded-full flex items-center justify-center border border-wa-green/20">
+                            <UserIcon className="w-5 h-5 text-wa-green" />
                           </div>
-                          <div className="text-right">
-                             <span className="text-[8px] px-1.5 py-0.5 bg-wa-green/20 text-wa-green rounded font-bold uppercase">Active Period</span>
+                          <div>
+                            <h3 className="font-bold uppercase tracking-widest text-sm">{sal.full_name}</h3>
+                            <p className="text-[10px] opacity-40 uppercase">@{sal.username}</p>
                           </div>
                         </div>
+                        <div className="text-right">
+                           <span className="text-[8px] px-1.5 py-0.5 bg-wa-green/20 text-wa-green rounded font-bold uppercase">Settled</span>
+                        </div>
+                      </div>
 
-                        <div className="space-y-3 mt-2">
-                           <div className="flex justify-between text-xs border-b border-wa-green/5 pb-2">
-                             <span className="opacity-50 uppercase tracking-widest text-[10px]">Base Salary</span>
-                             <span className="font-mono">{staff.base_salary.toLocaleString()} EGP</span>
-                           </div>
-                           <div className="flex justify-between text-xs border-b border-wa-green/5 pb-2">
-                             <span className="opacity-50 uppercase tracking-widest text-[10px]">Total Commissions ({staff.commission_count})</span>
-                             <span className="font-mono text-wa-green">+{staff.total_commission.toLocaleString()} EGP</span>
-                           </div>
-                           <div className="flex justify-between items-end pt-2">
-                             <span className="font-bold uppercase tracking-widest text-[10px] text-wa-green">Total Payout</span>
-                             <span className="text-2xl font-bold font-mono text-wa-green">{staff.total_payout.toLocaleString()} EGP</span>
-                           </div>
+                      <div className="space-y-3 mt-2">
+                         <div className="flex justify-between text-xs border-b border-wa-green/5 pb-2">
+                           <span className="opacity-50 uppercase tracking-widest text-[10px]">Settlement Date</span>
+                           <span className="font-mono">{sal.date}</span>
+                         </div>
+                         <div className="flex justify-between text-xs border-b border-wa-green/5 pb-2">
+                           <span className="opacity-50 uppercase tracking-widest text-[10px]">Hours Pay ({sal.total_hours}h)</span>
+                           <span className="font-mono">{sal.hours_pay.toLocaleString()} EGP</span>
+                         </div>
+                         <div className="flex justify-between text-xs border-b border-wa-green/5 pb-2">
+                           <span className="opacity-50 uppercase tracking-widest text-[10px]">Commissions ({sal.games_count} missions)</span>
+                           <span className="font-mono text-wa-green">+{sal.commission_pay.toLocaleString()} EGP</span>
+                         </div>
+                         <div className="flex justify-between items-end pt-2">
+                           <span className="font-bold uppercase tracking-widest text-[10px] text-wa-green">Total Payout</span>
+                           <span className="text-2xl font-bold font-mono text-wa-green">{sal.amount.toLocaleString()} EGP</span>
+                         </div>
+                      </div>
+                      
+                      {sal.notes && (
+                        <div className="mt-2 p-3 bg-wa-bg rounded border border-wa-line text-[10px] text-wa-text/50 italic leading-relaxed">
+                          {sal.notes}
                         </div>
-                      </WAPanel>
-                    ))}
-                    {salaries.length === 0 && (
-                      <div className="col-span-full p-20 text-center opacity-30 italic">No staff records found.</div>
-                    )}
-                 </div>
-               )}
+                      )}
+                    </WAPanel>
+                  ))}
+                  {salaries.length === 0 && (
+                    <div className="col-span-full p-20 text-center border-2 border-dashed border-wa-line rounded-lg">
+                      <p className="opacity-30 italic font-mono uppercase tracking-widest">No settled payroll records found for this period.</p>
+                      <Link href="/admin/financials/payroll">
+                        <WAButton variant="ghost" className="mt-4">Go to Payroll Management</WAButton>
+                      </Link>
+                    </div>
+                  )}
+               </div>
             </div>
           )}
         </>

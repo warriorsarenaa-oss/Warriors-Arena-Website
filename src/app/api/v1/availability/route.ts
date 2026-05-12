@@ -119,7 +119,7 @@ export async function GET(request: Request) {
     .from("bookings")
     .select("id, booking_code, start_time, duration_minutes, status, customer_name, occupied_slots")
     .eq("booking_date", dateStr)
-    .in("status", ["confirmed", "pending", "checked_in", "in_progress"]);
+    .in("status", ["confirmed", "pending", "checked_in", "in_progress", "completed"]);
 
   if (bookingsError) {
     console.error("[availability] direct bookings query failed:", bookingsError);

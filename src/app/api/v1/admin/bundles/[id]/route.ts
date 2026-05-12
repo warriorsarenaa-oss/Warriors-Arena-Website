@@ -82,7 +82,7 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
       visibility: updatedBundle.is_visible ? "public" : "hidden",
       placement: updatedBundle.display_placement,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_BUNDLES_PATCH_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -126,7 +126,7 @@ export const DELETE = requirePermission(async (request: Request, { user, params 
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_BUNDLES_DELETE_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

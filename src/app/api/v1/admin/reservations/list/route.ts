@@ -52,7 +52,7 @@ export const GET = requirePermission(async (request: Request) => {
         totalPages: count ? Math.ceil(count / limit) : 0
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_RESERVATIONS_LIST_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

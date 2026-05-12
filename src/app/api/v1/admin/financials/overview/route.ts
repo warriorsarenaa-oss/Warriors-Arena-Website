@@ -10,22 +10,32 @@ export const GET = requirePermission(async (request: Request) => {
     const toStr = searchParams.get('to');
     const period = searchParams.get('period');
 
-    let startDate: Date;
-    let endDate = new Date();
+    let startISO: string;
+    let endISO: string;
 
     if (fromStr && toStr) {
-       startDate = parseISO(fromStr);
-       endDate = parseISO(toStr);
-    } else if (period === 'year') {
-       startDate = startOfYear(new Date());
-    } else if (period === 'quarter') {
-       startDate = startOfQuarter(new Date());
+       startISO = fromStr;
+       endISO = toStr;
     } else {
-       startDate = startOfMonth(new Date());
-    }
+       const formatToYYYYMMDD = (date: Date) => {
+         const y = date.getFullYear();
+         const m = String(date.getMonth() + 1).padStart(2, '0');
+         const d = String(date.getDate()).padStart(2, '0');
+         return `${y}-${m}-${d}`;
+       };
 
-    const startISO = startDate.toISOString().substring(0, 10);
-    const endISO = endDate.toISOString().substring(0, 10);
+       let startDate: Date;
+       if (period === 'year') {
+          startDate = startOfYear(new Date());
+       } else if (period === 'quarter') {
+          startDate = startOfQuarter(new Date());
+       } else {
+          startDate = startOfMonth(new Date());
+       }
+       
+       startISO = formatToYYYYMMDD(startDate);
+       endISO = formatToYYYYMMDD(new Date());
+    }
 
     // 1. Realized Revenue Logic
     const { data: bookings, error: bookingError } = await supabaseService
@@ -64,23 +74,48 @@ export const GET = requirePermission(async (request: Request) => {
        date, amount: dailyMap[date]
     }));
 
-    // 2. Expenses
-    const { data: expenses } = await supabaseService
+    // 2. Expenses (grouped by category)
+    const { data: expenses, error: expenseError } = await supabaseService
       .from('expenses')
-      .select('amount')
+      .select(`
+        amount,
+        expense_categories (
+          name
+        )
+      `)
       .gte('expense_date', startISO)
       .lte('expense_date', endISO);
 
-    const total_expenses = (expenses || []).reduce((acc, curr) => acc + Number(curr.amount), 0);
-    const profit = realized_revenue - total_expenses;
+    if (expenseError) throw expenseError;
+
+    let operation_expenses = 0;
+    let payroll_expenses = 0;
+    const expenseBreakdown: Record<string, number> = {};
+
+    (expenses || []).forEach((curr: any) => {
+        const catName = curr.expense_categories?.name || 'Uncategorized';
+        const amt = Number(curr.amount);
+        
+        if (catName === 'Payroll') {
+          payroll_expenses += amt;
+        } else {
+          operation_expenses += amt;
+        }
+        
+        expenseBreakdown[catName] = (expenseBreakdown[catName] || 0) + amt;
+    });
+
+    const profit = realized_revenue - (operation_expenses + payroll_expenses);
 
     return NextResponse.json({
       realized_revenue,
-      total_expenses,
+      total_expenses: operation_expenses, // Renamed to operation_expenses in logic, but keeping key for compatibility
+      payroll_expenses,
       profit,
-      daily_revenue_data
+      daily_revenue_data,
+      expense_breakdown: expenseBreakdown
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_FINANCIALS_GET_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

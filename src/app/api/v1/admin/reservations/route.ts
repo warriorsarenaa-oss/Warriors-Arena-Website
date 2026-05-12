@@ -15,6 +15,7 @@ const AdminBookingSchema = z.object({
   customer_phone: z.string().regex(EGYPT_PHONE_REGEX, "Invalid Egyptian phone number"),
   customer_email: z.string().email().optional().or(z.literal("")),
   customer_notes: z.string().max(500).optional(),
+  special_mission_id: z.string().uuid().optional().nullable(),
 });
 
 function calculateOccupiedSlots(startTime: string, durationMinutes: number): string[] {
@@ -51,7 +52,22 @@ export const POST = requirePermission(async (request: Request, { user }) => {
     }
 
     const data = parsed.data;
-    const requestedSlots = calculateOccupiedSlots(data.start_time, data.duration_minutes);
+    
+    // ✅ Calculate total duration including mission bonus
+    let totalDuration = data.duration_minutes;
+    if (data.special_mission_id) {
+      const { data: mission } = await supabaseService
+        .from("special_missions")
+        .select("duration_bonus_minutes")
+        .eq("id", data.special_mission_id)
+        .single();
+      
+      if (mission?.duration_bonus_minutes) {
+        totalDuration += mission.duration_bonus_minutes;
+      }
+    }
+
+    const requestedSlots = calculateOccupiedSlots(data.start_time, totalDuration);
 
     // ✅ CRITICAL PRE-CHECK: Prevent double bookings across ALL occupied slots
     console.log(`Checking availability for slots: ${requestedSlots.join(", ")}`);
@@ -61,7 +77,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
       .from("bookings")
       .select("id, booking_code, status, customer_name, occupied_slots, start_time, duration_minutes")
       .eq("booking_date", data.booking_date)
-      .in("status", ["confirmed", "pending", "checked_in", "in_progress"]);
+      .in("status", ["confirmed", "pending", "checked_in", "in_progress", "completed"]);
 
     if (checkError) {
       console.error("[BOOKING_PRE_CHECK_ERROR]", checkError);
@@ -120,7 +136,8 @@ export const POST = requirePermission(async (request: Request, { user }) => {
         p_customer_email: data.customer_email || null,
         p_customer_notes: data.customer_notes || null,
         p_source: "manual",
-        p_created_by_user_id: user.id
+        p_created_by_user_id: user.id,
+        p_special_mission_id: data.special_mission_id || null
       }
     ).single();
 
@@ -165,7 +182,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
     });
 
     return NextResponse.json(booking, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_BOOKING_EXCEPTION]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -196,7 +213,13 @@ export const GET = requirePermission(async (request: Request) => {
         deposit_amount,
         deposit_status,
         occupied_slots,
-        games ( id, name_en )
+        ammo_package,
+        refills,
+        total_refill_cost,
+        mission_additional_price,
+        special_mission_id,
+        games ( id, name_en, slug ),
+        special_missions ( id, name_en )
       `)
       .eq('booking_date', dateStr)
       .not('status', 'eq', 'cancelled')
@@ -211,7 +234,7 @@ export const GET = requirePermission(async (request: Request) => {
     }));
 
     return NextResponse.json(transformedBookings);
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_RESERVATIONS_GET_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { Archivo_Black, Barlow_Condensed, Cairo, IBM_Plex_Mono } from "next/font/google";
 import { BookingProvider } from '@/contexts/BookingContext';
 import { BookingModalManager } from '@/components/public/booking/BookingModalManager';
+import { PreloadingScreen } from '@/components/UI/PreloadingScreen';
 import '../globals.css';
 
 const archivo = Archivo_Black({
@@ -64,6 +65,7 @@ export default async function RootLayout({
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-wa-bg text-wa-text selection:bg-wa-green selection:text-wa-bg">
         <NextIntlClientProvider messages={messages} locale={locale}>
           <BookingProvider>
+            <PreloadingScreen />
             {children}
             <BookingModalManager />
           </BookingProvider>

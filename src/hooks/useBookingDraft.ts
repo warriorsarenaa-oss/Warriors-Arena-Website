@@ -11,7 +11,6 @@ import { useState, useEffect, useCallback } from "react";
 
 export interface BookingDraft {
   game_id?: string;
-  bundle_id?: string | null;
   date?: string; // YYYY-MM-DD
   start_time?: string; // HH:mm
   duration_minutes?: 30 | 60;
@@ -20,6 +19,8 @@ export interface BookingDraft {
   customer_phone: string;
   customer_email: string;
   customer_notes: string;
+  special_mission_id?: string | null;
+  mission_additional_price?: number;
   currentStep: number;
 }
 
@@ -27,7 +28,6 @@ const STORAGE_KEY = "wa_booking_draft";
 
 const DEFAULT_DRAFT: BookingDraft = {
   game_id: undefined,
-  bundle_id: null,
   date: undefined,
   start_time: undefined,
   duration_minutes: 30,
@@ -36,6 +36,8 @@ const DEFAULT_DRAFT: BookingDraft = {
   customer_phone: "",
   customer_email: "",
   customer_notes: "",
+  special_mission_id: null,
+  mission_additional_price: 0,
   currentStep: 1,
 };
 

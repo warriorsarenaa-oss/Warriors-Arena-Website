@@ -6,6 +6,8 @@ import { supabaseService } from "@/lib/db/supabase-service";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { CalendarDays, DollarSign, Target, Clock, PlusCircle } from "lucide-react";
 import { generateTimeSlots } from "@/lib/time/slots";
+import { formatInTimeZone } from "date-fns-tz";
+import { format } from "date-fns";
 
 export const revalidate = 0; // Disable cache for dashboard
 
@@ -20,8 +22,8 @@ export default async function AdminDashboard() {
   const canViewBookings = permissions.permissionKeys.includes("view_bookings");
   const canCreateBookings = permissions.permissionKeys.includes("create_booking");
   
-  // Fetch Dashboard Stats (Server-side)
-  const today = new Date().toISOString().split('T')[0];
+  // Fetch Dashboard Stats (Server-side) using Cairo Time
+  const today = formatInTimeZone(new Date(), "Africa/Cairo", "yyyy-MM-dd");
   
   // 1. Confirmed Bookings & Revenue
   const { data: bookings } = await supabaseService
@@ -50,14 +52,12 @@ export default async function AdminDashboard() {
 
   const timelineSlots = isVenueClosed ? [] : generateTimeSlots(openTime, closeTime, 30);
   
-  // Next 60-min alert
-  const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
-  const currentTimeStr = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}:00`;
+  // Next 60-min alert using Cairo Time
+  const nowInCairo = new Date(new Date().toLocaleString("en-US", { timeZone: "Africa/Cairo" }));
+  const currentTimeStr = formatInTimeZone(new Date(), "Africa/Cairo", "HH:mm:00");
   
-  const upcomingHour = new Date(now.getTime() + 60 * 60 * 1000);
-  const upcomingHourStr = `${upcomingHour.getHours().toString().padStart(2, '0')}:${upcomingHour.getMinutes().toString().padStart(2, '0')}:00`;
+  const upcomingHour = new Date(nowInCairo.getTime() + 60 * 60 * 1000);
+  const upcomingHourStr = formatInTimeZone(upcomingHour, "Africa/Cairo", "HH:mm:00");
 
   const nextBooking = bookings
     ?.filter(b => b.status === "confirmed" && b.start_time >= currentTimeStr && b.start_time <= upcomingHourStr)

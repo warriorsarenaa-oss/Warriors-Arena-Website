@@ -13,6 +13,9 @@ export default function PricingPage() {
   // Edit Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editPrice, setEditPrice] = useState("");
+  const [editType, setEditType] = useState<'time' | 'ammo'>('time');
+  const [editAmmo, setEditAmmo] = useState("");
+  const [editDisplay, setEditDisplay] = useState("");
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -38,6 +41,9 @@ export default function PricingPage() {
   const handleEdit = (row: any) => {
     setSelectedRow(row);
     setEditPrice(row.price_per_player.toString());
+    setEditType(row.pricing_type || 'time');
+    setEditAmmo(row.ammo_count?.toString() || "");
+    setEditDisplay(row.duration_minutes_display || "");
     setIsModalOpen(true);
   };
 
@@ -53,7 +59,10 @@ export default function PricingPage() {
         body: JSON.stringify({
           game_id: selectedRow.game_id,
           duration_minutes: selectedRow.duration_minutes,
-          price_per_player: parseFloat(editPrice)
+          price_per_player: parseFloat(editPrice),
+          pricing_type: editType,
+          ammo_count: editType === 'ammo' ? parseInt(editAmmo) : null,
+          duration_minutes_display: editType === 'ammo' ? editDisplay : null
         }),
       });
 
@@ -97,8 +106,9 @@ export default function PricingPage() {
               <thead>
                 <tr className="border-b border-wa-green/20 text-wa-text/60 uppercase tracking-widest text-xs">
                   <th className="p-4">Game</th>
-                  <th className="p-4">Duration</th>
-                  <th className="p-4">Current Price / Player</th>
+                  <th className="p-4">Type</th>
+                  <th className="p-4">Ammo / Time</th>
+                  <th className="p-4">Current Price</th>
                   <th className="p-4 text-right">Action</th>
                 </tr>
               </thead>
@@ -108,7 +118,17 @@ export default function PricingPage() {
                 ) : activePrices.map(row => (
                   <tr key={row.id} className="border-b border-wa-green/10 hover:bg-wa-green/5 transition-colors group">
                     <td className="p-4 font-bold">{(row.games as any)?.name_en || 'Unknown'}</td>
-                    <td className="p-4">{row.duration_minutes} min</td>
+                    <td className="p-4 uppercase text-[10px] font-mono tracking-tighter">
+                      <span className={row.pricing_type === 'ammo' ? 'text-wa-orange' : 'text-wa-text/60'}>
+                        {row.pricing_type || 'time'}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      {row.pricing_type === 'ammo' 
+                        ? `${row.ammo_count} Bullets (${row.duration_minutes_display || 'N/A'})` 
+                        : `${row.duration_minutes} min`
+                      }
+                    </td>
                     <td className="p-4 text-wa-green font-bold text-lg">{row.price_per_player} EGP</td>
                     <td className="p-4 text-right">
                       <button 
@@ -177,20 +197,69 @@ export default function PricingPage() {
             </div>
 
             <form onSubmit={handleSave} className="flex flex-col gap-6">
-              <div className="flex flex-col gap-2">
-                <label className="text-xs uppercase tracking-widest opacity-70">New Price Per Player (EGP)</label>
-                <div className="relative">
-                  <input 
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={editPrice}
-                    onChange={(e) => setEditPrice(e.target.value)}
-                    className="w-full bg-transparent border border-wa-text/20 p-3 pl-8 rounded outline-none focus:border-wa-green text-lg font-bold"
-                    required
-                  />
-                  <DollarSign className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-wa-text/50" />
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs uppercase tracking-widest opacity-70">Pricing Type</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditType('time')}
+                      className={`flex-1 p-2 border rounded text-xs font-bold transition-colors ${editType === 'time' ? 'border-wa-green bg-wa-green/20 text-wa-green' : 'border-wa-text/10 text-wa-text/40'}`}
+                    >
+                      TIME-BASED
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditType('ammo')}
+                      className={`flex-1 p-2 border rounded text-xs font-bold transition-colors ${editType === 'ammo' ? 'border-wa-orange bg-wa-orange/20 text-wa-orange' : 'border-wa-text/10 text-wa-text/40'}`}
+                    >
+                      AMMO-BASED
+                    </button>
+                  </div>
                 </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs uppercase tracking-widest opacity-70">New Price Per Player (EGP)</label>
+                  <div className="relative">
+                    <input 
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={editPrice}
+                      onChange={(e) => setEditPrice(e.target.value)}
+                      className="w-full bg-transparent border border-wa-text/20 p-3 pl-8 rounded outline-none focus:border-wa-green text-lg font-bold"
+                      required
+                    />
+                    <DollarSign className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-wa-text/50" />
+                  </div>
+                </div>
+
+                {editType === 'ammo' && (
+                  <>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs uppercase tracking-widest opacity-70">Ammo Count (Bullets)</label>
+                      <input 
+                        type="number"
+                        value={editAmmo}
+                        onChange={(e) => setEditAmmo(e.target.value)}
+                        className="w-full bg-transparent border border-wa-text/20 p-3 rounded outline-none focus:border-wa-green text-sm font-mono"
+                        placeholder="e.g. 400"
+                        required
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs uppercase tracking-widest opacity-70">Display Duration (e.g. "30 Min")</label>
+                      <input 
+                        type="text"
+                        value={editDisplay}
+                        onChange={(e) => setEditDisplay(e.target.value)}
+                        className="w-full bg-transparent border border-wa-text/20 p-3 rounded outline-none focus:border-wa-green text-sm"
+                        placeholder="e.g. 30 Min"
+                        required
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex justify-end gap-4 mt-2">

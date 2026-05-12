@@ -22,7 +22,7 @@ describe("Permissions System", () => {
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
           single: vi.fn().mockResolvedValue({
-            data: { is_active: false, user_roles: [{ roles: { name: "admin" } }] },
+            data: { is_active: false, roles: { name: "admin" } },
             error: null,
           }),
         })),
@@ -39,7 +39,7 @@ describe("Permissions System", () => {
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
           single: vi.fn().mockResolvedValue({
-            data: { is_active: true, user_roles: [] },
+            data: { is_active: true, roles: null },
             error: null,
           }),
         })),
@@ -59,25 +59,15 @@ describe("Permissions System", () => {
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
           single: vi.fn().mockResolvedValue({
-            data: { is_active: true, user_roles: [{ roles: { name: "super_admin" } }] },
-            error: null,
-          }),
-        })),
-      })),
-    });
-
-    // Mock the permissions relational fetch
-    mockFrom.mockReturnValueOnce({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn().mockResolvedValue({
-            data: {
-              roles: {
+            data: { 
+              is_active: true, 
+              roles: { 
+                name: "super_admin",
                 role_permissions: [
                   { permissions: { key: "manage_bookings" } },
                   { permissions: { key: "view_revenue" } },
-                ],
-              },
+                ]
+              } 
             },
             error: null,
           }),

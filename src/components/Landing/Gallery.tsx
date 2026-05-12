@@ -20,7 +20,7 @@ export const Gallery: React.FC<{ locale?: string }> = ({ locale = "en" }) => {
   useEffect(() => {
     const fetchGallery = async () => {
       try {
-        const res = await fetch('/api/v1/cms/gallery');
+        const res = await fetch('/api/v1/cms/gallery', { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           if (data.length > 0) setImages(data);
@@ -40,25 +40,22 @@ export const Gallery: React.FC<{ locale?: string }> = ({ locale = "en" }) => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 auto-rows-[300px]">
         {displayImages.map((src, i) => {
           let colSpan = "";
-          let label = "";
           if (i % 4 === 0) {
             colSpan = "md:col-span-2 md:row-span-2";
-            label = "Zone Alpha: Field Ops";
           } else if (i % 4 === 3) {
             colSpan = "md:col-span-2";
-            label = "Close Quarter Combat";
           }
           
           return (
-            <div key={i} className={`${colSpan} relative overflow-hidden wa-panel-clip border border-wa-line`}>
+            <div key={i} className={`${colSpan} relative overflow-hidden wa-panel-clip border border-wa-line group`}>
               <Image
                 src={src}
                 alt="Arena"
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover grayscale hover:grayscale-0 transition-all duration-700 hover:scale-105"
+                className="object-cover transition-all duration-700 hover:scale-105"
               />
-              {label && <div className={`absolute ${i % 4 === 0 ? 'top-6 left-6' : 'bottom-6 right-6'} wa-tape ${i % 4 === 3 ? 'wa-tape--orange' : ''} text-[10px]`}>{label}</div>}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </div>
           );
         })}

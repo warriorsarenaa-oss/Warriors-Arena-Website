@@ -50,7 +50,7 @@ export const DELETE = requirePermission(async (request: Request, { user, params 
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_HOURS_DELETE_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

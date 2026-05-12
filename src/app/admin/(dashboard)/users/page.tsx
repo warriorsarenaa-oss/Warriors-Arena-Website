@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, X, Trash2, Search, User as UserIcon, Shield, Check, Loader2 } from "lucide-react";
+import { Plus, X, Trash2, Search, User as UserIcon, Shield, Check, Loader2, Eye, EyeOff } from "lucide-react";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
 
@@ -29,10 +29,11 @@ export default function UsersPage() {
   const [formData, setFormData] = useState({
     username: "", 
     password: "", 
-    commission_percentage: 5, 
-    fixed_monthly_salary: 0,
+    commission_rate: 0, 
+    hourly_rate: 0,
     permissions: [] as string[]
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   
@@ -64,8 +65,8 @@ export default function UsersPage() {
       setFormData({
         username: user.username,
         password: "", // Don't show existing password
-        commission_percentage: user.commission_percentage,
-        fixed_monthly_salary: user.fixed_monthly_salary,
+        commission_rate: user.commission_rate || 0,
+        hourly_rate: user.hourly_rate || 0,
         permissions: user.permissions || []
       });
     } else {
@@ -73,8 +74,8 @@ export default function UsersPage() {
       setFormData({
         username: "",
         password: "",
-        commission_percentage: 5,
-        fixed_monthly_salary: 0,
+        commission_rate: 0,
+        hourly_rate: 0,
         permissions: []
       });
     }
@@ -113,8 +114,8 @@ export default function UsersPage() {
           method: "PATCH",
           headers: { "Content-Type": "application/json" }, 
           body: JSON.stringify({
-            commission_percentage: formData.commission_percentage,
-            fixed_monthly_salary: formData.fixed_monthly_salary,
+            commission_rate: formData.commission_rate,
+            hourly_rate: formData.hourly_rate,
             permissions: formData.permissions
           })
         });
@@ -180,8 +181,8 @@ export default function UsersPage() {
               <th className="p-6 w-12"></th>
               <th className="p-6">Username</th>
               <th className="p-6 text-center">Permissions</th>
-              <th className="p-6 text-right">Commission</th>
-              <th className="p-6 text-right">Base Salary</th>
+              <th className="p-6 text-right">Comm Rate (%)</th>
+              <th className="p-6 text-right">Hourly Rate</th>
               <th className="p-6 w-24 text-center">Active</th>
               <th className="p-6 w-24 text-right">Actions</th>
             </tr>
@@ -208,8 +209,8 @@ export default function UsersPage() {
                     {(user.permissions?.length || 0) === 0 && <span className="text-[10px] opacity-30 italic">No Access</span>}
                   </div>
                 </td>
-                <td className="p-6 text-right font-mono text-wa-green font-bold">{user.commission_percentage}%</td>
-                <td className="p-6 text-right font-mono font-bold">{(user.fixed_monthly_salary || 0).toLocaleString()} EGP</td>
+                <td className="p-6 text-right font-mono text-wa-green font-bold">{user.commission_rate || 0}%</td>
+                <td className="p-6 text-right font-mono font-bold">{(user.hourly_rate || 0).toLocaleString()} EGP/h</td>
                 <td className="p-6 text-center">
                   <label className="flex items-center justify-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" checked={user.is_active} onChange={() => handleToggleActive(user)} />
@@ -270,14 +271,23 @@ export default function UsersPage() {
                   <label className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-50">
                     {editingUser ? "New Password (Leave blank to keep)" : "Password *"}
                   </label>
-                  <input 
-                    type="password" 
-                    required={!editingUser} 
-                    value={formData.password} 
-                    onChange={e => setFormData({...formData, password: e.target.value})} 
-                    placeholder="••••••••"
-                    className="bg-wa-bg border border-wa-green/20 p-4 rounded-xl focus:border-wa-green outline-none font-mono" 
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      required={!editingUser} 
+                      value={formData.password} 
+                      onChange={e => setFormData({...formData, password: e.target.value})} 
+                      placeholder="••••••••"
+                      className="w-full bg-wa-bg border border-wa-green/20 p-4 rounded-xl focus:border-wa-green outline-none font-mono pr-12" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-wa-green/50 hover:text-wa-green transition-colors z-10"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -287,21 +297,20 @@ export default function UsersPage() {
                   <input 
                     type="number" 
                     min="0" 
-                    max="100" 
                     required 
-                    value={formData.commission_percentage} 
-                    onChange={e => setFormData({...formData, commission_percentage: parseFloat(e.target.value)})} 
+                    value={formData.commission_rate} 
+                    onChange={e => setFormData({...formData, commission_rate: parseFloat(e.target.value)})} 
                     className="bg-wa-bg border border-wa-green/20 p-4 rounded-xl focus:border-wa-green outline-none font-mono text-xl text-wa-green font-bold" 
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-50">Base Monthly Salary (EGP)</label>
+                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-50">Hourly Rate (EGP/h)</label>
                   <input 
                     type="number" 
                     min="0" 
                     required 
-                    value={formData.fixed_monthly_salary} 
-                    onChange={e => setFormData({...formData, fixed_monthly_salary: parseFloat(e.target.value)})} 
+                    value={formData.hourly_rate} 
+                    onChange={e => setFormData({...formData, hourly_rate: parseFloat(e.target.value)})} 
                     className="bg-wa-bg border border-wa-green/20 p-4 rounded-xl focus:border-wa-green outline-none font-mono text-xl" 
                   />
                 </div>

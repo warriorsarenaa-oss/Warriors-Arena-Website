@@ -1,5 +1,5 @@
 import { supabaseService } from "@/lib/db/supabase-service";
-import { writeAudit } from "@/lib/audit";
+import { logAuditAction } from "@/lib/admin/audit-log";
 import { logger } from "@/lib/log";
 
 /**
@@ -16,7 +16,6 @@ import { logger } from "@/lib/log";
 
 export interface CreateBookingParams {
   game_id: string;
-  bundle_id?: string | null;
   date: string; // YYYY-MM-DD
   start_time: string; // HH:mm
   duration_minutes: number;
@@ -25,6 +24,8 @@ export interface CreateBookingParams {
   customer_phone: string;
   customer_email?: string | null;
   customer_notes?: string | null;
+  special_mission_id?: string | null;
+  mission_additional_price?: number;
   source: "online" | "manual";
   created_by_user_id?: string | null;
 }
@@ -54,7 +55,7 @@ export async function createBooking(params: CreateBookingParams): Promise<Bookin
   // 1. Call Database RPC
   const { data, error } = await supabaseService.rpc("fn_create_booking", {
     p_game_id: params.game_id,
-    p_bundle_id: params.bundle_id || null,
+    p_bundle_id: null,
     p_date: params.date,
     p_start_time: params.start_time,
     p_duration_minutes: params.duration_minutes,
@@ -64,7 +65,8 @@ export async function createBooking(params: CreateBookingParams): Promise<Bookin
     p_customer_email: params.customer_email || null,
     p_customer_notes: params.customer_notes || null,
     p_source: params.source,
-    p_created_by_user_id: params.created_by_user_id || null
+    p_created_by_user_id: params.created_by_user_id || null,
+    p_special_mission_id: params.special_mission_id || null
   }).single();
 
   // 2. Handle RPC Errors
@@ -91,25 +93,22 @@ export async function createBooking(params: CreateBookingParams): Promise<Bookin
     deposit_amount: number; 
   };
 
-  // 3. Write Audit Log
+  // 3. Write Audit Log — non-fatal: booking is already committed in DB
   try {
-    await writeAudit({
-      actorUserId: params.created_by_user_id || "anonymous",
-      actorEmail: params.source === "online" ? "anonymous" : "staff",
+    await logAuditAction({
+      actor_user_id: params.created_by_user_id || "anonymous",
+      actor_email: params.source === "online" ? "anonymous" : "staff",
       action: "CREATE_BOOKING",
-      entityType: "bookings",
-      entityId: result.booking_id,
-      after: {
+      entity_type: "bookings",
+      entity_id: result.booking_id,
+      after_state: {
         code: result.booking_code,
         game_id: params.game_id,
         date: params.date,
-        total: result.total_price
-      }
+        total: result.total_price,
+      },
     });
   } catch (auditErr) {
-    // We log but don't fail the booking if audit fails?
-    // User said "failures surface" in Sprint 1 for audit writer.
-    // However, the booking is already committed in the DB.
     logger.error("Audit log failed for successful booking", auditErr, { booking_id: result.booking_id });
   }
 

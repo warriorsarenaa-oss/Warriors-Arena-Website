@@ -122,10 +122,10 @@ export const POST = requirePermission(async (
       deposit_refunded: refund_deposit
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Cancel booking error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'An unexpected error occurred.' },
       { status: 500 }
     );
   }

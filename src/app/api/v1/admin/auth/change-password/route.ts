@@ -44,7 +44,7 @@ export const POST = async (request: Request) => {
     });
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return new NextResponse(JSON.stringify({ error: err.message }), { status: 500 });
+  } catch (err) {
+    return new NextResponse(JSON.stringify({ error: "An unexpected error occurred." }), { status: 500 });
   }
 };

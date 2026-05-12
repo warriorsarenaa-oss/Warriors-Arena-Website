@@ -102,3 +102,16 @@ public/uploads/scratch/
 *.bak
 *.tmp
 .cache/
+
+# ============================================
+# Developer Scratch Files (never commit)
+# ============================================
+scratch.js
+scratch/
+check_pg.js
+db_audit.ts
+run_migration.js
+migration.sql
+WARRIORS_ARENA_404_FIX.sh
+prompts/
+Reference/

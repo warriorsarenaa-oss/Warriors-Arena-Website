@@ -50,7 +50,7 @@ export const GET = requirePermission(async (_request: Request) => {
     }));
 
     return NextResponse.json(normalized);
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_BUNDLES_GET_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -87,7 +87,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
 
     if (error) {
       console.error("Bundle Insert Error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
     }
 
     // Audit log (Table name is 'audit_logs' per migration 011)
@@ -107,7 +107,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
     }
 
     return NextResponse.json({ ...newBundle, visibility, placement }, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_BUNDLES_POST_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

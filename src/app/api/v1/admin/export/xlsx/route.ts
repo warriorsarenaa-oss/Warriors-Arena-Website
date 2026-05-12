@@ -81,7 +81,7 @@ export const GET = requirePermission(async (request: Request) => {
       }
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_EXPORT_GET_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

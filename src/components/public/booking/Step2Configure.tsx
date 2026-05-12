@@ -8,6 +8,9 @@ import { Users, Clock, Plus, Minus } from "lucide-react";
 interface GamePricing {
   duration_minutes: number;
   price_per_player: number;
+  pricing_type?: 'time' | 'ammo';
+  ammo_count?: number;
+  duration_minutes_display?: string;
 }
 
 interface Step2ConfigureProps {
@@ -68,10 +71,17 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
                 >
                   <div className="flex flex-col items-center gap-1">
                     <span className={`text-2xl font-archivo ${isSelected ? "text-wa-green" : "text-wa-text"}`}>
-                      {p.duration_minutes} {t("min")}
+                      {p.pricing_type === 'ammo' ? (
+                        `${p.ammo_count} ${t("bullets")}`
+                      ) : (
+                        `${p.duration_minutes} ${t("min")}`
+                      )}
                     </span>
-                    <span className="text-[10px] text-wa-text/40 font-mono uppercase tracking-widest">
+                    <span className="text-[10px] text-wa-text/40 font-mono uppercase tracking-widest text-center">
                       {p.price_per_player} EGP / {t("player")}
+                      {p.pricing_type === 'ammo' && p.duration_minutes_display && (
+                        <> · {p.duration_minutes_display}</>
+                      )}
                     </span>
                   </div>
                 </WAPanel>
@@ -130,13 +140,6 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
         </div>
       </div>
 
-      {/* 3. Live Feedback */}
-      {duration && (
-        <div className="bg-wa-green/5 border border-wa-green/20 p-4 font-mono text-[11px] uppercase tracking-wider text-wa-green flex justify-between items-center">
-          <span>{t("deploymentConfiguration")}</span>
-          <span>OK // {playerCount}P_{duration}M</span>
-        </div>
-      )}
     </div>
   );
 };

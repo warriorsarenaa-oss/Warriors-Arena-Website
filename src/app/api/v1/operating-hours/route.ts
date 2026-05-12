@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       isClosed: result.is_closed,
       isOverride: result.source_scope !== 'default'
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[OPERATING_HOURS_GET_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

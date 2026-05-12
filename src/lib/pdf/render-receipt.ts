@@ -41,11 +41,21 @@ export async function generateReceipt(
     const dateLocale = locale === 'ar' ? arSA : enUS;
     const bookingDateFormatted = format(new Date(booking.booking_date), 'MMMM dd, yyyy', { locale: dateLocale });
     
-    // QR Code links to the booking lookup page
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://warriorsarena.me';
-    const phoneLast4 = booking.customer_phone.slice(-4);
-    const lookupUrl = `${baseUrl}/${locale}/book/lookup?code=${bookingCode}&phone_last4=${phoneLast4}`;
-    const qrCodeDataUrl = await generateQRCode(lookupUrl);
+    // QR Code links to Instagram profile as requested
+    const instagramUrl = 'https://www.instagram.com/warriors_arenaa';
+    const qrCodeDataUrl = await generateQRCode(instagramUrl);
+
+    // Read Logo as Base64 for PDF embedding
+    let logoDataUrl = '';
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const logoPath = path.join(process.cwd(), 'public', 'logo.jpg');
+      const logoBuffer = fs.readFileSync(logoPath);
+      logoDataUrl = `data:image/jpeg;base64,${logoBuffer.toString('base64')}`;
+    } catch (err) {
+      console.warn('Failed to load logo for PDF receipt:', err);
+    }
 
     const templateProps = {
       bookingCode: booking.booking_code,
@@ -62,6 +72,7 @@ export async function generateReceipt(
       instapayId: instapayData?.identifier || 'warriors@instapay',
       locale,
       qrCodeDataUrl,
+      logoDataUrl,
     };
 
     // 4. Render React to Static HTML

@@ -118,7 +118,7 @@ export default function RevenuePage() {
             {/* Chart */}
             <WAPanel className="p-6 border-wa-green/20 bg-wa-bg/50 lg:col-span-2">
               <h3 className="text-xs uppercase tracking-widest font-bold mb-6 text-wa-green">Revenue Timeline</h3>
-              <div className="h-72 w-full text-xs">
+              <div className="h-72 min-h-[300px] w-full text-xs">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data.slot_breakdown}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#2A2A2A" vertical={false} />
@@ -140,7 +140,7 @@ export default function RevenuePage() {
             {/* Cancel Reasons */}
             <WAPanel className="p-6 border-wa-error/20 bg-wa-bg/50">
               <h3 className="text-xs uppercase tracking-widest font-bold mb-6 text-wa-error">Cancellation Breakdown</h3>
-              <div className="h-64 w-full text-xs">
+              <div className="h-64 min-h-[250px] w-full text-xs">
                 {data.cancellation_breakdown.length === 0 ? (
                   <div className="h-full flex items-center justify-center text-wa-text/40 italic">No cancellations</div>
                 ) : (

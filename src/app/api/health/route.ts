@@ -34,11 +34,12 @@ export async function GET() {
       site_url: siteUrl,
       environment: process.env.NODE_ENV
     });
-  } catch (err: any) {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({
       ok: false,
-      error: err.message,
-      timestamp: new Date().toISOString()
+      error: message,
+      timestamp: new Date().toISOString(),
     }, { status: 503 });
   }
 }

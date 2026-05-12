@@ -1,8 +1,7 @@
-"use client";
-
 import React from "react";
 import { useTranslations } from "next-intl";
 import { WAPanel } from "@/components/UI/WAPanel";
+import { useVenueSettings } from "@/hooks/useVenueSettings";
 
 interface PriceSummaryProps {
   gameName?: string;
@@ -12,6 +11,10 @@ interface PriceSummaryProps {
   className?: string;
   compact?: boolean;
   isBundle?: boolean;
+  missionName?: string;
+  missionPricePerPlayer?: number;
+  pricingType?: 'time' | 'ammo';
+  ammoCount?: number;
 }
 
 export const PriceSummary: React.FC<PriceSummaryProps> = ({
@@ -22,22 +25,25 @@ export const PriceSummary: React.FC<PriceSummaryProps> = ({
   className,
   compact = false,
   isBundle = false,
+  missionName,
+  missionPricePerPlayer = 0,
+  pricingType = 'time',
+  ammoCount,
 }) => {
   const t = useTranslations("Booking.Summary");
+  const { settings } = useVenueSettings();
 
-  const total = playerCount * pricePerPlayer;
-  const deposit = Math.ceil(total * 0.25);
-  const remaining = total - deposit;
-
+  const total = playerCount * (pricePerPlayer + missionPricePerPlayer);
+  
   if (compact) {
     return (
       <div className="bg-wa-panel border-t border-wa-green p-4 flex justify-between items-center w-full">
         <div className="flex flex-col">
           <span className="text-[10px] text-wa-text/40 font-mono uppercase tracking-tighter">
-            {gameName || "—"} · {duration || "—"} MIN
+            {gameName || "—"} · {pricingType === 'ammo' ? `${ammoCount} BULLETS` : `${duration || "—"} MIN`}
           </span>
           <span className="text-sm font-archivo text-wa-text uppercase">
-            {playerCount} {t("players")}
+            {playerCount} {t("players")} {missionName && `+ ${missionName}`}
           </span>
         </div>
         <div className="text-right">
@@ -64,13 +70,21 @@ export const PriceSummary: React.FC<PriceSummaryProps> = ({
             <span className="text-wa-text font-archivo text-right">{gameName || "—"}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-wa-text/60 text-sm font-barlow">{t("duration")}</span>
-            <span className="text-wa-text font-archivo">{duration ? `${duration} MIN` : "—"}</span>
+            <span className="text-wa-text/60 text-sm font-barlow">{pricingType === 'ammo' ? "AMMO" : t("duration")}</span>
+            <span className="text-wa-text font-archivo">
+              {pricingType === 'ammo' ? (ammoCount ? `${ammoCount} BULLETS` : "—") : (duration ? `${duration} MIN` : "—")}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-wa-text/60 text-sm font-barlow">{t("players")}</span>
             <span className="text-wa-text font-archivo">× {playerCount}</span>
           </div>
+          {missionName && (
+            <div className="flex justify-between items-start pt-2 border-t border-wa-gray/10">
+              <span className="text-wa-text/60 text-sm font-barlow">MISSION</span>
+              <span className="text-wa-green font-archivo text-right uppercase text-xs">{missionName}</span>
+            </div>
+          )}
         </div>
 
         {/* 2. Math */}
@@ -82,26 +96,12 @@ export const PriceSummary: React.FC<PriceSummaryProps> = ({
             </span>
           </div>
 
-          <div className="bg-wa-text/5 p-4 rounded-sm border-l-2 border-wa-orange">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-wa-orange text-xs font-mono uppercase tracking-tighter">
-                {t("depositRequired")} (25%)
-              </span>
-              <span className="text-wa-text font-archivo text-lg">
-                {deposit} <small className="text-[10px]">EGP</small>
-              </span>
-            </div>
-            <p className="text-[9px] text-wa-text/40 leading-tight uppercase">
-              {t("depositNote")}
-            </p>
-          </div>
-
           <div className="flex justify-between items-center">
             <span className="text-wa-text/40 text-[10px] font-mono uppercase">
-              {t("balanceDue")}
+              TOTAL DUE ON ARRIVAL
             </span>
-            <span className="text-sm font-archivo text-wa-text/60">
-              {remaining} EGP
+            <span className="font-archivo text-xl text-wa-text">
+              {total} EGP
             </span>
           </div>
         </div>

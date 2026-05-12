@@ -34,7 +34,7 @@ export const GET = requirePermission(async (request: Request, { user }) => {
     if (error) throw error;
 
     return NextResponse.json({ logs, count });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_AUDIT_GET_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

@@ -45,7 +45,7 @@ export const POST = requirePermission(async (request: Request, { user, params })
 
     if (error) {
       console.error("[CONFIRM_DEPOSIT_ERROR]", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
     }
 
     // Audit Log
@@ -60,7 +60,7 @@ export const POST = requirePermission(async (request: Request, { user, params })
     });
 
     return NextResponse.json({ success: true, booking: data });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[CONFIRM_DEPOSIT_EXCEPTION]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

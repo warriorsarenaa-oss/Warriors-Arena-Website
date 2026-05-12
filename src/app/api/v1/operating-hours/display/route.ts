@@ -24,7 +24,7 @@ export async function GET() {
     const displayText = `${formatTime(data.open_time)} - ${formatTime(data.close_time)}`;
 
     return NextResponse.json({ displayText });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[OPERATING_HOURS_DISPLAY_GET_ERROR]", error);
     return NextResponse.json({ displayText: '6 PM - 9 PM' });
   }

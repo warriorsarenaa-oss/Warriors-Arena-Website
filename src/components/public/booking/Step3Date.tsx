@@ -6,7 +6,7 @@ import { DayPicker } from "react-day-picker";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { formatInTimeZone } from "date-fns-tz";
-import { Calendar as CalendarIcon, Clock, Info } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Info, AlertTriangle } from "lucide-react";
 import "react-day-picker/dist/style.css";
 
 interface Slot {
@@ -22,6 +22,7 @@ interface Step3DateProps {
   selectedTime?: string; // HH:mm
   onSelectTime: (time: string) => void;
   duration: number;
+  gameId?: string; // Current game ID
 }
 
 const CAIRO_TZ = "Africa/Cairo";
@@ -31,7 +32,8 @@ export const Step3Date: React.FC<Step3DateProps> = ({
   onSelectDate,
   selectedTime,
   onSelectTime,
-  duration
+  duration,
+  gameId
 }) => {
   const t = useTranslations("Booking");
   const locale = useLocale();
@@ -39,6 +41,7 @@ export const Step3Date: React.FC<Step3DateProps> = ({
   const [slots, setSlots] = useState<Slot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [slotsError, setSlotsError] = useState<string | null>(null);
+  const [isGameRestricted, setIsGameRestricted] = useState(false);
 
   // Cairo Today
   const todayCairo = new Date(formatInTimeZone(new Date(), CAIRO_TZ, "yyyy-MM-dd'T'HH:mm:ssXXX"));
@@ -61,6 +64,21 @@ export const Step3Date: React.FC<Step3DateProps> = ({
   };
 
   useEffect(() => {
+    async function checkGameAvailability() {
+      if (!selectedDate || !gameId) return;
+      
+      try {
+        const res = await fetch(`/api/v1/availability/games?date=${selectedDate}`);
+        if (res.ok) {
+          const data = await res.json();
+          const gameAvail = data.find((a: any) => a.game_id === gameId);
+          setIsGameRestricted(gameAvail ? !gameAvail.is_available : false);
+        }
+      } catch (err) {
+        console.error("Failed to check game availability", err);
+      }
+    }
+
     async function fetchAvailability() {
       if (!selectedDate) return;
       
@@ -78,8 +96,9 @@ export const Step3Date: React.FC<Step3DateProps> = ({
       }
     }
 
+    checkGameAvailability();
     fetchAvailability();
-  }, [selectedDate]);
+  }, [selectedDate, gameId]);
 
   const formatTimeDisplay = (timeStr: string) => {
     const [h, m] = timeStr.split(":");
@@ -140,7 +159,17 @@ export const Step3Date: React.FC<Step3DateProps> = ({
             {t("Step4.title")}
           </label>
 
-          {slotsLoading ? (
+          {isGameRestricted ? (
+            <div className="py-12 border-2 border-dashed border-wa-red/30 bg-wa-red/5 flex flex-col items-center gap-4 text-center p-6 animate-in zoom-in duration-300">
+              <AlertTriangle className="w-12 h-12 text-wa-red" />
+              <div>
+                <h3 className="text-2xl font-archivo text-wa-red uppercase mb-2 tracking-widest">{t("Step1.restricted") || "MISSION RESTRICTED"}</h3>
+                <p className="text-wa-text/60 max-w-sm font-barlow">
+                  This game is not available on the selected date due to maintenance or schedule protocol. Please select another date or go back.
+                </p>
+              </div>
+            </div>
+          ) : slotsLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="h-16 bg-wa-text/5 animate-pulse border border-wa-text/10" />
@@ -197,18 +226,19 @@ export const Step3Date: React.FC<Step3DateProps> = ({
             </div>
           )}
 
-          {/* Grid Legend */}
-          <div className="flex flex-wrap gap-4 pt-6 border-t border-wa-gray/20">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-wa-green uppercase font-mono border-b border-wa-green/30">{t("Step4.available")}</span>
+          {!isGameRestricted && (
+            <div className="flex flex-wrap gap-4 pt-6 border-t border-wa-gray/20">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-wa-green uppercase font-mono border-b border-wa-green/30">{t("Step4.available")}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-wa-red uppercase font-mono border-b border-wa-red/30">{t("Step4.booked")}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-wa-orange uppercase font-mono border-b border-wa-orange/30">{t("Step4.shortOnly")}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-wa-red uppercase font-mono border-b border-wa-red/30">{t("Step4.booked")}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-wa-orange uppercase font-mono border-b border-wa-orange/30">{t("Step4.shortOnly")}</span>
-            </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -220,7 +250,26 @@ export const Step3Date: React.FC<Step3DateProps> = ({
           margin: 0;
           color: white;
           font-family: var(--font-barlow), sans-serif;
+          width: 100%;
+          max-width: 350px;
         }
+
+        /* Responsive cell size for mobile */
+        @media (max-width: 400px) {
+          .wa-day-picker {
+            --rdp-cell-size: 34px;
+          }
+        }
+        @media (max-width: 350px) {
+          .wa-day-picker {
+            --rdp-cell-size: 30px;
+          }
+        }
+
+        .wa-day-picker .rdp-months {
+          justify-content: center;
+        }
+
         .rdp-day_selected, .rdp-day_selected:focus-visible, .rdp-day_selected:hover {
           background-color: #00FF41 !important;
           color: #0A0A0A !important;
@@ -237,6 +286,11 @@ export const Step3Date: React.FC<Step3DateProps> = ({
           font-size: 0.75rem;
           font-weight: 600;
           text-transform: uppercase;
+        }
+
+        /* Fix for RTL in react-day-picker */
+        [dir="rtl"] .rdp-nav {
+          flex-direction: row-reverse;
         }
       `}</style>
     </div>

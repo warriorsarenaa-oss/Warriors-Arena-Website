@@ -15,6 +15,8 @@ import {
   Gamepad2,
   Package,
   Download,
+  FileText,
+  Target,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -29,12 +31,15 @@ export function AdminSidebar({ permissions, onNavigate }: SidebarProps) {
   const navItems = [
     { name: "Dashboard",    href: "/admin",             icon: LayoutDashboard, required: "view_dashboard" },
     { name: "Reservations", href: "/admin/reservations", icon: CalendarDays,    required: "view_bookings" },
+    { name: "Schedules",    href: "/admin/schedules/weekly-planner", icon: Clock, required: "manage_users" },
     { name: "Revenue",      href: "/admin/revenue",      icon: LineChart,       required: "view_revenue" },
     { name: "Financials",   href: "/admin/financials",   icon: Wallet,          required: "view_financials" },
+    { name: "Payroll",      href: "/admin/financials/payroll", icon: DollarSign, required: "manage_financials" },
+    { name: "Content",      href: "/admin/content",      icon: FileText,        required: "manage_content" },
     { name: "Hours",        href: "/admin/hours",        icon: Clock,           required: "manage_hours" },
     { name: "Pricing",      href: "/admin/pricing",      icon: DollarSign,      required: "manage_pricing" },
     { name: "Games",        href: "/admin/games",        icon: Gamepad2,        required: "manage_games" },
-    { name: "Bundles",      href: "/admin/bundles",      icon: Package,         required: "manage_bundles" },
+    { name: "Missions",     href: "/admin/missions",     icon: Target,          required: "manage_content" },
     { name: "Export",       href: "/admin/export",       icon: Download,        required: "export_data" },
     { name: "Users",        href: "/admin/users",        icon: Users,           required: "manage_users" },
     { name: "Audit Log",    href: "/admin/audit",        icon: ShieldAlert,     required: "view_audit" },

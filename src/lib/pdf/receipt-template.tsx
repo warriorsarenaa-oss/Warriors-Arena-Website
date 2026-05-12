@@ -18,6 +18,7 @@ export interface ReceiptProps {
   instapayId: string;
   locale: 'en' | 'ar';
   qrCodeDataUrl: string;
+  logoDataUrl?: string;
 }
 
 /**
@@ -40,6 +41,7 @@ export const ReceiptTemplate: React.FC<ReceiptProps> = ({
   instapayId,
   locale,
   qrCodeDataUrl,
+  logoDataUrl,
 }) => {
   const isRtl = locale === 'ar';
   
@@ -69,12 +71,9 @@ export const ReceiptTemplate: React.FC<ReceiptProps> = ({
       subtotal: 'SUBTOTAL',
       deposit: 'DEPOSIT (REQUIRED)',
       balance: 'BALANCE ON ARRIVAL',
-      instructions: 'PAYMENT INSTRUCTIONS',
-      instapay: 'InstaPay ID',
       whatsapp: 'WhatsApp',
       noticeTitle: 'IMPORTANT NOTICE',
-      noticeText: 'Warriors Arena is located inside Merryland Park. A small park entrance fee applies at the gate.',
-      cancellation: 'Cancellations within 24 hours forfeit the deposit.',
+      noticeText: 'Reservation fees do not include park entrance — 30 EGP/person regular days, 50 EGP/person on holidays and festivals.',
       footer: 'Thank you for choosing Warriors Arena. We\'ll see you in the arena!',
     },
     ar: {
@@ -91,12 +90,9 @@ export const ReceiptTemplate: React.FC<ReceiptProps> = ({
       subtotal: 'المجموع الفرعي',
       deposit: 'العربون (مطلوب)',
       balance: 'المبلغ المتبقي عند الوصول',
-      instructions: 'تعليمات الدفع',
-      instapay: 'معرف إنستا باي',
       whatsapp: 'واتساب',
       noticeTitle: 'ملاحظة هامة',
-      noticeText: 'تقع واريورز أرينا داخل حديقة ميري لاند. يتم تطبيق رسوم دخول رمزية للحديقة عند البوابة.',
-      cancellation: 'الإلغاء قبل أقل من ٢٤ ساعة يؤدي إلى خسارة العربون.',
+      noticeText: 'رسوم الحجز لا تشمل دخول الحديقة — ٣٠ جنيه للفرد في الأيام العادية، ٥٠ جنيه للفرد في الأعياد والمهرجانات.',
       footer: 'شكراً لاختياركم واريورز أرينا. نراكم في الساحة!',
     }
   }[locale];
@@ -159,12 +155,21 @@ export const ReceiptTemplate: React.FC<ReceiptProps> = ({
     <div style={containerStyle}>
       {/* HEADER */}
       <div style={headerStyle}>
-        <div>
-          <div style={{ fontSize: '32px', fontWeight: '900', color: colors.text, letterSpacing: '-0.02em' }}>
-            WARRIORS<span style={{ color: colors.green }}>ARENA</span>
-          </div>
-          <div style={{ fontSize: '12px', color: colors.textDim, marginTop: '4px', letterSpacing: '0.1em' }}>
-            {labels.title}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          {logoDataUrl && (
+            <img 
+              src={logoDataUrl} 
+              alt="Logo" 
+              style={{ width: '60px', height: '60px', borderRadius: '8px', border: `1px solid ${colors.green}` }} 
+            />
+          )}
+          <div>
+            <div style={{ fontSize: '32px', fontWeight: '900', color: colors.text, letterSpacing: '-0.02em' }}>
+              WARRIORS<span style={{ color: colors.green }}>ARENA</span>
+            </div>
+            <div style={{ fontSize: '12px', color: colors.textDim, marginTop: '4px', letterSpacing: '0.1em' }}>
+              {labels.title}
+            </div>
           </div>
         </div>
         <div style={{ textAlign: isRtl ? 'left' : 'right' }}>
@@ -224,11 +229,7 @@ export const ReceiptTemplate: React.FC<ReceiptProps> = ({
       {/* PAYMENT & NOTICE */}
       <div style={{ display: 'flex', gap: '20px', marginBottom: '30px' }}>
         <div style={{ ...sectionStyle, flex: 2, marginBottom: 0 }}>
-          <div style={titleStyle}>{labels.instructions}</div>
-          <div style={{ marginBottom: '12px' }}>
-            <div style={{ color: colors.textDim, fontSize: '11px' }}>{labels.instapay}</div>
-            <div style={{ fontSize: '16px', fontWeight: 'bold', color: colors.green }}>{instapayId}</div>
-          </div>
+          <div style={titleStyle}>SUPPORT & COMMS</div>
           <div>
             <div style={{ color: colors.textDim, fontSize: '11px' }}>{labels.whatsapp}</div>
             <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{whatsappNumber}</div>
@@ -243,9 +244,6 @@ export const ReceiptTemplate: React.FC<ReceiptProps> = ({
       {/* FOOTER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto' }}>
         <div style={{ flex: 1 }}>
-          <p style={{ fontSize: '12px', color: colors.textDim, marginBottom: '20px', maxWidth: '300px' }}>
-            * {labels.cancellation}
-          </p>
           <div style={{ fontSize: '14px', fontWeight: 'bold', color: colors.green }}>
             {labels.footer}
           </div>
@@ -259,7 +257,7 @@ export const ReceiptTemplate: React.FC<ReceiptProps> = ({
             />
           )}
           <div style={{ fontSize: '10px', color: colors.textDim, marginTop: '8px', letterSpacing: '0.1em' }}>
-            SCAN TO MANAGE
+            Visit us on Instagram
           </div>
         </div>
       </div>

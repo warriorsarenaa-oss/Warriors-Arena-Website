@@ -176,7 +176,7 @@ export const GET = requirePermission(async (request: Request) => {
         cancelled_forfeited: cancelledForfeited,
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_REVENUE_GET_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

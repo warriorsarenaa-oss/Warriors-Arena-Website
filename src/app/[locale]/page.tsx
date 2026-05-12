@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { Hero } from '@/components/Landing/Hero';
 import { GamesShowcaseWrapper } from '@/components/Landing/GamesShowcaseWrapper';
-import { BundleCarousel } from '@/components/Landing/BundleCarousel';
+import { MissionsSection } from '@/components/Landing/MissionsSection';
 import { HowItWorks } from '@/components/Landing/HowItWorks';
 import { Gallery } from '@/components/Landing/Gallery';
 import { FAQ } from '@/components/Landing/FAQ';
@@ -20,26 +20,38 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'Landing' });
 
+  // Fetch Missions CMS
+  let missionsHeader = { heading: t("bundlesTitle"), subheading: t("bundlesLine") };
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/v1/cms/missions`);
+    if (res.ok) {
+      const data = await res.json();
+      const content = data[locale] || data.en || {};
+      if (content.heading) missionsHeader.heading = content.heading;
+      if (content.subheading) missionsHeader.subheading = content.subheading;
+    }
+  } catch (err) {}
+
   return (
     <main className="w-full bg-wa-bg relative overflow-x-hidden">
       <Navbar />
       <Hero locale={locale} />
 
+      {/* ⭐ GAME SHOWCASE (Animated) ⭐ */}
+      <section id="games" className="bg-wa-black py-20 border-y border-wa-green/10">
+        <div className="max-w-[1320px] mx-auto">
+          <GamesShowcaseWrapper locale={locale} />
+        </div>
+      </section>
+
       <div className="max-w-[1320px] mx-auto px-6 space-y-24 md:space-y-40 py-20 md:py-40">
 
-        {/* ── GAMES ─────────────────────────────────── */}
-        <section id="games">
-          <GamesShowcaseWrapper locale={locale} />
-        </section>
-
-        {/* ── BUNDLES ───────────────────────────────── */}
-        <section id="bundles">
+        <section id="missions">
           <SectionHeader
-            kicker="02 · FIRE TEAMS"
-            title={t("bundlesTitle")}
-            line={t("bundlesLine")}
+            title={missionsHeader.heading}
+            line={missionsHeader.subheading}
           />
-          <BundleCarousel />
+          <MissionsSection />
         </section>
 
         {/* ── HOW IT WORKS ──────────────────────────── */}

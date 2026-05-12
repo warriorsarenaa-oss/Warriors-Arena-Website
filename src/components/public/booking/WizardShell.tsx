@@ -6,6 +6,7 @@ import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { StrategicNotice } from "@/components/UI/StrategicNotice";
 
 interface WizardShellProps {
   currentStep: number;
@@ -45,6 +46,9 @@ export const WizardShell: React.FC<WizardShellProps> = ({
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto">
+      {/* 0. Strategic Notice (Always Visible) */}
+      <StrategicNotice type="warning" className="mb-2 shadow-lg shadow-wa-orange/5" />
+
       {/* 1. Progress Indicator */}
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-end">

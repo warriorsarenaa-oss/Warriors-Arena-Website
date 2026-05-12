@@ -13,7 +13,14 @@ const UpdateGameSchema = z.object({
   display_order: z.number().int().optional(),
   is_active: z.boolean().optional(),
   pricing: z.array(z.object({
+    pricing_type: z.enum(['time', 'ammo']).default('time'),
     duration_minutes: z.number().int(),
+    price_per_player: z.number().min(0),
+    ammo_count: z.number().int().optional().nullable(),
+    duration_minutes_display: z.string().optional().nullable()
+  })).optional(),
+  refill_packages: z.array(z.object({
+    ammo_count: z.number().int(),
     price_per_player: z.number().min(0)
   })).optional(),
 });
@@ -37,7 +44,7 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
 
     if (fetchError) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    const { pricing, ...gameData } = parsed.data;
+    const { pricing, refill_packages, ...gameData } = parsed.data;
 
     // Update Game
     const { data: updatedGame, error: updateError } = await supabaseService
@@ -60,8 +67,11 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
       // Insert new
       const pricingRows = pricing.map(p => ({
         game_id: id,
+        pricing_type: p.pricing_type,
         duration_minutes: p.duration_minutes,
         price_per_player: p.price_per_player,
+        ammo_count: p.ammo_count,
+        duration_minutes_display: p.duration_minutes_display,
         is_active: true
       }));
 
@@ -70,6 +80,30 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
         .insert(pricingRows);
 
       if (pricingError) throw pricingError;
+    }
+
+    // Update Refill Packages if provided
+    if (refill_packages) {
+      // Mark old as inactive (or delete if you prefer, but inactive is safer for history)
+      await supabaseService
+        .from('refill_packages')
+        .update({ is_active: false })
+        .eq('game_id', id);
+
+      if (refill_packages.length > 0) {
+        const refillRows = refill_packages.map(r => ({
+          game_id: id,
+          ammo_count: r.ammo_count,
+          price_per_player: r.price_per_player,
+          is_active: true
+        }));
+
+        const { error: refillError } = await supabaseService
+          .from('refill_packages')
+          .insert(refillRows);
+
+        if (refillError) throw refillError;
+      }
     }
 
     // 3. Audit log (Table name is 'audit_logs' per migration 011)
@@ -90,7 +124,7 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
     }
 
     return NextResponse.json(updatedGame);
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_GAMES_PATCH_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
@@ -145,7 +179,7 @@ export const DELETE = requirePermission(async (request: Request, { user, params 
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_GAMES_DELETE_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

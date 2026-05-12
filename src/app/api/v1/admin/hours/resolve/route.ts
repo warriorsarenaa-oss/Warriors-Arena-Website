@@ -18,7 +18,7 @@ export const GET = requirePermission(async (request: Request) => {
     if (error) throw error;
 
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error) {
     console.error("[ADMIN_HOURS_RESOLVE_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

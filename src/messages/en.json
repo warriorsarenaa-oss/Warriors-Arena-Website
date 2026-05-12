@@ -2,7 +2,7 @@
   "Landing": {
     "Nav": {
       "games": "Games",
-      "bundles": "Bundles",
+      "missions": "Missions",
       "howItWorks": "How It Works",
       "location": "Find Us",
       "bookNow": "Book Now"
@@ -15,7 +15,6 @@
       "line3": "WIN.",
       "subtitle": "Cairo's most intense tactical arena — laser tag & gel blasters. 30-minute exclusive slots. 6-player squads. No spectators, just warfare.",
       "primaryCTA": "Book Your Slot",
-      "secondaryCTA": "See Pricing",
       "stat1Value": "30 MIN",
       "stat1Label": "Exclusive slot",
       "stat2Value": "6 MAX",
@@ -25,27 +24,27 @@
     },
     "gamesTitle": "CHOOSE YOUR WEAPON",
     "gamesLine": "Two game modes. One winner. Pick your loadout and own the arena.",
-    "bundlesTitle": "SQUAD BUNDLES",
-    "bundlesLine": "",
-    "howItWorksTitle": "HOW IT WORKS",
-    "howItWorksLine": "Four simple steps to book your game.",
-    "galleryTitle": "IN THE FIELD",
-    "galleryLine": "Raw footage from real arena sessions. No filters — just carnage.",
-    "faqTitle": "MISSION INTEL",
-    "faqLine": "Everything you need to know before stepping onto the field.",
-    "locationTitle": "FIND US",
-    "locationLine": "We're inside Merryland Park, Heliopolis. Show up early, gear up fast, dominate.",
+    "bundlesTitle": "SPECIAL MISSIONS",
+    "bundlesLine": "Themed mission layers to take your tactical session to the next level.",
     "HowItWorks": {
+      "howItWorksTitle": "HOW IT WORKS",
+      "howItWorksLine": "Four simple steps to book your game.",
       "step1Title": "PICK YOUR GAME",
       "step1Desc": "Choose Laser Tag or Gel Blasters. Select 30 or 60-minute sessions. Solo or group bookings available.",
       "step2Title": "RESERVE YOUR SLOT",
       "step2Desc": "Each time slot is exclusive — you get the entire arena to yourself. No sharing with other groups.",
-      "step3Title": "PAY DEPOSIT (25%)",
-      "step3Desc": "Send your deposit via WhatsApp or InstaPay to confirm your booking. Remaining balance paid on arrival.",
+      "step3Title": "FINALIZE BOOKING",
+      "step3Desc": "Verify your phone number and get your unique mission code instantly.",
       "step4Title": "ARRIVE & PLAY",
       "step4Desc": "Arrive 15 minutes early for gear setup. Play your session. Have fun!"
     },
+    "Gallery": {
+      "galleryTitle": "IN THE FIELD",
+      "galleryLine": "Raw footage from real arena sessions. No filters — just carnage."
+    },
     "FAQ": {
+      "faqTitle": "MISSION INTEL",
+      "faqLine": "Everything you need to know before stepping onto the field.",
       "q1": "HOW DO I BOOK?",
       "a1": "Use our online booking system — choose your game, pick a time slot, fill in your info, verify your phone number, and receive your booking code instantly.",
       "q2": "CAN I CANCEL MY RESERVATION?",
@@ -58,6 +57,8 @@
       "a5": "Wear comfortable athletic clothing and closed-toe shoes. We provide all the tactical gear, safety equipment, and training needed for the mission."
     },
     "Location": {
+      "locationTitle": "FIND US",
+      "locationLine": "We're inside Merryland Park, Heliopolis. Show up early, gear up fast, dominate.",
       "kicker": "RALLY POINT",
       "title": "Heliopolis, Cairo",
       "line": "Inside Merryland Park. Come early, gear up, and dominate.",
@@ -150,13 +151,24 @@
     "Step2": {
       "title": "BUILD YOUR SQUAD",
       "description": "Lock in the team size and how long you want to run. Bigger squad = bigger chaos.",
-      "chooseDuration": "SESSION LENGTH",
+      "chooseDuration": "CHOOSE PACKAGE",
       "min": "MIN",
+      "bullets": "BULLETS",
       "player": "PLAYER",
       "playerCount": "SQUAD SIZE",
       "players": "PLAYERS",
       "maxPlayersNote": "MAX {max} PLAYERS PER SLOT",
       "deploymentConfiguration": "DEPLOYMENT CONFIG"
+    },
+    "StepMission": {
+      "title": "SPECIAL MISSION",
+      "description": "Add a themed mission layer to your game. Optional but recommended.",
+      "loadingMissions": "LOADING MISSIONS...",
+      "noMission": "STANDARD GAME",
+      "noMissionDesc": "Standard tactical session with no special mission objectives.",
+      "standardPricing": "STANDARD PRICING",
+      "missionAddon": "ADD-ON",
+      "player": "player"
     },
     "Step3": {
       "title": "PICK A DATE",
@@ -208,13 +220,13 @@
       "time": "TIME",
       "players": "PLAYERS",
       "units": "players",
-      "paymentRequired": "DEPOSIT REQUIRED",
-      "paymentNote": "To confirm your mission, please send the {deposit} EGP deposit via {ident}. The remaining balance is payable on arrival.",
-      "depositToSecure": "DEPOSIT TO SECURE SLOT",
+      "paymentRequired": "RESERVATION CONFIRMED",
+      "paymentNote": "Your mission is locked. No deposit required. Total is payable upon arrival at the venue.",
+      "depositToSecure": "TOTAL DUE ON ARRIVAL",
       "sendWhatsApp": "CONFIRM YOUR RESERVATION ON WHATSAPP",
       "downloadReceipt": "DOWNLOAD RECEIPT",
       "successNote": "Show up 15 minutes early to gear up. Bring your squad, bring your energy.",
-      "cancellationPolicy": "Free cancellation up to 24 hours before your slot. Inside 24 hours — deposit is non-refundable.",
+      "cancellationPolicy": "Free cancellation up to 6 hours before your slot. Please notify us if you can't make it.",
       "backToBase": "BACK TO SITE"
     },
     "Summary": {
@@ -223,9 +235,9 @@
       "duration": "DURATION",
       "players": "PLAYERS",
       "total": "TOTAL",
-      "depositRequired": "DEPOSIT (50%)",
-      "depositNote": "Due now to secure your slot",
-      "balanceDue": "BALANCE ON ARRIVAL"
+      "depositRequired": "TOTAL DUE",
+      "depositNote": "Payable on arrival at venue",
+      "balanceDue": "TOTAL TO PAY"
     }
   }
 }

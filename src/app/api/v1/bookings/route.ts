@@ -17,7 +17,6 @@ const EGYPT_PHONE_REGEX = /^(\+20|0)?1[0125][0-9]{8}$/;
 
 const BookingRequestSchema = z.object({
   game_id: z.string().uuid(),
-  bundle_id: z.string().uuid().optional().nullable(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   start_time: z.string(),
   duration_minutes: z.union([z.literal(30), z.literal(60)]),
@@ -26,6 +25,8 @@ const BookingRequestSchema = z.object({
   customer_phone: z.string().min(10).max(15),
   customer_email: z.string().email().optional().nullable(),
   customer_notes: z.string().max(500).optional().nullable(),
+  special_mission_id: z.string().uuid().optional().nullable(),
+  mission_additional_price: z.number().optional(),
   event_id: z.string().optional() // From Meta Pixel on client
 });
 
@@ -83,18 +84,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // 6. Fetch game name for WhatsApp link
-    const { data: gameData } = await supabaseAnon
-      .from("games")
-      .select("name_en")
-      .eq("id", data.game_id)
-      .single();
+    // 6. Fetch game and mission details for WhatsApp link
+    const [{ data: gameData }, { data: missionData }] = await Promise.all([
+      supabaseAnon.from("games").select("name_en").eq("id", data.game_id).single(),
+      data.special_mission_id 
+        ? supabaseAnon.from("special_missions").select("name_en").eq("id", data.special_mission_id).single()
+        : Promise.resolve({ data: null })
+    ]);
 
     const whatsappLink = generateWhatsAppLink({
       phone: data.customer_phone,
       customerName: data.customer_name,
       bookingCode: result.booking_code!,
       gameName: gameData?.name_en || "Game",
+      missionName: missionData?.name_en || null,
       date: data.date,
       startTime: data.start_time,
       totalPrice: result.total_price!,

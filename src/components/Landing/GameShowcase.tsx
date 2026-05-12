@@ -1,47 +1,44 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Zap, 
   Users, 
-  ShieldCheck, 
   ChevronRight, 
-  Crosshair,
   Target,
-  Activity
+  Activity,
+  Zap,
+  Crosshair
 } from "lucide-react";
 import { WAButton } from "../UI/WAButton";
 import { useBooking } from "@/contexts/BookingContext";
 
-function CircularGauge({ name, value, color = '#8FE04A' }: { name: string; value: number; color?: string }) {
-  const radius = 40;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (value / 100) * circumference;
-
+function LinearGauge({ name, value, delay = 0 }: { name: string; value: number; delay?: number }) {
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="relative w-24 h-24">
-        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-          {/* Track */}
-          <circle cx="50" cy="50" r={radius} fill="none"
-            stroke="#8FE04A15" strokeWidth="6" />
-          {/* Progress */}
-          <circle cx="50" cy="50" r={radius} fill="none"
-            stroke={color} strokeWidth="6"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            strokeLinecap="round" 
-            className="transition-all duration-1000 ease-out"
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-xl font-bold text-wa-green">{value}%</span>
-        </div>
+    <div className="w-full space-y-2">
+      <div className="flex justify-between items-end">
+        <span className="text-[10px] font-mono font-bold text-wa-text/40 uppercase tracking-[0.2em]">{name}</span>
+        <span className="text-xs font-mono font-bold text-wa-green">{value}%</span>
       </div>
-      <span className="text-xs font-bold text-wa-text-dim uppercase tracking-wider text-center">
-        {name}
-      </span>
+      <div className="relative h-3 bg-wa-green/5 border border-wa-green/20 rounded-full overflow-hidden">
+        {/* Track Grid Pattern */}
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(90deg, #8FE04A 1px, transparent 1px)', backgroundSize: '10%' }} />
+        
+        {/* Progress Bar */}
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${value}%` }}
+          transition={{ duration: 1.5, delay, ease: [0.22, 1, 0.36, 1] }}
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-wa-green/60 to-wa-green shadow-[0_0_15px_rgba(143,224,74,0.4)]"
+        >
+          {/* Scanning Line */}
+          <motion.div 
+            animate={{ left: ["0%", "100%", "0%"] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+            className="absolute top-0 bottom-0 w-1/4 bg-white/20 blur-md"
+          />
+        </motion.div>
+      </div>
     </div>
   );
 }
@@ -54,7 +51,7 @@ interface GameData {
   price: number | null;
   features: {
     label: string;
-    value: number; // 0-100
+    value: number;
     icon: string;
   }[];
   stats: {
@@ -71,212 +68,187 @@ interface GameShowcaseProps {
 export const GameShowcase: React.FC<GameShowcaseProps> = ({ games, locale = "en" }) => {
   const isRtl = locale === "ar";
   const [activeIdx, setActiveIdx] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const autoPlayTimer = useRef<NodeJS.Timeout | null>(null);
+  const pauseTimer = useRef<NodeJS.Timeout | null>(null);
   const { openWizard } = useBooking();
   
+  const nextGame = useCallback(() => {
+    setActiveIdx((prev) => (prev + 1) % games.length);
+  }, [games.length]);
+
+  // Auto-play logic
+  useEffect(() => {
+    if (isAutoPlaying) {
+      autoPlayTimer.current = setInterval(nextGame, 8000);
+    }
+    return () => {
+      if (autoPlayTimer.current) clearInterval(autoPlayTimer.current);
+    };
+  }, [isAutoPlaying, nextGame]);
+
+  const handleManualSwitch = (idx: number) => {
+    setActiveIdx(idx);
+    setIsAutoPlaying(false);
+    
+    // Resume auto-play after 15 seconds of inactivity
+    if (pauseTimer.current) clearTimeout(pauseTimer.current);
+    pauseTimer.current = setTimeout(() => {
+      setIsAutoPlaying(true);
+    }, 15000);
+  };
+
   if (games.length === 0) return null;
 
   const current = games[activeIdx];
-  const isAlt = activeIdx % 2 !== 0;
-
-  // Animation variants
-  const containerVars: import("framer-motion").Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1, delayChildren: 0.1 } as const
-    }
-  };
-
-  const itemVars: import("framer-motion").Variants = {
-    hidden: { opacity: 0, y: 30, filter: "blur(12px)" },
-    visible: {
-      opacity: 1,
-      y: 0,
-      filter: "blur(0px)",
-      transition: { type: "spring" as const, stiffness: 100, damping: 20 }
-    }
-  };
-
-  const imageVars = (alt: boolean): import("framer-motion").Variants => ({
-    initial: {
-      opacity: 0,
-      scale: 1.2,
-      filter: "blur(20px)",
-      rotate: alt ? 25 : -25,
-      x: alt ? 60 : -60,
-    },
-    animate: {
-      opacity: 1,
-      scale: 1,
-      filter: "blur(0px)",
-      rotate: 0,
-      x: 0,
-      transition: { type: "spring" as const, stiffness: 200, damping: 22 }
-    },
-    exit: {
-      opacity: 0,
-      scale: 0.8,
-      filter: "blur(20px)",
-      transition: { duration: 0.3 }
-    }
-  });
 
   return (
-    <div id="games-section" className="relative w-full py-12 will-change-contents">
-      {/* Background Glow - Optimized: Use two layers and cross-fade them to avoid background-string re-computation */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div 
-          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${!isAlt ? "opacity-100" : "opacity-0"}`}
-          style={{ background: "radial-gradient(circle at 10% 50%, rgba(143, 224, 74, 0.12), transparent 55%)" }}
-        />
-        <div 
-          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${isAlt ? "opacity-100" : "opacity-0"}`}
-          style={{ background: "radial-gradient(circle at 90% 50%, rgba(143, 224, 74, 0.12), transparent 55%)" }}
-        />
+    <div className="relative w-full py-12">
+      {/* ── TABS (The Switcher) ────────────────────────── */}
+      <div className="flex justify-center mb-12 sm:mb-20">
+        <div className="inline-flex p-1 bg-wa-bg/80 border border-wa-green/20 rounded-xl backdrop-blur-xl relative overflow-hidden">
+          {/* Animated Background Pulse */}
+          <div className="absolute inset-0 bg-wa-green/5 animate-pulse" />
+          
+          {games.map((game, i) => (
+            <button
+              key={game.id}
+              onClick={() => handleManualSwitch(i)}
+              className={`relative px-8 py-3 font-archivo text-sm tracking-[0.2em] transition-all duration-300 uppercase z-10 ${
+                activeIdx === i ? "text-wa-bg" : "text-wa-text/40 hover:text-wa-text/80"
+              }`}
+            >
+              {activeIdx === i && (
+                <motion.div
+                  layoutId="active-tab-bg"
+                  className="absolute inset-0 bg-wa-green rounded-lg shadow-[0_0_20px_rgba(143,224,74,0.3)]"
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+              )}
+              <span className="relative z-10 font-bold">{game.name}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="max-w-[1320px] mx-auto px-6">
-        <motion.div
-          layout="position"
-          transition={{ type: "spring" as const, bounce: 0, duration: 0.9, restDelta: 0.5 }}
-          className={`flex flex-col lg:flex-row items-center justify-center gap-16 md:gap-24 w-full ${
-            isAlt ? "lg:flex-row-reverse" : "lg:flex-row"
-          }`}
-        >
-          {/* VISUAL COLUMN */}
-          <motion.div layout="position" className="relative group shrink-0 will-change-transform">
-            {/* Animated HUD Rings - use pure CSS animation for better perf */}
-            <div 
-              className="absolute inset-[-15%] rounded-full border border-dashed border-wa-green/20 animate-[spin_40s_linear_infinite]"
-            />
-            <motion.div
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute inset-0 rounded-full bg-wa-green/10 blur-3xl opacity-30 pointer-events-none"
-            />
+      {/* ── SHOWCASE CONTENT ──────────────────────────── */}
+      <div className="max-w-6xl mx-auto px-6">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={current.id}
+            initial={{ opacity: 0, y: 40, filter: "blur(10px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -40, filter: "blur(10px)" }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center"
+          >
+            {/* Left Column: Tactical Visuals */}
+            <div className="relative order-2 lg:order-1">
+              {/* Decorative HUD Elements */}
+              <div className="absolute -inset-10 pointer-events-none opacity-20">
+                <div className="absolute top-0 left-0 w-20 h-20 border-t-2 border-l-2 border-wa-green rounded-tl-3xl" />
+                <div className="absolute top-0 right-0 w-20 h-20 border-t-2 border-r-2 border-wa-green rounded-tr-3xl" />
+                <div className="absolute bottom-0 left-0 w-20 h-20 border-b-2 border-l-2 border-wa-green rounded-bl-3xl" />
+                <div className="absolute bottom-0 right-0 w-20 h-20 border-b-2 border-r-2 border-wa-green rounded-br-3xl" />
+              </div>
 
-            {/* Frame */}
-            <div className="relative h-72 w-72 md:h-[480px] md:w-[480px] wa-panel wa-panel-clip flex items-center justify-center bg-black/40 backdrop-blur-md overflow-hidden shadow-2xl">
-              <motion.div
-                animate={{ y: [-5, 5, -5] }}
-                transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
-                className="w-full h-full p-10 will-change-transform"
-              >
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.img
-                    key={current.id}
-                    src={current.image}
-                    alt={current.name}
-                    variants={imageVars(isAlt)}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                    className="w-full h-full object-contain filter drop-shadow-[0_0_30px_rgba(143,224,74,0.25)]"
-                    loading="eager"
-                  />
-                </AnimatePresence>
-              </motion.div>
+              <div className="relative aspect-square max-w-[500px] mx-auto overflow-hidden bg-gradient-to-br from-wa-green/10 to-transparent border border-wa-green/20 rounded-[3rem]">
+                {/* Background Grid */}
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #8FE04A 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+                
+                <motion.img
+                  initial={{ scale: 1.2, rotate: -5 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ duration: 0.8 }}
+                  src={current.image}
+                  alt={current.name}
+                  className="w-full h-full object-contain p-12 drop-shadow-[0_0_50px_rgba(143,224,74,0.3)]"
+                />
+
+                {/* Tactical Status Badge */}
+                <div className="absolute bottom-8 left-8 right-8 flex justify-between items-end">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono text-wa-green/60 uppercase tracking-widest block">Operational Capacity</span>
+                    <span className="text-sm font-mono text-wa-text font-bold uppercase">{current.stats.capacity}</span>
+                  </div>
+                  <div className="bg-wa-green text-wa-bg px-3 py-1 rounded text-[10px] font-mono font-bold uppercase tracking-widest flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-wa-bg animate-pulse" />
+                    Live Status
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Intensity Badge */}
-            <motion.div
-              layout="position"
-              className="absolute -bottom-6 left-1/2 -translate-x-1/2"
-            >
-              <div className="flex items-center gap-2 bg-wa-bg/90 border border-wa-line px-4 py-2 wa-panel-clip-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-wa-green animate-pulse" />
-                <span className="font-mono text-[10px] tracking-[0.2em] text-wa-text-dim uppercase">
-                  {isRtl ? "الحالة" : "STATUS"} · {current.stats.intensity}
-                </span>
-              </div>
-            </motion.div>
-          </motion.div>
-
-          {/* CONTENT COLUMN */}
-          <motion.div layout="position" className="w-full max-w-xl will-change-transform">
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={current.id}
-                variants={containerVars}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ type: "spring" as const, bounce: 0, duration: 0.6 }}
-                className={`flex flex-col ${isAlt ? "lg:items-end lg:text-right" : "lg:items-start lg:text-left"}`}
-              >
-                <motion.div variants={itemVars} className="wa-tag mb-4">
-                  {isRtl ? "المهمة" : "MISSION"} 0{activeIdx + 1}
-                </motion.div>
-                
-                <motion.h2 variants={itemVars} className="font-archivo text-5xl md:text-7xl leading-none text-wa-text uppercase mb-4">
+            {/* Right Column: Mission Briefing */}
+            <div className="space-y-8 order-1 lg:order-2">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-[2px] w-12 bg-wa-green" />
+                  <span className="text-xs font-mono font-bold text-wa-green uppercase tracking-[0.4em]">Mission Loadout</span>
+                </div>
+                <h2 className="text-5xl md:text-7xl font-archivo text-wa-text uppercase leading-none tracking-tighter">
                   {current.name}
-                </motion.h2>
-                
-                <motion.p variants={itemVars} className="text-wa-text-dim text-lg leading-relaxed mb-10 max-w-lg">
+                </h2>
+                <p className="text-lg md:text-xl text-wa-text/60 font-barlow leading-relaxed max-w-lg">
                   {current.description}
-                </motion.p>
+                </p>
+              </div>
 
-                {/* Feature Artifacts */}
-                <motion.div variants={itemVars} className="w-full space-y-6 bg-wa-panel-2/30 p-8 border border-wa-line wa-panel-clip">
-                  <div className="flex justify-center gap-6 md:gap-12 w-full py-4">
-                    {current.features.map((f, i) => (
-                      <motion.div 
-                        key={f.label}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.2 + (i * 0.1) }}
-                      >
-                        <CircularGauge name={f.label} value={f.value} />
-                      </motion.div>
-                    ))}
+              {/* Stats & Gauges */}
+              <div className="bg-wa-surface/30 border border-wa-green/10 p-8 rounded-[2rem] space-y-8 relative overflow-hidden">
+                {/* Decorative corner */}
+                <div className="absolute top-0 right-0 w-24 h-24 bg-wa-green/5 -rotate-45 translate-x-12 -translate-y-12" />
+                
+                <div className="space-y-6">
+                  {current.features.map((f, i) => (
+                    <LinearGauge key={f.label} name={f.label} value={f.value} delay={0.2 + (i * 0.1)} />
+                  ))}
+                </div>
+
+                <div className="pt-6 border-t border-wa-green/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono text-wa-text/40 uppercase tracking-widest block">Mission Cost</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xs font-bold text-wa-text/60">FROM</span>
+                      <span className="text-2xl font-archivo text-wa-green">{current.price}</span>
+                      <span className="text-xs font-bold text-wa-text/60 uppercase">EGP / PLAYER</span>
+                    </div>
                   </div>
 
-                  <div className={`pt-6 flex ${isAlt ? "justify-end" : "justify-start"}`}>
-                    <WAButton variant="primary" size="lg" onClick={() => openWizard({ kind: "game", id: current.id })}>
-                      {isRtl ? "احجز هذه المهمة" : "LOCK THIS MISSION"} 
-                      {isRtl ? <ChevronRight size={18} className="mr-2 rotate-180" /> : <ChevronRight size={18} className="ml-2" />}
-                    </WAButton>
-                  </div>
-                </motion.div>
-
-                {/* Foot stats */}
-                <motion.div variants={itemVars} className={`mt-8 flex items-center gap-6 text-wa-text-dim ${isAlt ? "lg:flex-row-reverse" : "lg:flex-row"}`}>
-                   <div className="flex items-center gap-2">
-                     <Users size={16} />
-                     <span className="font-mono text-[11px] tracking-wide">{current.stats.capacity}</span>
-                   </div>
-                   <div className="w-1 h-1 bg-wa-line rounded-full" />
-                   <div className="flex items-center gap-2 font-archivo text-wa-green text-sm">
-                     {isRtl ? "يبدأ من" : "FROM"} {current.price} {isRtl ? "ج.م / لاعب" : "EGP / PLAYER"}
-                   </div>
-                </motion.div>
-              </motion.div>
-            </AnimatePresence>
+                  <WAButton 
+                    variant="primary" 
+                    size="lg" 
+                    onClick={() => openWizard({ kind: "game", id: current.id })}
+                    className="w-full sm:w-auto px-10 group"
+                  >
+                    {isRtl ? "احجز المهمة" : "BOOK NOW"}
+                    <ChevronRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
+                  </WAButton>
+                </div>
+              </div>
+            </div>
           </motion.div>
-        </motion.div>
+        </AnimatePresence>
+      </div>
 
-        {/* SWITCHER HUD */}
-        <div className="mt-16 sm:mt-24 flex justify-center">
-          <div className="flex items-center gap-2 p-1.5 bg-wa-bg/80 border border-wa-line wa-panel-clip backdrop-blur-xl">
-            {games.map((game, i) => (
-              <button
-                key={game.id}
-                onClick={() => setActiveIdx(i)}
-                className={`relative px-6 py-3 font-archivo text-sm tracking-widest transition-all ${
-                  activeIdx === i ? "text-wa-bg" : "text-wa-text-dim hover:text-wa-text"
-                }`}
-              >
-                {activeIdx === i && (
-                  <motion.div
-                    layoutId="game-active-surface"
-                    className="absolute inset-0 bg-wa-green wa-panel-clip-sm"
-                    transition={{ type: "spring", stiffness: 220, damping: 22 }}
-                  />
-                )}
-                <span className="relative z-10">{game.name}</span>
-              </button>
-            ))}
-          </div>
+      {/* ── AUTO-ROTATE PROGRESS BAR ─────────────────── */}
+      <div className="mt-16 flex justify-center">
+        <div className="flex gap-2 items-center">
+          {games.map((_, i) => (
+            <div key={i} className="relative w-8 h-1 bg-wa-green/10 rounded-full overflow-hidden">
+              {activeIdx === i && isAutoPlaying && (
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 8, ease: "linear" }}
+                  className="absolute inset-y-0 left-0 bg-wa-green shadow-[0_0_10px_rgba(143,224,74,0.5)]"
+                />
+              )}
+              {activeIdx === i && !isAutoPlaying && (
+                <div className="absolute inset-0 bg-wa-green/40" />
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>

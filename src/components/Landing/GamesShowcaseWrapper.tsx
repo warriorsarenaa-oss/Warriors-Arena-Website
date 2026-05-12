@@ -108,7 +108,10 @@ export const GamesShowcaseWrapper = async ({ locale }: { locale: string }) => {
 
   return (
     <div>
-      <SectionHeader title={headerContent.heading} line={headerContent.subheading} />
+      <SectionHeader 
+        title={headerContent.heading} 
+        line={headerContent.subheading} 
+      />
       <GameShowcase games={games} locale={locale} />
     </div>
   );

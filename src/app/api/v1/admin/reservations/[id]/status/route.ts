@@ -54,7 +54,7 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
 
     if (error) {
       console.error("[STATUS_UPDATE_ERROR]", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
     }
 
     // ✅ Fix: If status is cancelled or no_show, release the slots in booking_slots table
@@ -84,7 +84,7 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
     });
 
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error) {
     console.error("[STATUS_UPDATE_EXCEPTION]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

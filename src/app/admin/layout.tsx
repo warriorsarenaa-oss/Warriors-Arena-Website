@@ -43,6 +43,7 @@ export default function AdminRootLayout({
     <html
       lang="en"
       className={`${archivo.variable} ${barlow.variable} ${cairo.variable} ${plex.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full bg-wa-bg text-wa-text font-mono selection:bg-wa-green selection:text-wa-bg">
         {children}

@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
     if (error) {
       logger.error("Cron failed: fn_complete_bookings_due", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
     }
 
     logger.info("Cron completed: mark-completed-bookings", { count });

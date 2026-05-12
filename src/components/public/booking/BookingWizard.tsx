@@ -8,6 +8,7 @@ import { WizardShell } from "./WizardShell";
 import { PriceSummary } from "./PriceSummary";
 import { Step1Game } from "./Step1Game";
 import { Step2Configure } from "./Step2Configure";
+import { StepMission, SpecialMission } from "./StepMission";
 import { Step3Date } from "./Step3Date";
 import { Step5Customer } from "./Step5Customer";
 import { SuccessScreen } from "./SuccessScreen";
@@ -28,7 +29,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
   const { seed } = useBooking();
 
   const [selectedGame, setSelectedGame] = useState<any>(null);
-  const [selectedBundle, setSelectedBundle] = useState<any>(null);
+  const [selectedMission, setSelectedMission] = useState<SpecialMission | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [showConflictModal, setShowConflictModal] = useState(false);
@@ -50,15 +51,10 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
     // Handle seed logic
     if (seed?.kind === "game" && seed.id) {
       if (draft.game_id !== seed.id) {
-        updateDraft({ game_id: seed.id, bundle_id: null, currentStep: 2 });
+        updateDraft({ game_id: seed.id, currentStep: 2 });
         return;
       } else if (draft.currentStep === 1) {
         goToStep(2);
-      }
-    } else if (seed?.kind === "bundle" && seed.id) {
-      if (draft.bundle_id !== seed.id) {
-        updateDraft({ bundle_id: seed.id, currentStep: 3 }); // Bundles go straight to Date selection
-        return;
       }
     }
 
@@ -77,31 +73,23 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
         }
       }
 
-      // Fetch Bundle if needed
-      if (draft.bundle_id && !selectedBundle) {
+      // Fetch Mission if needed
+      if (draft.special_mission_id && !selectedMission) {
         try {
-          const res = await fetch("/api/v1/admin/bundles"); // We use admin endpoint because it's already implemented
+          const res = await fetch("/api/v1/missions");
           if (res.ok) {
-            const bundles = await res.json();
-            const bundle = bundles.find((b: any) => b.id === draft.bundle_id);
-            if (bundle) {
-              setSelectedBundle(bundle);
-              // Sync bundle requirements into draft
-              updateDraft({
-                game_id: bundle.game_id,
-                duration_minutes: bundle.duration_minutes,
-                player_count: bundle.player_count
-              });
-            }
+            const missions = await res.json();
+            const mission = missions.find((m: any) => m.id === draft.special_mission_id);
+            if (mission) setSelectedMission(mission);
           }
         } catch (err) {
-          console.error("Failed to fetch bundle for draft:", err);
+          console.error("Failed to fetch mission for draft:", err);
         }
       }
     };
 
     fetchDetails();
-  }, [isLoaded, draft.game_id, draft.bundle_id, draft.currentStep, selectedGame, selectedBundle, seed, updateDraft]);
+  }, [isLoaded, draft.game_id, draft.currentStep, selectedGame, seed, updateDraft]);
 
   // 2. Track Funnel Events
   useEffect(() => {
@@ -116,27 +104,21 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
         break;
       case 3:
         if (draft.start_time) {
-          let price = 0;
-          if (selectedBundle) {
-            price = selectedBundle.pricing_mode === 'per_player' 
-              ? selectedBundle.price_value * selectedBundle.player_count 
-              : selectedBundle.price_value;
-          } else {
-            price = (selectedGame?.pricing?.find((p: any) => p.duration_minutes === draft.duration_minutes)?.price_per_player || 0) * draft.player_count;
-          }
+          const price = (selectedGame?.pricing?.find((p: any) => p.duration_minutes === draft.duration_minutes)?.price_per_player || 0) * draft.player_count;
           track("AddToCart", { value: price, currency: "EGP" });
         }
         break;
     }
-  }, [draft.currentStep, draft.start_time, isLoaded, selectedGame, selectedBundle, draft.duration_minutes, draft.player_count, track]);
+  }, [draft.currentStep, draft.start_time, isLoaded, selectedGame, draft.duration_minutes, draft.player_count, track]);
 
   // 3. Validation Guards
   const isStepValid = useMemo(() => {
     switch (draft.currentStep) {
       case 1: return !!draft.game_id;
       case 2: return !!draft.duration_minutes && !!draft.player_count;
-      case 3: return !!draft.date && !!draft.start_time;
-      case 4: return isStep5Valid;
+      case 3: return true; // Mission is optional
+      case 4: return !!draft.date && !!draft.start_time;
+      case 5: return isStep5Valid;
       default: return false;
     }
   }, [draft, isStep5Valid]);
@@ -162,11 +144,12 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
     // Construct clean payload matching API schema
     const payload = {
       game_id: draft.game_id,
-      bundle_id: draft.bundle_id || null,
       date: draft.date,
       start_time: draft.start_time,
       duration_minutes: draft.duration_minutes,
       player_count: draft.player_count,
+      special_mission_id: draft.special_mission_id || null,
+      mission_additional_price: draft.mission_additional_price || 0,
       customer_name: formData.customer_name?.trim(),
       customer_phone: normalizePhone(formData.customer_phone),
       customer_email: formData.customer_email?.trim() || null, 
@@ -179,11 +162,6 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
       setSubmissionError("Missing required booking information. Please go back and check your selection.");
       setIsSubmitting(false);
       return;
-    }
-
-    // Bundle-specific validation
-    if (draft.bundle_id && !payload.bundle_id) {
-       payload.bundle_id = draft.bundle_id;
     }
 
     console.log("[BOOKING_DEBUG] Sending payload:", payload);
@@ -232,7 +210,8 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
           gameName: selectedGame?.name_en || "Game",
           date: draft.date,
           startTime: draft.start_time,
-          playerCount: draft.player_count
+          playerCount: draft.player_count,
+          missionName: selectedMission ? (locale === "ar" ? selectedMission.name_ar : selectedMission.name_en) : null
         }
       });
       
@@ -257,37 +236,38 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
     );
   }
 
-  const currentPricePerPlayer = selectedBundle 
-    ? (selectedBundle.pricing_mode === 'per_player' ? selectedBundle.price_value : selectedBundle.price_value / selectedBundle.player_count)
-    : (selectedGame?.pricing?.find((p: any) => p.duration_minutes === draft.duration_minutes)?.price_per_player || 0);
+  const selectedPricing = selectedGame?.pricing?.find((p: any) => p.duration_minutes === draft.duration_minutes);
+  const pricingType = selectedPricing?.pricing_type || 'time';
+  const ammoCount = selectedPricing?.ammo_count;
 
-  const displayGameName = selectedBundle 
-    ? (locale === "ar" ? selectedBundle.title_ar : selectedBundle.title_en)
-    : (locale === "ar" ? selectedGame?.name_ar : selectedGame?.name_en);
+  const currentPricePerPlayer = selectedPricing?.price_per_player || 0;
+
+  const displayGameName = locale === "ar" ? selectedGame?.name_ar : selectedGame?.name_en;
 
   return (
     <div className="flex flex-col lg:flex-row gap-12 items-start w-full pb-32 lg:pb-0">
       <div className="flex-1 w-full order-2 lg:order-1">
         <WizardShell
           currentStep={draft.currentStep}
-          totalSteps={4}
-          title={t(`Step${draft.currentStep === 4 ? 5 : draft.currentStep}.title`)}
-          description={t(`Step${draft.currentStep === 4 ? 5 : draft.currentStep}.description`)}
+          totalSteps={5}
+          title={t(`Step${draft.currentStep === 3 ? "Mission" : (draft.currentStep > 3 ? draft.currentStep : draft.currentStep)}.title`)}
+          description={t(`Step${draft.currentStep === 3 ? "Mission" : (draft.currentStep > 3 ? draft.currentStep : draft.currentStep)}.description`)}
           onBack={() => goToStep(draft.currentStep - 1)}
           onNext={() => {
-            if (draft.currentStep === 4) {
+            if (draft.currentStep === 5) {
               document.getElementById("booking-form")?.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
             } else {
               goToStep(draft.currentStep + 1);
             }
           }}
           isNextDisabled={!isStepValid}
-          nextLabel={draft.currentStep === 4 ? t("confirm") : undefined}
+          nextLabel={draft.currentStep === 5 ? t("confirm") : undefined}
           isSubmitting={isSubmitting}
         >
           {draft.currentStep === 1 && (
             <Step1Game 
               selectedGameId={draft.game_id}
+              date={draft.date}
               onSelect={(game) => {
                 setSelectedGame(game);
                 updateDraft({ game_id: game.id, duration_minutes: 30 });
@@ -300,21 +280,33 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
               duration={draft.duration_minutes}
               playerCount={draft.player_count}
               onUpdate={updateDraft}
-              disabled={!!draft.bundle_id}
             />
           )}
-          {draft.currentStep === 3 && (
-            <Step3Date 
-              selectedDate={draft.date}
-              onSelectDate={(date) => {
-                updateDraft({ date, start_time: undefined });
+          {draft.currentStep === 3 && selectedGame && (
+            <StepMission 
+              gameId={selectedGame.id}
+              selectedMissionId={draft.special_mission_id || undefined}
+              onSelect={(mission) => {
+                setSelectedMission(mission);
+                updateDraft({ 
+                  special_mission_id: mission?.id || null,
+                  mission_additional_price: mission?.additional_price_per_player || 0
+                });
               }}
-              selectedTime={draft.start_time}
-              onSelectTime={(start_time) => updateDraft({ start_time })}
-              duration={draft.duration_minutes || 30}
+              onNext={() => goToStep(4)}
             />
           )}
           {draft.currentStep === 4 && (
+            <Step3Date
+              selectedDate={draft.date}
+              onSelectDate={(date) => updateDraft({ date })}
+              selectedTime={draft.start_time}
+              onSelectTime={(start_time) => updateDraft({ start_time })}
+              duration={draft.duration_minutes ?? 60}
+              gameId={draft.game_id}
+            />
+          )}
+          {draft.currentStep === 5 && (
             <Step5Customer 
               defaultValues={draft}
               onSubmit={handleFinalSubmit}
@@ -340,7 +332,11 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
           duration={draft.duration_minutes}
           playerCount={draft.player_count}
           pricePerPlayer={currentPricePerPlayer}
-          isBundle={!!selectedBundle}
+          isBundle={false}
+          missionName={selectedMission ? (locale === "ar" ? selectedMission.name_ar : selectedMission.name_en) : undefined}
+          missionPricePerPlayer={draft.mission_additional_price}
+          pricingType={pricingType}
+          ammoCount={ammoCount}
         />
       </aside>
 
@@ -352,7 +348,11 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
           duration={draft.duration_minutes}
           playerCount={draft.player_count}
           pricePerPlayer={currentPricePerPlayer}
-          isBundle={!!selectedBundle}
+          isBundle={false}
+          missionName={selectedMission ? (locale === "ar" ? selectedMission.name_ar : selectedMission.name_en) : undefined}
+          missionPricePerPlayer={draft.mission_additional_price}
+          pricingType={pricingType}
+          ammoCount={ammoCount}
         />
       </div>
 

@@ -158,15 +158,15 @@ export default function ReservationsPage() {
 
         {loading ? (
           <div className="h-64 flex items-center justify-center">
-            <div className="animate-spin w-8 h-8 border-2 border-wa-green border-t-transparent rounded-full"></div>
+            <div className="animate-spin w-8 h-8 border-2 border-wa-green border-t-transparent rounded-full shadow-[0_0_15px_rgba(0,255,65,0.2)]"></div>
           </div>
         ) : isClosed ? (
-          <div className="h-64 flex flex-col items-center justify-center text-wa-error/50 gap-4 border border-wa-error/20 rounded-lg bg-wa-error/5">
+          <div className="h-64 flex flex-col items-center justify-center text-wa-error/50 gap-4 border border-wa-error/20 rounded-lg bg-wa-error/5 backdrop-blur-sm">
             <AlertTriangle className="w-12 h-12" />
-            <span className="font-bold uppercase tracking-[0.2em]">ARENA CLOSED ON THIS DATE</span>
+            <span className="font-bold uppercase tracking-[0.2em] text-center px-4">ARENA CLOSED ON THIS DATE</span>
           </div>
         ) : view === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
             {timeSlots.map((slot) => {
               // ✅ Find booking that occupies this slot (check array first, then fallback)
               const booking = bookings.find(b => {
@@ -188,7 +188,7 @@ export default function ReservationsPage() {
               
               if (booking) {
                 return (
-                  <div key={slot} className={`border p-4 rounded-lg flex flex-col relative group min-h-[120px] ${
+                  <div key={slot} className={`border p-4 rounded-lg flex flex-col relative group min-h-[120px] transition-all hover:scale-[1.02] ${
                     booking.status === 'confirmed' ? 'border-wa-orange bg-wa-orange/10' :
                     booking.status === 'completed' ? 'border-wa-green/40 bg-wa-green/10' :
                     'border-wa-text/20 bg-wa-surface/30'
@@ -217,14 +217,14 @@ export default function ReservationsPage() {
                       </div>
                     )}
                     
-                    <div className="absolute inset-0 bg-wa-bg/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2 rounded-lg gap-2">
-                       <button onClick={() => setViewBooking(booking)} className="text-xs font-bold text-wa-text border border-wa-text/20 hover:bg-wa-text/10 px-3 py-1 rounded w-full">VIEW</button>
+                    <div className="absolute inset-0 bg-wa-bg/95 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center p-4 rounded-lg gap-3 border border-wa-green/50">
+                       <button onClick={() => setViewBooking(booking)} className="text-[10px] font-bold text-wa-bg bg-wa-green px-4 py-2 rounded-full w-full uppercase tracking-widest">VIEW INTEL</button>
                        {['pending', 'confirmed'].includes(booking.status) && (
                          <button 
                            onClick={() => setSelectedBookingForCancel(booking)}
-                           className="text-xs font-bold text-wa-error border border-wa-error/20 hover:bg-wa-error/10 px-3 py-1 rounded w-full"
+                           className="text-[10px] font-bold text-wa-error border border-wa-error/30 hover:bg-wa-error/10 px-4 py-2 rounded-full w-full uppercase tracking-widest"
                          >
-                           CANCEL
+                           ABORT
                          </button>
                        )}
                     </div>
@@ -236,10 +236,10 @@ export default function ReservationsPage() {
                 <button 
                   key={slot} 
                   onClick={() => handleOpenBooking(slot)}
-                  className="border border-wa-green/20 bg-wa-green/5 p-4 rounded-lg flex flex-col items-center justify-center hover:bg-wa-green/10 hover:border-wa-green/40 transition-all group min-h-[120px]"
+                  className="border border-wa-green/20 bg-wa-green/5 p-4 rounded-lg flex flex-col items-center justify-center hover:bg-wa-green/10 hover:border-wa-green/40 transition-all group min-h-[120px] active:scale-95"
                 >
                   <span className="font-bold text-lg font-heading text-wa-green group-hover:scale-110 transition-transform">{slot.substring(0, 5)}</span>
-                  <span className="text-xs uppercase tracking-widest mt-1 opacity-50 group-hover:opacity-100">AVAILABLE</span>
+                  <span className="text-[10px] uppercase tracking-[0.2em] mt-2 opacity-30 group-hover:opacity-100 transition-opacity">AVAILABLE</span>
                 </button>
               );
             })}

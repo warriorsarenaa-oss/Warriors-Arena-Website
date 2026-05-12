@@ -2,7 +2,7 @@
 
 import React from "react";
 import { WAButton } from "../UI/WAButton";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useBooking } from "@/contexts/BookingContext";
 
@@ -27,6 +27,19 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
   const { openWizard } = useBooking();
   const [operatingHours, setOperatingHours] = React.useState("6 PM - 9 PM");
   const [cms, setCms] = React.useState<any>(null);
+
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end start"]
+  });
+
+  // Parallax layers
+  const yBg = useTransform(scrollYProgress, [0, 1], [0, 200]);
+  const yContent = useTransform(scrollYProgress, [0, 1], [0, -100]);
+  const yCard = useTransform(scrollYProgress, [0, 1], [0, 50]);
+  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.95]);
 
   React.useEffect(() => {
     const fetchHours = async () => {
@@ -56,9 +69,15 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
   const getCmsValue = (key: string, fallback: string) => cms?.[key] || fallback;
 
   return (
-    <section className="relative overflow-hidden border-b border-wa-line bg-wa-bg wa-noise">
-      {/* Animated grid */}
-      <div className="absolute inset-0 wa-anim-grid opacity-100" />
+    <section 
+      ref={containerRef}
+      className="relative overflow-hidden border-b border-wa-line bg-wa-bg wa-noise min-h-[90dvh] flex flex-col justify-center"
+    >
+      {/* Animated grid (Parallax Layer 1) */}
+      <motion.div 
+        style={{ y: yBg }}
+        className="absolute inset-0 wa-anim-grid opacity-100" 
+      />
       <div className="wa-scanline" />
 
       {/* Radial vignette */}
@@ -75,7 +94,10 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
       ))}
 
       {/* Main content */}
-      <div className="relative z-10 max-w-[1320px] mx-auto px-6 py-16 md:py-32 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center">
+      <motion.div 
+        style={{ y: yContent, opacity, scale }}
+        className="relative z-10 max-w-[1320px] mx-auto px-6 py-16 md:py-32 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center"
+      >
         <div>
           {/* Kicker tags */}
           <motion.div
@@ -137,19 +159,6 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
             <WAButton variant="primary" size="lg" type="button" onClick={() => openWizard()}>
               {t("primaryCTA")}
             </WAButton>
-            <WAButton 
-              variant="ghost" 
-              size="lg" 
-              type="button"
-              onClick={() => {
-                document.getElementById('games-section')?.scrollIntoView({ 
-                  behavior: 'smooth', 
-                  block: 'start' 
-                });
-              }}
-            >
-              {t("secondaryCTA")}
-            </WAButton>
           </motion.div>
 
           {/* Stat strip */}
@@ -178,6 +187,7 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
 
         {/* Right: tactical card placeholder */}
         <motion.div
+          style={{ y: yCard }}
           className="hidden lg:block relative h-[520px]"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -189,58 +199,17 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
             <img 
               src={getCmsValue('hero_image_url', "https://images.unsplash.com/photo-1552072092-7f9b8d63efcb?auto=format&fit=crop&w=1200")} 
               alt="Arena Tactical" 
-              className="absolute inset-0 w-full h-full object-cover grayscale brightness-50"
+              className="absolute inset-0 w-full h-full object-cover"
             />
-            {/* Tactical overlay grid */}
-            <div className="absolute inset-0 bg-[#0a120a]/40"
-              style={{
-                backgroundImage: "repeating-linear-gradient(135deg, rgba(143,224,74,0.06) 0 12px, transparent 12px 36px)"
-              }}
-            />
-            {/* Reticle SVG */}
-            <svg viewBox="0 0 200 200" className="absolute inset-0 w-full h-full opacity-40">
-              <g stroke="var(--color-wa-green)" strokeWidth="0.8" fill="none">
-                <circle cx="100" cy="100" r="80" />
-                <circle cx="100" cy="100" r="60" />
-                <circle cx="100" cy="100" r="40" />
-                <circle cx="100" cy="100" r="20" />
-                <line x1="10" y1="100" x2="190" y2="100" />
-                <line x1="100" y1="10" x2="100" y2="190" />
-              </g>
-              <g stroke="var(--color-wa-green)" strokeWidth="1.4" fill="none">
-                <path d="M20 20 L20 50 M20 20 L50 20" />
-                <path d="M180 20 L180 50 M180 20 L150 20" />
-                <path d="M20 180 L20 150 M20 180 L50 180" />
-                <path d="M180 180 L180 150 M180 180 L150 180" />
-              </g>
-            </svg>
-            {/* Live badge */}
-            <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/60 border border-wa-line px-3 py-1.5">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="font-mono text-[11px] tracking-[0.15em] text-white">LIVE · ARENA 01</span>
-            </div>
-          </div>
-
-          {/* Next slot badge */}
-          <div 
-            className={`absolute -top-4 bg-wa-green text-wa-bg px-4 py-2 z-20 ${isRtl ? "-left-4" : "-right-4"}`}
-            style={{ clipPath: isRtl 
-              ? "polygon(0 10px, 10px 0, 100% 0, 100% 100%, 0 100%)" 
-              : "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))" 
-            }}
-          >
-            <div className="font-mono text-[10px] tracking-[0.18em]">NEXT SLOT</div>
-            <div className="font-archivo text-2xl leading-none">7:00 PM</div>
-          </div>
-
-          {/* Tape label */}
-          <div className="absolute -bottom-3 left-4">
-            <span className="wa-tape wa-tape--orange text-[11px] px-4 py-1.5">
-              GEL · BLASTERS · LASER · TAG
-            </span>
           </div>
         </motion.div>
-      </div>
+      </motion.div>
+
+      {/* Bottom fade for smooth transition to Games section */}
+      <motion.div 
+        style={{ opacity: useTransform(scrollYProgress, [0.7, 1], [0, 1]) }}
+        className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-wa-bg to-transparent z-20 pointer-events-none" 
+      />
 
       {/* Bottom marquee ticker */}
       <div className="relative z-10 bg-wa-green text-wa-bg py-2.5 overflow-hidden border-t border-black">

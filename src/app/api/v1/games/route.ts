@@ -37,7 +37,7 @@ export async function GET(request: Request) {
       hero_image_url,
       display_order,
       is_active,
-      game_pricing(duration_minutes, price_per_player)
+      game_pricing(duration_minutes, price_per_player, pricing_type, ammo_count, duration_minutes_display)
     `);
 
   if (activeOnly) {

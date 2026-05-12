@@ -31,7 +31,7 @@ export const Navbar: React.FC = () => {
 
   const navLinks = [
     { label: t("games"), href: "#games" },
-    { label: t("bundles"), href: "#bundles" },
+    { label: t("missions"), href: "#missions" },
     { label: t("howItWorks"), href: "#how" },
     { label: t("location"), href: "#location" },
   ];
@@ -46,20 +46,14 @@ export const Navbar: React.FC = () => {
     >
       <div className="max-w-[1320px] mx-auto px-6 py-3.5 flex items-center gap-6">
         {/* Logo */}
-        <Link href={`/${locale}`} className="flex items-center gap-2.5 no-underline shrink-0">
-          <div
-            className="w-9 h-9 bg-wa-green flex items-center justify-center text-wa-bg"
-            style={{ clipPath: "polygon(50% 0, 100% 30%, 100% 100%, 0 100%, 0 30%)" }}
-          >
-            <svg viewBox="0 0 24 24" width={20} height={20} fill="none" stroke="currentColor" strokeWidth="1.6">
-              <circle cx="12" cy="12" r="8" />
-              <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
-              <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-            </svg>
+        <Link href={`/${locale}`} className="flex items-center no-underline shrink-0 group">
+          <div className="relative w-12 h-12 md:w-14 md:h-14 overflow-hidden border border-wa-green/20 group-hover:border-wa-green transition-colors"
+               style={{ clipPath: "polygon(20% 0, 100% 0, 100% 80%, 80% 100%, 0 100%, 0 20%)" }}>
+            <img src="/logo.jpg" alt="Warriors Arena" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
           </div>
-          <div className="leading-none flex flex-col">
-            <span className="font-archivo text-[18px] text-wa-text uppercase">WARRIORS</span>
-            <span className="font-mono text-[10px] text-wa-green tracking-[0.3em]">ARENA · EGY</span>
+          <div className="ms-3 leading-none flex flex-col">
+            <span className="font-archivo text-[18px] text-wa-text uppercase tracking-tight">WARRIORS</span>
+            <span className="font-mono text-[10px] text-wa-green tracking-[0.2em]">ARENA · EGY</span>
           </div>
         </Link>
 

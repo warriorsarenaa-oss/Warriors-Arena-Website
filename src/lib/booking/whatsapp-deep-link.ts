@@ -16,6 +16,7 @@ interface WhatsAppLinkParams {
   totalPrice: number;
   playerCount: number;
   depositAmount: number;
+  missionName?: string | null;
 }
 
 export function generateWhatsAppLink(params: WhatsAppLinkParams): string {
@@ -28,9 +29,11 @@ export function generateWhatsAppLink(params: WhatsAppLinkParams): string {
     `Time: ${formatCairoTime(params.startTime)}\n` +
     `Game: ${params.gameName}\n` +
     `Players: ${params.playerCount}\n` +
+    (params.missionName ? `Mission: ${params.missionName}\n` : "") +
     `Total: ${params.totalPrice} EGP\n` +
-    `Deposit Required: ${params.depositAmount} EGP\n\n` +
-    `I'd like to confirm my booking and pay the deposit.`;
+    (params.depositAmount > 0 
+      ? `Deposit Required: ${params.depositAmount} EGP\n\nI'd like to confirm my booking and pay the deposit.`
+      : "\nI'd like to confirm my booking. The total will be paid on arrival.");
   
   const encodedMessage = encodeURIComponent(fullMessage);
   

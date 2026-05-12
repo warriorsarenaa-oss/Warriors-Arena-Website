@@ -92,7 +92,9 @@
       "selected": "TARGET LOCKED",
       "loadingGames": "SCANNING FIELD DATA...",
       "error": "INTEL ERROR",
-      "viewPricing": "PRICING DETAILS"
+      "viewPricing": "PRICING DETAILS",
+      "restricted": "MISSION RESTRICTED",
+      "restrictedDesc": "This game is not available on the selected date due to maintenance or schedule protocol. Please select another date or go back."
     },
     "Step2": {
       "title": "Configure Mission",

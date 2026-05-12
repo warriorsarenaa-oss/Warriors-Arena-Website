@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
 import { WAButton } from "@/components/UI/WAButton";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { Eye, EyeOff } from "lucide-react";
@@ -15,60 +14,61 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    // Logic to handle both Email and Username
+    // Resolve username → email server-side if no "@" present
     let loginEmail = username;
-    
+
     if (!username.includes("@")) {
-      // Use the internal lookup API (Server-side with service role)
       try {
         const res = await fetch(`/api/v1/auth/lookup?username=${encodeURIComponent(username)}`);
         if (res.ok) {
           const { email } = await res.json();
-          if (email) {
-            loginEmail = email;
-          } else {
-            // Fallback to convention if not found
-            loginEmail = `${username}@warriorsarena.example`;
-          }
+          loginEmail = email || `${username}@warriorsarena.example`;
+        } else {
+          loginEmail = `${username}@warriorsarena.example`;
         }
-      } catch (err) {
-        console.error("Lookup failed:", err);
+      } catch {
         loginEmail = `${username}@warriorsarena.example`;
       }
     }
 
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password,
+      // All auth goes through the server-side route — rate limiting enforced there
+      const res = await fetch("/api/v1/admin/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail, password }),
       });
 
-      if (authError) throw authError;
+      const data = await res.json();
 
-      // Fetch profile via server-side API to bypass RLS issues (406 error)
-      const profileRes = await fetch("/api/v1/admin/auth/me");
-      if (!profileRes.ok) throw new Error("Failed to load user profile");
-      
-      const { user: profileData } = await profileRes.json();
+      if (res.status === 429) {
+        setError("Too many login attempts. Please try again later.");
+        return;
+      }
 
-      if (profileData.must_change_password) {
+      if (res.status === 403) {
+        setError("Your account has been deactivated. Contact an administrator.");
+        return;
+      }
+
+      if (!res.ok) {
+        setError(data.error || "Invalid credentials. Please check your username and password.");
+        return;
+      }
+
+      // Server returns mustChangePassword flag — no extra round-trip needed
+      if (data.mustChangePassword) {
         router.push("/admin/change-password");
       } else {
         router.push("/admin");
       }
-    } catch (err: any) {
-      console.error("Login error:", err);
-      setError(err.message || "Failed to login. Check credentials.");
+    } catch {
+      setError("A network error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -127,7 +127,7 @@ export default function AdminLogin() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-wa-text/30 hover:text-wa-green transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-wa-green/50 hover:text-wa-green transition-colors z-10"
                 title={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}

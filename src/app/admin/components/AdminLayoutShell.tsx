@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Toaster } from "sonner";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminTopbar } from "./AdminTopbar";
 import { UserPermissions } from "@/lib/auth/permissions";
@@ -18,6 +19,7 @@ export function AdminLayoutShell({
 
   return (
     <div className="flex h-screen bg-wa-bg text-wa-text font-mono overflow-hidden relative">
+      <Toaster richColors closeButton theme="dark" position="top-right" />
       {/* Mobile Menu Button - Top Left */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
