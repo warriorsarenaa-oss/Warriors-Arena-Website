@@ -59,7 +59,8 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({
       console.error("No booking code for receipt download");
       return;
     }
-    const phoneLast4 = bookingData.customer_phone.slice(-4);
+    const cleanPhone = bookingData.customer_phone.replace(/\D/g, '');
+    const phoneLast4 = cleanPhone.slice(-4);
     const url = `/api/v1/bookings/${bookingData.booking_code}/receipt?phone_last4=${phoneLast4}&locale=${locale}`;
     
     try {
@@ -87,9 +88,9 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({
       
       // Clean up blob URL after a delay to ensure the browser has time to handle it
       setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Receipt download failed:', error);
-      alert("Failed to download receipt. Please try again later.");
+      alert(error.message || "Failed to download receipt. Please try again later.");
     }
   };
 
@@ -222,19 +223,10 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({
       <div className="flex flex-col gap-4">
         <WAButton 
           variant="primary" 
-          onClick={() => window.open(bookingData.whatsapp_link, "_blank")}
+          onClick={handleDownloadReceipt}
           className="w-full flex items-center justify-center gap-3 py-6"
         >
-          <MessageCircle className="w-6 h-6" />
-          {t("sendWhatsApp")}
-        </WAButton>
-
-        <WAButton 
-          variant="ghost" 
-          onClick={handleDownloadReceipt}
-          className="w-full flex items-center justify-center gap-3 py-4"
-        >
-          <Download className="w-5 h-5" />
+          <Download className="w-6 h-6" />
           {t("downloadReceipt")}
         </WAButton>
 

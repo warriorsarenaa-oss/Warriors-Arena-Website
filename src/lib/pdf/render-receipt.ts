@@ -84,15 +84,21 @@ export async function generateReceipt(
     // 5. PDF Generation via Puppeteer
     const isLocal = process.env.NODE_ENV === 'development';
     
-    browser = await puppeteer.launch({
-      args: isLocal ? [] : (chromium as any).args,
-      defaultViewport: { width: 1280, height: 720 },
-      executablePath: isLocal 
-        ? process.env.CHROME_BIN || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-        : await (chromium as any).executablePath(),
-      headless: true,
-    });
+    const launchOptions = isLocal 
+      ? {
+          args: [],
+          executablePath: process.env.CHROME_BIN || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+          headless: true,
+        }
+      : {
+          args: chromium.args,
+          defaultViewport: chromium.defaultViewport,
+          executablePath: await chromium.executablePath(),
+          headless: chromium.headless,
+          ignoreHTTPSErrors: true,
+        };
 
+    browser = await puppeteer.launch(launchOptions as any);
     const page = await browser.newPage();
     
     // Set content and wait for it to render
