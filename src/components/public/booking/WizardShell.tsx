@@ -72,7 +72,7 @@ export const WizardShell: React.FC<WizardShellProps> = ({
       </div>
 
       {/* 2. Content Panel */}
-      <WAPanel className="p-6 md:p-10 min-h-[400px] flex flex-col">
+      <WAPanel className="p-4 md:p-10 min-h-[400px] flex flex-col">
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl text-wa-text font-archivo uppercase mb-2">
             {title}
@@ -128,12 +128,6 @@ export const WizardShell: React.FC<WizardShellProps> = ({
         </div>
       </WAPanel>
 
-      {/* 4. Draft Status (Visual Polish) */}
-      <div className="flex justify-center">
-        <span className="text-[10px] text-wa-text/20 uppercase tracking-[0.2em] font-mono">
-          {t("autoSaveActive")}
-        </span>
-      </div>
     </div>
   );
 };

@@ -7,8 +7,6 @@ export const POST = requirePermission(async (request: Request, { user, params })
   const { id } = await params;
 
   try {
-    console.log('=== CONFIRM DEPOSIT ===');
-    console.log('Identifier:', id);
 
     // 1. Robust lookup (Try UUID, then code)
     let { data: booking, error: findError } = await supabaseService

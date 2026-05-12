@@ -59,7 +59,6 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
 
     // ✅ Fix: If status is cancelled or no_show, release the slots in booking_slots table
     if (status === 'cancelled' || status === 'no_show') {
-      console.log(`Releasing slots for booking ${id} due to status: ${status}`);
       const { error: slotError } = await supabaseService
         .from('booking_slots')
         .update({ released: true })

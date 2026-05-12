@@ -21,9 +21,6 @@ export const POST = requirePermission(async (
     } = body;
     const finalNotes = notes || note || null;
 
-    console.log('=== CANCEL BOOKING ===');
-    console.log('Identifier:', identifier);
-    console.log('Refund deposit?', refund_deposit);
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -102,7 +99,6 @@ export const POST = requirePermission(async (
       .update({ released: true })
       .eq('booking_id', booking.id);
 
-    console.log('✅ Cancellation successful');
     
     // Audit log
     await logAuditAction({

@@ -20,6 +20,20 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'Landing' });
 
+  // Fetch Hero CMS and Hours
+  let heroCms = null;
+  let operatingHours = "6 PM - 9 PM";
+  try {
+    const [hoursRes, cmsRes] = await Promise.all([
+      fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/v1/operating-hours/display`).then(r => r.json()),
+      fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/v1/cms/hero`).then(r => r.json()),
+    ]);
+    if (hoursRes?.displayText) operatingHours = hoursRes.displayText;
+    if (cmsRes) heroCms = cmsRes[locale] || cmsRes.en || null;
+  } catch (err) {
+    console.error("Failed to fetch Hero data", err);
+  }
+
   // Fetch Missions CMS
   let missionsHeader = { heading: t("bundlesTitle"), subheading: t("bundlesLine") };
   try {
@@ -33,9 +47,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   } catch (err) {}
 
   return (
-    <main className="w-full bg-wa-bg relative overflow-x-hidden">
+    <main id="main-content" className="w-full bg-wa-bg relative overflow-x-hidden">
       <Navbar />
-      <Hero locale={locale} />
+      <Hero locale={locale} hours={operatingHours} cms={heroCms} />
 
       {/* ⭐ GAME SHOWCASE (Animated) ⭐ */}
       <section id="games" className="bg-wa-black py-20 border-y border-wa-green/10">

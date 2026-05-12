@@ -126,7 +126,7 @@ export const Step3Date: React.FC<Step3DateProps> = ({
           )}
         </div>
 
-        <div className="wa-calendar-container p-4 bg-wa-text/5 border border-wa-text/10 rounded-sm w-full flex justify-center">
+        <div className="wa-calendar-container p-2 sm:p-4 bg-wa-text/5 border border-wa-text/10 rounded-sm w-full flex justify-center">
           <DayPicker
             mode="single"
             selected={dateValue}
@@ -257,12 +257,17 @@ export const Step3Date: React.FC<Step3DateProps> = ({
         /* Responsive cell size for mobile */
         @media (max-width: 400px) {
           .wa-day-picker {
-            --rdp-cell-size: 34px;
+            --rdp-cell-size: 44px;
+          }
+        }
+        @media (max-width: 380px) {
+          .wa-day-picker {
+            --rdp-cell-size: 40px;
           }
         }
         @media (max-width: 350px) {
           .wa-day-picker {
-            --rdp-cell-size: 30px;
+            --rdp-cell-size: 36px;
           }
         }
 

@@ -2,12 +2,14 @@
 
 import React from "react";
 import { WAButton } from "../UI/WAButton";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { useBooking } from "@/contexts/BookingContext";
 
 interface HeroProps {
   locale: string;
+  hours?: string;
+  cms?: any;
 }
 
 const MARQUEE_ITEMS = [
@@ -21,12 +23,13 @@ const MARQUEE_ITEMS = [
   "BIRTHDAY OPS",
 ];
 
-export const Hero: React.FC<HeroProps> = ({ locale }) => {
+import Image from "next/image";
+
+export const Hero: React.FC<HeroProps> = ({ locale, hours = "6 PM - 9 PM", cms }) => {
   const t = useTranslations("Landing.Hero");
   const isRtl = locale === "ar";
   const { openWizard } = useBooking();
-  const [operatingHours, setOperatingHours] = React.useState("6 PM - 9 PM");
-  const [cms, setCms] = React.useState<any>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -35,36 +38,11 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
   });
 
   // Parallax layers
-  const yBg = useTransform(scrollYProgress, [0, 1], [0, 200]);
-  const yContent = useTransform(scrollYProgress, [0, 1], [0, -100]);
-  const yCard = useTransform(scrollYProgress, [0, 1], [0, 50]);
+  const yBg = useTransform(scrollYProgress, [0, 1], prefersReducedMotion ? [0, 0] : [0, 200]);
+  const yContent = useTransform(scrollYProgress, [0, 1], prefersReducedMotion ? [0, 0] : [0, -100]);
+  const yCard = useTransform(scrollYProgress, [0, 1], prefersReducedMotion ? [0, 0] : [0, 50]);
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 1], [1, 0.95]);
-
-  React.useEffect(() => {
-    const fetchHours = async () => {
-      try {
-        const res = await fetch('/api/v1/operating-hours/display');
-        const data = await res.json();
-        if (data.displayText) setOperatingHours(data.displayText);
-      } catch (err) {
-        console.error("Hero: Failed to fetch hours", err);
-      }
-    };
-    
-    const fetchCms = async () => {
-      try {
-        const res = await fetch('/api/v1/cms/hero');
-        const data = await res.json();
-        setCms(isRtl ? data.ar : data.en);
-      } catch (err) {
-        console.error("Hero: Failed to fetch CMS", err);
-      }
-    };
-
-    fetchHours();
-    fetchCms();
-  }, [isRtl]);
 
   const getCmsValue = (key: string, fallback: string) => cms?.[key] || fallback;
 
@@ -111,7 +89,7 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
               {getCmsValue('location_badge', t("kicker"))}
             </span>
             <span className="wa-tag wa-tag--neutral font-mono text-[10px]">
-              {operatingHours}
+              {hours}
             </span>
           </motion.div>
 
@@ -196,10 +174,12 @@ export const Hero: React.FC<HeroProps> = ({ locale }) => {
           <div className="wa-panel border border-wa-line absolute inset-0 overflow-hidden"
             style={{ clipPath: "polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))" }}>
             {/* Immersive Action Shot */}
-            <img 
+            <Image 
               src={getCmsValue('hero_image_url', "https://images.unsplash.com/photo-1552072092-7f9b8d63efcb?auto=format&fit=crop&w=1200")} 
               alt="Arena Tactical" 
-              className="absolute inset-0 w-full h-full object-cover"
+              fill
+              priority
+              className="object-cover"
             />
           </div>
         </motion.div>

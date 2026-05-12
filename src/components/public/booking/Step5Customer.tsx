@@ -63,65 +63,83 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* 1. Name */}
         <div className="flex flex-col gap-2">
-          <label className="text-wa-text/60 font-mono text-[10px] uppercase tracking-widest flex items-center gap-2">
+          <label htmlFor="customer_name" className="text-wa-text/60 font-mono text-[10px] uppercase tracking-widest flex items-center gap-2">
             <User className="w-3 h-3" />
             {t("fullName")} *
           </label>
           <input
+            id="customer_name"
+            type="text"
+            autoComplete="name"
             {...register("customer_name")}
+            aria-invalid={!!errors.customer_name}
+            aria-describedby={errors.customer_name ? "name-error" : undefined}
             className={`bg-wa-text/5 border-2 p-4 text-wa-text outline-none transition-all ${
               errors.customer_name ? "border-wa-error/50" : "border-wa-text/10 focus:border-wa-green shadow-[inset_0_0_10px_rgba(255,255,255,0.02)]"
             }`}
             placeholder="e.g. Ahmed Hassan"
           />
           {errors.customer_name && (
-            <span className="text-wa-error text-[10px] uppercase font-mono">{errors.customer_name.message}</span>
+            <span id="name-error" role="alert" className="text-wa-error text-xs font-mono">{errors.customer_name.message}</span>
           )}
         </div>
 
         {/* 2. Phone */}
         <div className="flex flex-col gap-2">
-          <label className="text-wa-text/60 font-mono text-[10px] uppercase tracking-widest flex items-center gap-2">
+          <label htmlFor="customer_phone" className="text-wa-text/60 font-mono text-[10px] uppercase tracking-widest flex items-center gap-2">
             <Phone className="w-3 h-3" />
             {t("phone")} *
           </label>
           <input
+            id="customer_phone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
             {...register("customer_phone")}
+            aria-invalid={!!errors.customer_phone}
+            aria-describedby={errors.customer_phone ? "phone-error" : undefined}
             className={`bg-wa-text/5 border-2 p-4 text-wa-text outline-none transition-all ${
               errors.customer_phone ? "border-wa-error/50" : "border-wa-text/10 focus:border-wa-green shadow-[inset_0_0_10px_rgba(255,255,255,0.02)]"
             }`}
             placeholder="01xxxxxxxxx"
           />
           {errors.customer_phone && (
-            <span className="text-wa-error text-[10px] uppercase font-mono">{errors.customer_phone.message}</span>
+            <span id="phone-error" role="alert" className="text-wa-error text-xs font-mono">{errors.customer_phone.message}</span>
           )}
         </div>
 
         {/* 3. Email */}
         <div className="flex flex-col gap-2">
-          <label className="text-wa-text/60 font-mono text-[10px] uppercase tracking-widest flex items-center gap-2">
+          <label htmlFor="customer_email" className="text-wa-text/60 font-mono text-[10px] uppercase tracking-widest flex items-center gap-2">
             <Mail className="w-3 h-3" />
             {t("email")} ({t("optional")})
           </label>
           <input
+            id="customer_email"
+            type="email"
+            autoComplete="email"
             {...register("customer_email")}
+            aria-invalid={!!errors.customer_email}
+            aria-describedby={errors.customer_email ? "email-error" : undefined}
             className={`bg-wa-text/5 border-2 p-4 text-wa-text outline-none transition-all border-wa-text/10 focus:border-wa-green shadow-[inset_0_0_10px_rgba(255,255,255,0.02)] ${
               errors.customer_email ? "border-wa-error/50" : ""
             }`}
             placeholder="email@example.com"
           />
           {errors.customer_email && (
-            <span className="text-wa-error text-[10px] uppercase font-mono">{errors.customer_email.message}</span>
+            <span id="email-error" role="alert" className="text-wa-error text-xs font-mono">{errors.customer_email.message}</span>
           )}
         </div>
 
         {/* 4. Notes */}
         <div className="flex flex-col gap-2 md:col-span-2">
-          <label className="text-wa-text/60 font-mono text-[10px] uppercase tracking-widest flex items-center gap-2">
+          <label htmlFor="customer_notes" className="text-wa-text/60 font-mono text-[10px] uppercase tracking-widest flex items-center gap-2">
             <FileText className="w-3 h-3" />
             {t("specialRequests")} ({t("optional")})
           </label>
           <textarea
+            id="customer_notes"
+            autoComplete="off"
             {...register("customer_notes")}
             rows={3}
             className="bg-wa-text/5 border-2 border-wa-text/10 p-4 text-wa-text outline-none focus:border-wa-green transition-all shadow-[inset_0_0_10px_rgba(255,255,255,0.02)]"
@@ -131,22 +149,25 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
       </div>
 
       <div className="flex flex-col gap-4 py-6 border-y border-wa-gray/20">
-        <label className="flex items-start gap-4 cursor-pointer group">
           <div className="relative mt-1">
             <input
+              id="terms_agreed"
               type="checkbox"
               {...register("terms_agreed")}
+              aria-invalid={!!errors.terms_agreed}
+              aria-describedby={errors.terms_agreed ? "terms-error" : undefined}
               className="peer sr-only"
             />
+        <label htmlFor="terms_agreed" className="flex items-start gap-4 cursor-pointer group">
             <div className={`w-5 h-5 border-2 transition-all group-hover:border-wa-green ${errors.terms_agreed ? "border-wa-error" : "border-wa-text/40 peer-checked:bg-wa-green peer-checked:border-wa-green"}`} />
             <CheckCircle2 className="absolute top-0 left-0 w-5 h-5 text-wa-bg opacity-0 peer-checked:opacity-100 transition-opacity" />
-          </div>
           <p className="text-xs text-wa-text/60 leading-relaxed font-barlow">
             {t("termsNote")} <a href="#" className="text-wa-green underline hover:text-wa-orange">{t("rules")}</a> {t("and")} <a href="#" className="text-wa-green underline hover:text-wa-orange">{t("cancelPolicy")}</a>.
           </p>
         </label>
+          </div>
         {errors.terms_agreed && (
-          <span className="text-wa-error text-[10px] uppercase font-mono">{errors.terms_agreed.message}</span>
+          <span id="terms-error" role="alert" className="text-wa-error text-xs font-mono">{errors.terms_agreed.message}</span>
         )}
       </div>
     </form>

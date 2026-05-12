@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, X, Trash2, GripVertical, Image as ImageIcon, Save, Check } from "lucide-react";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
+import Image from "next/image";
 import { supabaseBrowser } from "@/lib/db/supabase-browser";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
@@ -246,7 +247,9 @@ export default function CMSContentPage() {
               <label className="text-xs uppercase text-wa-green/80">Hero Background Image</label>
               <div className="flex gap-4 items-center">
                 {cmsData.hero?.hero_image_url?.value_en ? (
-                  <img src={cmsData.hero.hero_image_url.value_en} alt="Hero" className="h-20 w-40 object-cover rounded" />
+                  <div className="relative h-20 w-40 rounded overflow-hidden">
+                    <Image unoptimized fill src={cmsData.hero.hero_image_url.value_en} alt="Hero" className="object-cover" />
+                  </div>
                 ) : <div className="h-20 w-40 bg-wa-text/10 rounded flex items-center justify-center text-xs">No Image</div>}
                 
                 <label className="bg-wa-green/10 text-wa-green px-4 py-2 rounded cursor-pointer hover:bg-wa-green/20">
@@ -403,7 +406,7 @@ export default function CMSContentPage() {
                 <SortableContext items={galleryImages.map(s => s.id)}>
                   {galleryImages.map((img) => (
                     <SortableItemDiv key={img.id} id={img.id} className="relative border border-wa-green/20 rounded overflow-hidden aspect-square group bg-wa-bg">
-                      <img src={img.url} className={`w-full h-full object-cover transition-all ${!img.is_active ? 'opacity-30 grayscale' : ''}`} alt="" />
+                      <Image unoptimized fill src={img.url} className={`object-cover transition-all ${!img.is_active ? 'opacity-30 grayscale' : ''}`} alt="" />
                       
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2 gap-2">
                          <input type="text" defaultValue={img.alt_en} onBlur={e => fetch('/api/v1/admin/cms/gallery', {method: 'POST', body: JSON.stringify([{id: img.id, alt_en: e.target.value}])})} className="bg-black/50 border border-white/20 p-1 text-xs text-white" placeholder="Alt EN" />

@@ -70,7 +70,6 @@ export const POST = requirePermission(async (request: Request, { user }) => {
     const requestedSlots = calculateOccupiedSlots(data.start_time, totalDuration);
 
     // ✅ CRITICAL PRE-CHECK: Prevent double bookings across ALL occupied slots
-    console.log(`Checking availability for slots: ${requestedSlots.join(", ")}`);
     
     // Check if any booking occupies these slots
     const { data: existingBookings, error: checkError } = await supabaseService
@@ -119,7 +118,6 @@ export const POST = requirePermission(async (request: Request, { user }) => {
       );
     }
     
-    console.log("✅ All requested slots are available, creating booking...");
 
     // Call the fn_create_booking RPC
     const { data: bookingResult, error: rpcError } = await supabaseService.rpc(

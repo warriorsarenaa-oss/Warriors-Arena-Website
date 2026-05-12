@@ -43,6 +43,20 @@
   [lang="ar"] body {
     font-family: var(--font-cairo), sans-serif;
   }
+
+  :focus { outline: none; }
+
+  :focus-visible {
+    outline: 2px solid var(--wa-green);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .wa-input:focus-visible {
+    outline: none;
+    border-color: var(--wa-green);
+    box-shadow: 0 0 0 3px rgba(143,224,74, 0.25);
+  }
 }
 
 @layer components {
@@ -322,5 +336,21 @@
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: var(--wa-green);
     border-radius: 10px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    .wa-anim-grid,
+    .wa-scanline,
+    .wa-noise::before {
+      animation: none !important;
+    }
   }
 }

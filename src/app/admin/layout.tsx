@@ -1,37 +1,12 @@
 import "../globals.css";
-import { Archivo_Black, Barlow_Condensed, Cairo, IBM_Plex_Mono } from "next/font/google";
-
-const archivo = Archivo_Black({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-archivo",
-  display: "swap",
-});
-
-const barlow = Barlow_Condensed({
-  weight: ["300", "400", "500", "600", "700", "800"],
-  subsets: ["latin"],
-  variable: "--font-barlow",
-  display: "swap",
-});
-
-const cairo = Cairo({
-  weight: ["400", "600", "700", "800", "900"],
-  subsets: ["arabic", "latin"],
-  variable: "--font-cairo",
-  display: "swap",
-});
-
-const plex = IBM_Plex_Mono({
-  weight: ["400", "500", "600"],
-  subsets: ["latin"],
-  variable: "--font-mono",
-  display: "swap",
-});
+import { archivo, barlow, cairo, plex } from '@/lib/fonts';
 
 export const metadata = {
   title: "Warriors Arena | Admin Console",
   description: "Secure Administrative Interface",
+  icons: {
+    icon: '/logo.jpg',
+  }
 };
 
 export default function AdminRootLayout({
@@ -42,6 +17,7 @@ export default function AdminRootLayout({
   return (
     <html
       lang="en"
+      dir="ltr"
       className={`${archivo.variable} ${barlow.variable} ${cairo.variable} ${plex.variable} h-full antialiased`}
       suppressHydrationWarning
     >

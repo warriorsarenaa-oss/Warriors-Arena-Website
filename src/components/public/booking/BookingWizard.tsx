@@ -35,13 +35,19 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
   const [showConflictModal, setShowConflictModal] = useState(false);
   const [successData, setSuccessData] = useState<any>(null);
   const [isStep5Valid, setIsStep5Valid] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // 1. Sync Step History
   const goToStep = (step: number) => {
-    updateDraft({ currentStep: step });
-    if (typeof window !== "undefined" && window.location.pathname.endsWith("/book")) {
-        window.history.pushState({ step }, "", `#step=${step}`);
-    }
+    setIsNavigating(true);
+    // Use timeout to allow UI to show loading state
+    setTimeout(() => {
+      updateDraft({ currentStep: step });
+      if (typeof window !== "undefined" && window.location.pathname.endsWith("/book")) {
+          window.history.pushState({ step }, "", `#step=${step}`);
+      }
+      setIsNavigating(false);
+    }, 300);
   };
 
   // Skip Step 1 if game is already selected via seed
@@ -164,7 +170,6 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
       return;
     }
 
-    console.log("[BOOKING_DEBUG] Sending payload:", payload);
 
     try {
       const res = await fetch("/api/v1/bookings", {
@@ -201,7 +206,6 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
       const totalPrice = data.total_price;
       track("Purchase", { value: totalPrice, currency: "EGP", content_ids: [data.booking_code] });
       
-      console.log("[BOOKING_DEBUG] Success Response:", data);
       
       setSuccessData({
         ...data,
@@ -260,9 +264,9 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
               goToStep(draft.currentStep + 1);
             }
           }}
-          isNextDisabled={!isStepValid}
+          isNextDisabled={!isStepValid || isNavigating}
           nextLabel={draft.currentStep === 5 ? t("confirm") : undefined}
-          isSubmitting={isSubmitting}
+          isSubmitting={isSubmitting || isNavigating}
         >
           {draft.currentStep === 1 && (
             <Step1Game 

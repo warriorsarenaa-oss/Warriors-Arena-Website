@@ -125,11 +125,8 @@ export async function GET(request: Request) {
     console.error("[availability] direct bookings query failed:", bookingsError);
   }
 
-  console.log(`Found ${allBookings?.length || 0} existing bookings for ${dateStr}`);
   if (allBookings && allBookings.length > 0) {
-    console.log("Existing bookings:");
     allBookings.forEach(b => {
-      console.log(`  - ${b.start_time}: ${b.booking_code} (${b.status}) - ${b.customer_name}`);
     });
   }
 
@@ -200,9 +197,7 @@ export async function GET(request: Request) {
     else if (isBooked) reason = "booked";
     else if ((mins + 60) > closeMins) reason = "closing";
 
-    console.log(`Slot ${slotTime}: ${isBooked ? "❌ BOOKED" : "✅ AVAILABLE"} (${bookingsForSlot.length} bookings)`);
     if (isBooked) {
-      console.log(`  Booked by: ${bookingsForSlot.map(b => b.booking_code).join(", ")}`);
     }
 
     slots.push({
@@ -220,9 +215,6 @@ export async function GET(request: Request) {
     });
   }
 
-  console.log(`Generated ${slots.length} slots`);
-  console.log(`Available: ${slots.filter(s => !s.is_booked).length}`);
-  console.log(`Booked: ${slots.filter(s => s.is_booked).length}`);
 
   return NextResponse.json({
     slots,

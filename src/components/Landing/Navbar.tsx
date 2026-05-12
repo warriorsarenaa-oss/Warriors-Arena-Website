@@ -75,9 +75,10 @@ export const Navbar: React.FC = () => {
           <button
             type="button"
             onClick={toggleLocale}
+            aria-label={locale === 'en' ? 'Switch to Arabic' : 'Switch to English'}
             className="flex items-center gap-1.5 border border-wa-line text-wa-text-dim px-3 py-2 text-[12px] font-mono uppercase tracking-wider hover:border-wa-green hover:text-wa-green transition-colors bg-transparent cursor-pointer"
           >
-            <Globe className="w-3.5 h-3.5" />
+            <Globe aria-hidden="true" className="w-3.5 h-3.5" />
             {locale === "en" ? "AR" : "EN"}
           </button>
 
@@ -89,17 +90,20 @@ export const Navbar: React.FC = () => {
           {/* Mobile hamburger */}
           <button
             type="button"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
             className="md:hidden text-wa-green p-2 bg-transparent border-0 cursor-pointer"
             onClick={() => setMenuOpen(!menuOpen)}
           >
-            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {menuOpen ? <X aria-hidden="true" className="w-5 h-5" /> : <Menu aria-hidden="true" className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-wa-line bg-wa-bg/98 px-6 py-8 flex flex-col gap-6">
+        <div id="mobile-menu" className="md:hidden border-t border-wa-line bg-wa-bg/98 px-6 py-8 flex flex-col gap-6">
           {navLinks.map((link) => (
             <a
               key={link.label}
