@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { WAPanel } from "@/components/UI/WAPanel";
