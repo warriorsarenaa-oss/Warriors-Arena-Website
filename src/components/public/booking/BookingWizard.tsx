@@ -138,15 +138,17 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
 
     // Normalize phone number (remove spaces, ensure +20 if needed)
     const normalizePhone = (phone: string): string => {
-      let cleaned = phone.replace(/[\s\-\(\)]/g, "");
-      if (!cleaned.startsWith("+")) {
-        if (cleaned.startsWith("0")) {
-          cleaned = "+20" + cleaned.substring(1);
-        } else {
-          cleaned = "+20" + cleaned;
-        }
+      if (!phone) return "";
+      let cleaned = phone.replace(/[\s\-\(\)\+]/g, "");
+      // If it starts with 20, remove it to normalize
+      if (cleaned.startsWith("20") && cleaned.length > 10) {
+        cleaned = cleaned.substring(2);
       }
-      return cleaned;
+      // If it starts with 0, remove it
+      if (cleaned.startsWith("0")) {
+        cleaned = cleaned.substring(1);
+      }
+      return "+20" + cleaned;
     };
 
     // Construct clean payload matching API schema
@@ -158,17 +160,25 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
       player_count: draft.player_count,
       special_mission_id: draft.special_mission_id || null,
       mission_additional_price: draft.mission_additional_price || 0,
-      customer_name: formData.customer_name?.trim(),
-      customer_phone: normalizePhone(formData.customer_phone),
-      customer_email: formData.customer_email?.trim() || null, 
-      customer_notes: formData.customer_notes?.trim() || null,
+      customer_name: (formData.customer_name || draft.customer_name || "").trim(),
+      customer_phone: normalizePhone(formData.customer_phone || draft.customer_phone || ""),
+      customer_email: (formData.customer_email || draft.customer_email || "").trim() || null, 
+      customer_notes: (formData.customer_notes || draft.customer_notes || "").trim() || null,
       whatsapp_confirmed: true,
     };
 
     // Pre-flight check
-    if (!payload.game_id || !payload.date || !payload.start_time || !payload.customer_name || !payload.customer_phone) {
-      console.error("[BOOKING_DEBUG] Missing required fields in payload:", payload);
-      setSubmissionError("Missing required booking information. Please go back and check your selection.");
+    // Pre-flight check with detailed logging
+    const missingFields = [];
+    if (!payload.game_id) missingFields.push("Game");
+    if (!payload.date) missingFields.push("Date");
+    if (!payload.start_time) missingFields.push("Time");
+    if (!payload.customer_name) missingFields.push("Name");
+    if (!payload.customer_phone) missingFields.push("Phone");
+
+    if (missingFields.length > 0) {
+      console.error("[BOOKING_DEBUG] Missing fields:", missingFields, "Payload:", payload);
+      setSubmissionError(`Missing required info: ${missingFields.join(", ")}. Please go back and check Step 5.`);
       setIsSubmitting(false);
       return;
     }

@@ -92,6 +92,18 @@ export const Step6Summary: React.FC<Step6SummaryProps> = ({
           value={`${totalAmount} EGP`}
           highlight
         />
+
+        {/* Divider */}
+        <div className="h-px bg-wa-gray/20 my-2" />
+
+        <SummaryRow
+          label={locale === "ar" ? "الاسم" : "Name"}
+          value={bookingData.customer_name || "—"}
+        />
+        <SummaryRow
+          label={locale === "ar" ? "الموبايل" : "Phone"}
+          value={bookingData.customer_phone || "—"}
+        />
       </div>
 
       {/* ── Step 1: WhatsApp Confirmation (mandatory) ── */}

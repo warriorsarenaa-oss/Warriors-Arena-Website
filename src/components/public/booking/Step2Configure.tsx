@@ -53,7 +53,7 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
           {t("chooseDuration")}
         </label>
         <div className="grid grid-cols-2 gap-4">
-          {(pricing || []).map((p) => {
+          {[...(pricing || [])].sort((a, b) => a.duration_minutes - b.duration_minutes).map((p) => {
             const isSelected = duration === p.duration_minutes;
             return (
               <button
