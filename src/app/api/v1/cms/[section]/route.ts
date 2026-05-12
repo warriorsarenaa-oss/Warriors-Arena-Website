@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseService } from "@/lib/db/supabase-service";
+import { createSupabaseService } from "@/lib/db/supabase-service";
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(
   request: NextRequest,
@@ -7,8 +10,9 @@ export async function GET(
 ) {
   try {
     const { section } = await params;
+    const supabase = createSupabaseService();
     
-    const { data, error } = await supabaseService
+    const { data, error } = await supabase
       .from('cms_content')
       .select('*')
       .eq('section', section);
@@ -26,7 +30,12 @@ export async function GET(
       result.ar[item.key] = item.value_ar || item.value_en; // Fallback to EN if AR is missing
     });
     
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+      }
+    });
   } catch (error) {
     console.error(`[PUBLIC_CMS_${(await params).section.toUpperCase()}_GET]`, error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

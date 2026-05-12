@@ -22,6 +22,7 @@ export interface BookingDraft {
   special_mission_id?: string | null;
   mission_additional_price?: number;
   currentStep: number;
+  whatsapp_confirmed: boolean;
 }
 
 const STORAGE_KEY = "wa_booking_draft";
@@ -39,6 +40,7 @@ const DEFAULT_DRAFT: BookingDraft = {
   special_mission_id: null,
   mission_additional_price: 0,
   currentStep: 1,
+  whatsapp_confirmed: false,
 };
 
 export function useBookingDraft() {

@@ -70,7 +70,7 @@ export const StepMission: React.FC<StepMissionProps> = ({
             onSelect(null);
             onNext();
           }}
-          className="text-left rtl:text-right group outline-none"
+          className="text-start group outline-none"
         >
           <WAPanel
             hot={!selectedMissionId}
@@ -117,7 +117,7 @@ export const StepMission: React.FC<StepMissionProps> = ({
                 onSelect(mission);
                 onNext();
               }}
-              className="text-left rtl:text-right group outline-none"
+              className="text-start group outline-none"
             >
               <WAPanel
                 hot={isSelected}

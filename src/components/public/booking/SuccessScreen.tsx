@@ -67,11 +67,26 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({
       if (!response.ok) throw new Error('Failed to download receipt');
       
       const blob = await response.blob();
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `WA-${bookingData.booking_code}.pdf`;
-      link.click();
-      URL.revokeObjectURL(link.href);
+      const blobUrl = URL.createObjectURL(blob);
+
+      // Detect iOS
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+      if (isIOS) {
+        // iOS Safari: Open in new tab (iOS can't download blobs directly from scripts effectively)
+        window.open(blobUrl, '_blank');
+      } else {
+        // Android + Desktop: Trigger download
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `WA-${bookingData.booking_code}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      
+      // Clean up blob URL after a delay to ensure the browser has time to handle it
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
     } catch (error) {
       console.error('Receipt download failed:', error);
       alert("Failed to download receipt. Please try again later.");

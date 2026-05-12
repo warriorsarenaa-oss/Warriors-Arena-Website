@@ -12,13 +12,22 @@ if (typeof window !== "undefined") {
   throw new Error("CRITICAL: supabase-service client imported in browser context.");
 }
 
-export const supabaseService = createClient(
-  env.NEXT_PUBLIC_SUPABASE_URL,
-  env.SUPABASE_SERVICE_ROLE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
-);
+export function createSupabaseService() {
+  return createClient(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+      global: {
+        headers: {
+          'Cache-Control': 'no-store',
+        }
+      }
+    }
+  );
+}
+
+export const supabaseService = createSupabaseService();

@@ -1,11 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslations } from "next-intl";
-import { User, Phone, Mail, FileText, CheckCircle2 } from "lucide-react";
+import { User, Phone, Mail, FileText, CheckCircle2, X, AlertTriangle } from "lucide-react";
+import { WAPanel } from "@/components/UI/WAPanel";
+import { WAButton } from "@/components/UI/WAButton";
 
 const EGYPT_PHONE_REGEX = /^(\+20|0)?1[0125][0-9]{8}$/;
 
@@ -36,9 +38,12 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
 }) => {
   const t = useTranslations("Booking.Step5");
 
+  const [showPolicy, setShowPolicy] = useState(false);
+
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isValid },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -57,6 +62,8 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
   const onFormSubmit = (data: FormData) => {
     onSubmit(data);
   };
+
+  const isChecked = watch("terms_agreed");
 
   return (
     <form id="booking-form" onSubmit={handleSubmit(onFormSubmit)} className="flex flex-col gap-8">
@@ -149,27 +156,85 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
       </div>
 
       <div className="flex flex-col gap-4 py-6 border-y border-wa-gray/20">
-          <div className="relative mt-1">
-            <input
-              id="terms_agreed"
-              type="checkbox"
-              {...register("terms_agreed")}
-              aria-invalid={!!errors.terms_agreed}
-              aria-describedby={errors.terms_agreed ? "terms-error" : undefined}
-              className="peer sr-only"
-            />
-        <label htmlFor="terms_agreed" className="flex items-start gap-4 cursor-pointer group">
-            <div className={`w-5 h-5 border-2 transition-all group-hover:border-wa-green ${errors.terms_agreed ? "border-wa-error" : "border-wa-text/40 peer-checked:bg-wa-green peer-checked:border-wa-green"}`} />
-            <CheckCircle2 className="absolute top-0 left-0 w-5 h-5 text-wa-bg opacity-0 peer-checked:opacity-100 transition-opacity" />
-          <p className="text-xs text-wa-text/60 leading-relaxed font-barlow">
-            {t("termsNote")} <a href="#" className="text-wa-green underline hover:text-wa-orange">{t("rules")}</a> {t("and")} <a href="#" className="text-wa-green underline hover:text-wa-orange">{t("cancelPolicy")}</a>.
-          </p>
-        </label>
-          </div>
+        <div className="relative">
+          <input
+            id="terms_agreed"
+            type="checkbox"
+            {...register("terms_agreed")}
+            className="peer sr-only"
+          />
+          <label htmlFor="terms_agreed" className="flex items-start gap-4 cursor-pointer group select-none">
+            {/* Custom checkbox box */}
+            <div className={`
+              w-6 h-6 border-2 shrink-0 mt-0.5 flex items-center justify-center transition-all duration-200
+              ${isChecked 
+                ? "border-wa-green bg-wa-green shadow-[0_0_10px_rgba(0,255,65,0.3)]" 
+                : "border-wa-text/20 group-hover:border-wa-green/50 bg-wa-text/5"
+              }
+              ${errors.terms_agreed ? "border-wa-error" : ""}
+            `}>
+              {isChecked && (
+                <CheckCircle2 className="w-4 h-4 text-wa-bg" />
+              )}
+            </div>
+
+            <p className="text-xs text-wa-text/60 leading-relaxed font-barlow">
+              {t("termsNote")} 
+              {" "}
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowPolicy(true);
+                }}
+                className="text-wa-green underline hover:text-wa-orange transition-colors"
+              >
+                {t("cancelPolicy")}
+              </button>.
+            </p>
+          </label>
+        </div>
         {errors.terms_agreed && (
-          <span id="terms-error" role="alert" className="text-wa-error text-xs font-mono">{errors.terms_agreed.message}</span>
+          <span id="terms-error" role="alert" className="text-wa-error text-[10px] font-mono uppercase tracking-widest mt-1">
+            {errors.terms_agreed.message}
+          </span>
         )}
       </div>
+
+      {/* Cancellation Policy Popup */}
+      {showPolicy && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-wa-black/95 backdrop-blur-md">
+          <WAPanel hot className="max-w-md w-full p-8 flex flex-col items-center text-center gap-6 relative">
+            <button 
+              onClick={() => setShowPolicy(false)}
+              className="absolute top-4 right-4 text-wa-text/40 hover:text-wa-green transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="w-16 h-16 bg-wa-orange/20 rounded-full flex items-center justify-center border-2 border-wa-orange/50">
+              <AlertTriangle className="w-8 h-8 text-wa-orange" />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-archivo text-wa-orange uppercase tracking-widest mb-4">
+                {t("cancelPolicy")}
+              </h3>
+              <p className="text-wa-text/80 font-barlow leading-relaxed">
+                Before 6 hours of the booked slot only.
+              </p>
+            </div>
+
+            <WAButton 
+              variant="orange" 
+              className="w-full mt-2"
+              onClick={() => setShowPolicy(false)}
+            >
+              UNDERSTOOD
+            </WAButton>
+          </WAPanel>
+        </div>
+      )}
     </form>
   );
 };

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { supabaseService } from "@/lib/db/supabase-service";
+import { createSupabaseService } from "@/lib/db/supabase-service";
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 import { formatCairoDate, cairoNow } from "@/lib/time/cairo";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { isBefore, addDays, parseISO, isValid } from "date-fns";
@@ -71,7 +74,8 @@ export async function GET(request: Request) {
   //    Priority: exact_date > day_of_week > default  (mirrors fn_resolve_operating_hours)
   const dayOfWeek = requestedDate.getDay(); // 0 = Sunday, matches PostgreSQL EXTRACT(DOW)
 
-  const { data: hoursRows, error: hoursError } = await supabaseService
+  const supabase = createSupabaseService();
+  const { data: hoursRows, error: hoursError } = await supabase
     .from("operating_hours")
     .select("scope, open_time, close_time, is_closed, exact_date, day_of_week")
     .in("scope", ["exact_date", "day_of_week", "default"]);
@@ -115,7 +119,7 @@ export async function GET(request: Request) {
   }
 
   // 4. Load ALL existing bookings for this date (CRITICAL FIX)
-  const { data: allBookings, error: bookingsError } = await supabaseService
+  const { data: allBookings, error: bookingsError } = await supabase
     .from("bookings")
     .select("id, booking_code, start_time, duration_minutes, status, customer_name, occupied_slots")
     .eq("booking_date", dateStr)
@@ -216,13 +220,11 @@ export async function GET(request: Request) {
   }
 
 
-  return NextResponse.json({
-    slots,
-    meta: {
-      date: dateStr,
-      total_slots: slots.length,
-      available: slots.filter(s => !s.is_booked).length,
-      booked: slots.filter(s => s.is_booked).length,
+    }
+  }, {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      'Pragma': 'no-cache',
     }
   });
 }

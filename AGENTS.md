@@ -55,6 +55,7 @@ These cannot be violated under any circumstances. If a request would require vio
 - Default operating hours: 6:00 PM – 9:00 PM Cairo (six 30-min slots).
 - 60-minute booking consumes two consecutive slots.
 - **Slot exclusivity is venue-wide, not per-game.** If 7:00 PM is booked for any game, no other game can be booked at 7:00 PM.
+- **Mandatory WhatsApp Confirmation:** All online bookings must pass a client-side "WhatsApp Gate". The booking is only submitted to the database after the user clicks "Confirm on WhatsApp" and acknowledges they have sent the message. This ensures every database entry is backed by a direct communication channel.
 - Database guarantee: unique partial index on `booking_slots(slot_date, slot_time) WHERE released = false`.
 
 ### Concurrency

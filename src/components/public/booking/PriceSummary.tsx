@@ -37,18 +37,18 @@ export const PriceSummary: React.FC<PriceSummaryProps> = ({
   
   if (compact) {
     return (
-      <div className="bg-wa-panel border-t border-wa-green p-4 flex justify-between items-center w-full">
+      <div className="bg-wa-bg/95 backdrop-blur-md border-t border-wa-green/30 p-3 sm:p-4 flex justify-between items-center w-full">
         <div className="flex flex-col">
-          <span className="text-[10px] text-wa-text/40 font-mono uppercase tracking-tighter">
+          <span className="text-[9px] text-wa-text/40 font-mono uppercase tracking-tighter">
             {gameName || "—"} · {pricingType === 'ammo' ? `${ammoCount} BULLETS` : `${duration || "—"} MIN`}
           </span>
-          <span className="text-sm font-archivo text-wa-text uppercase">
+          <span className="text-xs sm:text-sm font-archivo text-wa-text uppercase truncate max-w-[200px]">
             {playerCount} {t("players")} {missionName && `+ ${missionName}`}
           </span>
         </div>
-        <div className="text-right">
-          <div className="text-xs text-wa-text/40 font-mono uppercase">{t("total")}</div>
-          <div className="text-lg font-archivo text-wa-green leading-none">
+        <div className="text-end">
+          <div className="text-[10px] text-wa-text/40 font-mono uppercase">{t("total")}</div>
+          <div className="text-base sm:text-lg font-archivo text-wa-green leading-none">
             {total} <small className="text-[10px]">EGP</small>
           </div>
         </div>
@@ -67,7 +67,7 @@ export const PriceSummary: React.FC<PriceSummaryProps> = ({
         <div className="flex flex-col gap-3">
           <div className="flex justify-between items-start">
             <span className="text-wa-text/60 text-sm font-barlow">{t("game")}</span>
-            <span className="text-wa-text font-archivo text-right">{gameName || "—"}</span>
+            <span className="text-wa-text font-archivo text-end">{gameName || "—"}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-wa-text/60 text-sm font-barlow">{pricingType === 'ammo' ? "AMMO" : t("duration")}</span>
@@ -82,7 +82,7 @@ export const PriceSummary: React.FC<PriceSummaryProps> = ({
           {missionName && (
             <div className="flex justify-between items-start pt-2 border-t border-wa-gray/10">
               <span className="text-wa-text/60 text-sm font-barlow">MISSION</span>
-              <span className="text-wa-green font-archivo text-right uppercase text-xs">{missionName}</span>
+              <span className="text-wa-green font-archivo text-end uppercase text-xs">{missionName}</span>
             </div>
           )}
         </div>

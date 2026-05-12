@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
-import { supabaseAnon } from "@/lib/db/supabase-anon";
+import { createSupabaseAnon } from "@/lib/db/supabase-anon";
 import { checkRateLimit } from "@/lib/rate-limit";
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 /**
  * PUBLIC GAMES API
@@ -24,8 +27,10 @@ export async function GET(request: Request) {
   const activeParam = searchParams.get("active"); // "true", "false", or "all"
   const activeOnly = activeParam === null || activeParam === "true";
 
+  const supabase = createSupabaseAnon();
+
   // Fetch games joined with their active pricing tiers
-  let query = supabaseAnon
+  let query = supabase
     .from("games")
     .select(`
       id,
@@ -75,5 +80,10 @@ export async function GET(request: Request) {
     };
   });
 
-  return NextResponse.json(games);
+  return NextResponse.json(games, {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      'Pragma': 'no-cache',
+    }
+  });
 }

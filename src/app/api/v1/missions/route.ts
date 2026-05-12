@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
-import { supabaseAnon } from '@/lib/db/supabase-anon';
+import { createSupabaseAnon } from '@/lib/db/supabase-anon';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const gameId = searchParams.get('game_id');
 
-    let query = supabaseAnon
+    const supabase = createSupabaseAnon();
+    let query = supabase
       .from('special_missions')
       .select('*')
       .eq('is_active', true)
@@ -22,7 +26,12 @@ export async function GET(request: Request) {
 
     if (error) throw error;
 
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+      }
+    });
   } catch (error) {
     console.error('[MISSIONS_GET_ERROR]', error);
     return NextResponse.json({ error: 'Failed to fetch missions' }, { status: 500 });

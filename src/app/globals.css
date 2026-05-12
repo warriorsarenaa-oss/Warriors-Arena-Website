@@ -103,9 +103,16 @@
   /* ================================== BUTTONS ========================== */
   .wa-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 14px 22px;
+    padding: 10px 18px;
+    @media (min-width: 640px) {
+      padding: 14px 22px;
+    }
     font-family: var(--font-archivo);
-    font-size: 14px; letter-spacing: .08em;
+    font-size: 13px;
+    @media (min-width: 640px) {
+      font-size: 14px;
+    }
+    letter-spacing: .08em;
     text-transform: uppercase;
     color: var(--wa-bg);
     background: var(--wa-green);
@@ -352,5 +359,14 @@
     .wa-noise::before {
       animation: none !important;
     }
+  }
+
+  /* Utility to hide scrollbar but keep functionality */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }

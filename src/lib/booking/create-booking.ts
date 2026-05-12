@@ -1,4 +1,4 @@
-import { supabaseService } from "@/lib/db/supabase-service";
+import { createSupabaseService } from "@/lib/db/supabase-service";
 import { logAuditAction } from "@/lib/admin/audit-log";
 import { logger } from "@/lib/log";
 
@@ -28,6 +28,7 @@ export interface CreateBookingParams {
   mission_additional_price?: number;
   source: "online" | "manual";
   created_by_user_id?: string | null;
+  whatsapp_confirmed?: boolean;
 }
 
 export interface BookingResult {
@@ -52,8 +53,10 @@ export async function createBooking(params: CreateBookingParams): Promise<Bookin
     phone: params.customer_phone 
   });
 
+  const supabase = createSupabaseService();
+
   // 1. Call Database RPC
-  const { data, error } = await supabaseService.rpc("fn_create_booking", {
+  const { data, error } = await supabase.rpc("fn_create_booking", {
     p_game_id: params.game_id,
     p_bundle_id: null,
     p_date: params.date,
@@ -110,6 +113,18 @@ export async function createBooking(params: CreateBookingParams): Promise<Bookin
     });
   } catch (auditErr) {
     logger.error("Audit log failed for successful booking", auditErr, { booking_id: result.booking_id });
+  }
+
+  // 4. Update WhatsApp Confirmation Status if true
+  if (params.whatsapp_confirmed) {
+    try {
+      await supabase
+        .from('bookings')
+        .update({ whatsapp_confirmed: true })
+        .eq('id', result.booking_id);
+    } catch (waErr) {
+      logger.error("Failed to update whatsapp_confirmed status", waErr, { booking_id: result.booking_id });
+    }
   }
 
   return {

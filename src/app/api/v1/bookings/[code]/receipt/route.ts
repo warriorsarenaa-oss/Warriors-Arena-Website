@@ -3,10 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 import { generateReceipt } from '@/lib/pdf/render-receipt';
 import { z } from 'zod';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { createSupabaseService } from '@/lib/db/supabase-service';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const revalidate = 0;
 
 const querySchema = z.object({
   phone_last4: z.string().length(4),
@@ -30,6 +31,7 @@ export async function GET(
     }
 
     const { phone_last4, locale } = parsedQuery.data;
+    const supabase = createSupabaseService();
 
     // Fetch booking
     const { data: booking, error } = await supabase
@@ -60,7 +62,8 @@ export async function GET(
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="WA-${code}.pdf"`,
-        'Cache-Control': 'public, max-age=31536000, immutable',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
       },
     });
   } catch (error) {

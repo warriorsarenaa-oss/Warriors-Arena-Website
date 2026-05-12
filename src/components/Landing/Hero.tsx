@@ -74,7 +74,7 @@ export const Hero: React.FC<HeroProps> = ({ locale, hours = "6 PM - 9 PM", cms }
       {/* Main content */}
       <motion.div 
         style={{ y: yContent, opacity, scale }}
-        className="relative z-10 max-w-[1320px] mx-auto px-6 py-16 md:py-32 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 items-center"
+        className="relative z-10 max-w-[1320px] mx-auto px-6 py-12 md:py-32 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-12 items-center"
       >
         <div>
           {/* Kicker tags */}
@@ -96,7 +96,7 @@ export const Hero: React.FC<HeroProps> = ({ locale, hours = "6 PM - 9 PM", cms }
           {/* 3-line hero headline */}
           <h1 
             className={`font-archivo uppercase mt-5 ${isRtl ? "leading-[1.15]" : "leading-[0.88]"}`} 
-            style={{ fontSize: "clamp(48px,10vw,150px)" }}
+            style={{ fontSize: "clamp(40px,10vw,150px)" }}
           >
             <motion.span
               className="block text-wa-text"
@@ -141,7 +141,7 @@ export const Hero: React.FC<HeroProps> = ({ locale, hours = "6 PM - 9 PM", cms }
 
           {/* Stat strip */}
           <motion.div
-            className="grid grid-cols-3 gap-3 md:gap-6 mt-14 max-w-[560px]"
+            className="grid grid-cols-2 xs:grid-cols-3 gap-3 md:gap-6 mt-14 max-w-[560px]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.9, ease: [0.16, 1, 0.3, 1] }}
@@ -166,7 +166,7 @@ export const Hero: React.FC<HeroProps> = ({ locale, hours = "6 PM - 9 PM", cms }
         {/* Right: tactical card placeholder */}
         <motion.div
           style={{ y: yCard }}
-          className="hidden lg:block relative h-[520px]"
+          className="relative h-[300px] sm:h-[400px] lg:h-[520px]"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}

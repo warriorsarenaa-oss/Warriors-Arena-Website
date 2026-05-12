@@ -27,6 +27,7 @@ const BookingRequestSchema = z.object({
   customer_notes: z.string().max(500).optional().nullable(),
   special_mission_id: z.string().uuid().optional().nullable(),
   mission_additional_price: z.number().optional(),
+  whatsapp_confirmed: z.boolean().optional().default(false),
   event_id: z.string().optional() // From Meta Pixel on client
 });
 
@@ -74,7 +75,8 @@ export async function POST(request: Request) {
     // 5. Call Service Layer
     const result = await createBooking({
       ...data,
-      source: "online"
+      source: "online",
+      whatsapp_confirmed: data.whatsapp_confirmed
     });
 
     if (!result.success) {

@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
-import { supabaseService } from "@/lib/db/supabase-service";
+import { createSupabaseService } from "@/lib/db/supabase-service";
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   try {
+    const supabase = createSupabaseService();
     // Fetch default hours (most common pattern)
-    const { data } = await supabaseService
+    const { data } = await supabase
       .from('operating_hours')
       .select('open_time, close_time')
       .eq('scope', 'default')
@@ -23,9 +27,18 @@ export async function GET() {
 
     const displayText = `${formatTime(data.open_time)} - ${formatTime(data.close_time)}`;
 
-    return NextResponse.json({ displayText });
+    return NextResponse.json({ displayText }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+      }
+    });
   } catch (error) {
     console.error("[OPERATING_HOURS_DISPLAY_GET_ERROR]", error);
-    return NextResponse.json({ displayText: '6 PM - 9 PM' });
+    return NextResponse.json({ displayText: '6 PM - 9 PM' }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      }
+    });
   }
 }

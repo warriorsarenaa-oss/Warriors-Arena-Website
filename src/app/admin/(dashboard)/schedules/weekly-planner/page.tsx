@@ -198,21 +198,21 @@ export default function WeeklyPlannerPage() {
       />
 
       {/* Week Selector */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-wa-panel-2 p-6 border border-wa-line rounded-lg">
-        <div className="flex items-center gap-6">
-          <WAButton variant="ghost" size="sm" onClick={handlePrevWeek}>
-            <ChevronLeft className="w-5 h-5 mr-1" /> Prev Week
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-wa-panel-2 p-4 sm:p-6 border border-wa-line rounded-lg">
+        <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-6">
+          <WAButton variant="ghost" size="sm" onClick={handlePrevWeek} className="px-2 sm:px-4">
+            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-1" /> <span className="hidden xs:inline">Prev</span>
           </WAButton>
-          <div className="text-center">
-            <div className="text-wa-green font-archivo text-lg tracking-wider uppercase">
-              {format(currentWeekStart, "MMM d")} — {format(weekEnd, "MMM d, yyyy")}
+          <div className="text-center flex-1 sm:flex-none">
+            <div className="text-wa-green font-archivo text-sm sm:text-lg tracking-wider uppercase">
+              {format(currentWeekStart, "MMM d")} — {format(weekEnd, "MMM d")}
             </div>
-            <div className="text-wa-text-dim text-xs font-mono mt-1">
-              STATUS: {schedule ? (schedule.is_published ? "PUBLISHED" : "DRAFT") : "NO SCHEDULE"}
+            <div className="text-wa-text-dim text-[10px] font-mono mt-0.5">
+              STATUS: {schedule ? (schedule.is_published ? "PUBLISHED" : "DRAFT") : "EMPTY"}
             </div>
           </div>
-          <WAButton variant="ghost" size="sm" onClick={handleNextWeek}>
-            Next Week <ChevronRight className="w-5 h-5 ml-1" />
+          <WAButton variant="ghost" size="sm" onClick={handleNextWeek} className="px-2 sm:px-4">
+            <span className="hidden xs:inline">Next</span> <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 sm:ml-1" />
           </WAButton>
         </div>
 
@@ -239,7 +239,7 @@ export default function WeeklyPlannerPage() {
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-wa-line bg-wa-bg/50">
-              <th className="p-4 text-left border-r border-wa-line w-56 text-wa-text-dim text-[10px] uppercase tracking-widest font-mono sticky left-0 z-30 bg-wa-bg/95 backdrop-blur">
+              <th className="p-4 text-left border-r border-wa-line w-40 sm:w-56 text-wa-text-dim text-[9px] sm:text-[10px] uppercase tracking-widest font-mono sticky left-0 z-30 bg-wa-bg/95 backdrop-blur">
                 Personnel
               </th>
               {weekDays.map((day) => (
@@ -265,24 +265,16 @@ export default function WeeklyPlannerPage() {
               staffList.map((staff) => (
                 <tr key={staff.id} className="border-b border-wa-line hover:bg-wa-text/5 transition-colors">
                   <td className="p-4 border-r border-wa-line bg-wa-bg/30 sticky left-0 z-20 backdrop-blur">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <div 
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-wa-bg border"
+                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-wa-bg border shrink-0"
                         style={{ backgroundColor: staff.staff_color || '#22c55e', borderColor: staff.staff_color || '#22c55e' }}
                       >
-                        <User className="w-5 h-5" />
+                        <User className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
-                      <div>
-                        <div className="text-wa-text font-archivo text-sm uppercase truncate max-w-[120px]">{staff.full_name}</div>
-                        <div className="text-wa-text-dim text-[10px] font-mono">{staff.hourly_rate} EGP/HR</div>
-                        <div className="mt-1 flex flex-col gap-0.5">
-                          <div className="text-wa-green/80 text-[9px] font-mono uppercase tracking-tighter">
-                            Wk: {shifts.filter(s => s.staff_id === staff.id).reduce((sum, s) => sum + Number(s.hours_planned), 0).toFixed(1)}h
-                          </div>
-                          <div className="text-wa-green text-[9px] font-mono font-bold uppercase tracking-tighter">
-                            Pay: {Math.round(shifts.filter(s => s.staff_id === staff.id).reduce((sum, s) => sum + (Number(s.hours_planned) * staff.hourly_rate), 0))} EGP
-                          </div>
-                        </div>
+                      <div className="min-w-0">
+                        <div className="text-wa-text font-archivo text-[11px] sm:text-sm uppercase truncate">{staff.full_name}</div>
+                        <div className="text-wa-text-dim text-[8px] sm:text-[10px] font-mono mt-0.5">{staff.hourly_rate} EGP/HR</div>
                       </div>
                     </div>
                   </td>

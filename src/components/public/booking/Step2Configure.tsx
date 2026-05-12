@@ -132,7 +132,7 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
             <Plus className="w-6 h-6" />
           </button>
 
-          <div className="ml-auto text-right rtl:mr-auto rtl:text-left">
+          <div className="ms-auto text-end">
             <p className="text-[10px] text-wa-text/40 font-mono uppercase tracking-widest">
               {disabled ? "Fixed for this offer" : t("maxPlayersNote", { max: 6 })}
             </p>

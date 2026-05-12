@@ -31,7 +31,7 @@ export const WAButton: React.FC<WAButtonProps> = ({
   const sizes = {
     sm: "wa-btn-sm",
     md: "",
-    lg: "px-10 py-5 text-base font-bold",
+    lg: "px-6 py-4 sm:px-10 sm:py-5 text-sm sm:text-base font-bold",
   };
 
   return (

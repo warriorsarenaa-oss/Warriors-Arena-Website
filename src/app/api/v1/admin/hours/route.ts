@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/lib/auth/permission-middleware";
-import { supabaseService } from "@/lib/db/supabase-service";
+import { createSupabaseService } from "@/lib/db/supabase-service";
 
 /**
  * Hours API — operating_hours table
@@ -62,7 +63,8 @@ const HoursSchema = z
 
 export const GET = requirePermission(async (_request: Request) => {
   try {
-    const { data, error } = await supabaseService
+    const supabase = createSupabaseService();
+    const { data, error } = await supabase
       .from("operating_hours")
       .select("*")
       .order("scope")
@@ -96,8 +98,9 @@ export const POST = requirePermission(async (request: Request, { user }) => {
     if (scope === "day_of_week") payload.day_of_week = day_of_week;
     if (scope === "exact_date") payload.exact_date = exact_date;
 
+    const supabase = createSupabaseService();
     // Find existing row for upsert
-    let existingQuery = supabaseService
+    let existingQuery = supabase
       .from("operating_hours")
       .select("*")
       .eq("scope", scope);
@@ -112,7 +115,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
 
     let result;
     if (existingRow) {
-      const { data, error } = await supabaseService
+      const { data, error } = await supabase
         .from("operating_hours")
         .update({ open_time, close_time, is_closed })
         .eq("id", existingRow.id)
@@ -123,7 +126,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
     } else {
       // Add creator ID for new records
       const insertPayload = { ...payload, created_by_user_id: user.id };
-      const { data, error } = await supabaseService
+      const { data, error } = await supabase
         .from("operating_hours")
         .insert(insertPayload)
         .select()
@@ -134,7 +137,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
 
     // Audit log (Table name is 'audit_logs' per migration 011)
     try {
-      await supabaseService.from("audit_logs").insert({
+      await supabase.from("audit_logs").insert({
         action: existingRow ? "update_operating_hours" : "create_operating_hours",
         entity_type: "operating_hours",
         entity_id: result.id,
@@ -147,6 +150,13 @@ export const POST = requirePermission(async (request: Request, { user }) => {
       });
     } catch (auditErr) {
       console.warn("Audit logging failed (non-critical):", auditErr);
+    }
+
+    // After successful save, revalidate public pages
+    try {
+      revalidatePath('/', 'layout');
+    } catch (err) {
+      console.error('Revalidation error:', err);
     }
 
     return NextResponse.json(result);

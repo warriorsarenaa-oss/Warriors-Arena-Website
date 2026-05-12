@@ -23,7 +23,7 @@ export function AdminTopbar({ user, role }: TopbarProps) {
   };
 
   return (
-    <header className="h-16 bg-wa-bg/80 backdrop-blur-md border-b border-wa-green/20 flex items-center justify-end px-6 sticky top-0 z-10 shrink-0">
+    <header className="h-16 bg-wa-bg/80 backdrop-blur-md border-b border-wa-green/20 flex items-center justify-end px-4 md:px-6 pl-16 lg:pl-6 sticky top-0 z-10 shrink-0">
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-wa-green/20 flex items-center justify-center border border-wa-green/50">
@@ -41,10 +41,10 @@ export function AdminTopbar({ user, role }: TopbarProps) {
 
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 text-wa-text/70 hover:text-wa-error transition-colors uppercase tracking-widest text-xs font-bold group"
+          className="flex items-center gap-2 text-wa-text/70 hover:text-wa-error transition-colors uppercase tracking-widest text-[10px] sm:text-xs font-bold group"
         >
-          <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform" />
-          DISCONNECT
+          <LogOut className="w-3.5 h-3.5 sm:w-4 h-4 group-hover:scale-110 transition-transform" />
+          <span className="hidden xs:inline">DISCONNECT</span>
         </button>
       </div>
     </header>

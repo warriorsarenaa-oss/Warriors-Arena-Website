@@ -210,6 +210,10 @@
       "cancelPolicy": "Cancellation Policy",
       "termsNote": "By confirming, you agree to the arena rules and cancellation policy."
     },
+    "Step6": {
+      "title": "CONFIRM MISSION",
+      "description": "Verify your mission details and confirm on WhatsApp to lock it in."
+    },
     "Success": {
       "confirmed": "YOU'RE IN.",
       "mission": "MISSION BOOKED",

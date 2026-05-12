@@ -73,11 +73,11 @@ export const WizardShell: React.FC<WizardShellProps> = ({
 
       {/* 2. Content Panel */}
       <WAPanel className="p-4 md:p-10 min-h-[400px] flex flex-col">
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl text-wa-text font-archivo uppercase mb-2">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl text-wa-text font-archivo uppercase mb-2">
             {title}
           </h1>
-          <p className="text-wa-text/60 font-barlow text-lg">
+          <p className="text-wa-text/60 font-barlow text-base md:text-lg">
             {description}
           </p>
         </div>
@@ -97,7 +97,7 @@ export const WizardShell: React.FC<WizardShellProps> = ({
         </div>
 
         {/* 3. Navigation Buttons */}
-        <div className="flex justify-between items-center mt-12 pt-8 border-t border-wa-gray/20">
+        <div className="flex justify-between items-center mt-8 md:mt-12 pt-4 md:pt-8 border-t border-wa-gray/20">
           <WAButton
             variant="ghost"
             onClick={onBack}

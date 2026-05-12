@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
-import { supabaseService } from "@/lib/db/supabase-service";
+import { revalidatePath } from "next/cache";
+import { createSupabaseService } from "@/lib/db/supabase-service";
 import { requirePermission } from "@/lib/auth/permission-middleware";
 
 export const GET = requirePermission(async (request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
     const section = searchParams.get('section');
+    const supabase = createSupabaseService();
     
-    let query = supabaseService.from('cms_content').select('*');
+    let query = supabase.from('cms_content').select('*');
     if (section) {
       query = query.eq('section', section);
     }
@@ -37,19 +39,24 @@ export const POST = requirePermission(async (request: Request, { user }) => {
   try {
     const body = await request.json();
     
-    if (!Array.isArray(body)) {
-      return NextResponse.json({ error: "Body must be an array of updates" }, { status: 400 });
-    }
-
-    const { error } = await supabaseService
+    const supabase = createSupabaseService();
+    const { error } = await supabase
       .from('cms_content')
       .upsert(body, { onConflict: 'section,key' });
 
     if (error) throw error;
 
+    // After successful save, revalidate public pages
+    try {
+      revalidatePath('/', 'layout'); // Revalidate all paths under [locale] layout
+      revalidatePath('/[locale]', 'page');
+    } catch (err) {
+      console.error('Revalidation error:', err);
+    }
+
     // Optional: Log to audit_logs
     try {
-      await supabaseService.from('audit_logs').insert({
+      await supabase.from('audit_logs').insert({
         action: 'update_cms',
         entity_type: 'cms_content',
         entity_id: body[0]?.section || 'unknown',

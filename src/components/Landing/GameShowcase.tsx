@@ -105,8 +105,8 @@ export const GameShowcase: React.FC<GameShowcaseProps> = ({ games, locale = "en"
   return (
     <div className="relative w-full py-12">
       {/* ── TABS (The Switcher) ────────────────────────── */}
-      <div className="flex justify-center mb-12 sm:mb-20">
-        <div className="inline-flex p-1 bg-wa-bg/80 border border-wa-green/20 rounded-xl backdrop-blur-xl relative overflow-hidden">
+      <div className="flex justify-center mb-10 sm:mb-20 px-4">
+        <div className="inline-flex p-1 bg-wa-bg/80 border border-wa-green/20 rounded-xl backdrop-blur-xl relative overflow-x-auto no-scrollbar max-w-full">
           {/* Animated Background Pulse */}
           <div className="absolute inset-0 bg-wa-green/5 animate-pulse" />
           
@@ -186,7 +186,7 @@ export const GameShowcase: React.FC<GameShowcaseProps> = ({ games, locale = "en"
                   <div className="h-[2px] w-12 bg-wa-green" />
                   <span className="text-xs font-mono font-bold text-wa-green uppercase tracking-[0.4em]">Mission Loadout</span>
                 </div>
-                <h2 className="text-5xl md:text-7xl font-archivo text-wa-text uppercase leading-none tracking-tighter">
+                <h2 className="text-4xl md:text-7xl font-archivo text-wa-text uppercase leading-none tracking-tighter">
                   {current.name}
                 </h2>
                 <p className="text-lg md:text-xl text-wa-text/60 font-barlow leading-relaxed max-w-lg">

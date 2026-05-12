@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/lib/auth/permission-middleware";
-import { supabaseService } from "@/lib/db/supabase-service";
+import { createSupabaseService } from "@/lib/db/supabase-service";
 
 const UpdateGameSchema = z.object({
   name_en: z.string().optional(),
@@ -30,13 +31,14 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
     const { id } = await params;
     const body = await request.json();
     const parsed = UpdateGameSchema.safeParse(body);
+    const supabase = createSupabaseService();
 
     if (!parsed.success) {
       return NextResponse.json({ error: "Validation failed", details: parsed.error.format() }, { status: 400 });
     }
 
     // Get before state
-    const { data: existingGame, error: fetchError } = await supabaseService
+    const { data: existingGame, error: fetchError } = await supabase
       .from('games')
       .select('*')
       .eq('id', id)
@@ -47,7 +49,7 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
     const { pricing, refill_packages, ...gameData } = parsed.data;
 
     // Update Game
-    const { data: updatedGame, error: updateError } = await supabaseService
+    const { data: updatedGame, error: updateError } = await supabase
       .from('games')
       .update(gameData)
       .eq('id', id)
@@ -59,7 +61,7 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
     // Update Pricing if provided
     if (pricing) {
       // Mark old as inactive
-      await supabaseService
+      await supabase
         .from('game_pricing')
         .update({ is_active: false })
         .eq('game_id', id);
@@ -75,7 +77,7 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
         is_active: true
       }));
 
-      const { error: pricingError } = await supabaseService
+      const { error: pricingError } = await supabase
         .from('game_pricing')
         .insert(pricingRows);
 
@@ -85,7 +87,7 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
     // Update Refill Packages if provided
     if (refill_packages) {
       // Mark old as inactive (or delete if you prefer, but inactive is safer for history)
-      await supabaseService
+      await supabase
         .from('refill_packages')
         .update({ is_active: false })
         .eq('game_id', id);
@@ -98,7 +100,7 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
           is_active: true
         }));
 
-        const { error: refillError } = await supabaseService
+        const { error: refillError } = await supabase
           .from('refill_packages')
           .insert(refillRows);
 
@@ -108,7 +110,7 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
 
     // 3. Audit log (Table name is 'audit_logs' per migration 011)
     try {
-      await supabaseService.from('audit_logs').insert({
+      await supabase.from('audit_logs').insert({
         action: 'update_game',
         entity_type: 'games',
         entity_id: id,
@@ -123,6 +125,13 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
       console.warn("Audit logging failed (non-critical):", auditErr);
     }
 
+    // After successful save, revalidate public pages
+    try {
+      revalidatePath('/', 'layout');
+    } catch (err) {
+      console.error('Revalidation error:', err);
+    }
+
     return NextResponse.json(updatedGame);
   } catch (error) {
     console.error("[ADMIN_GAMES_PATCH_ERROR]", error);
@@ -135,9 +144,10 @@ export const DELETE = requirePermission(async (request: Request, { user, params 
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const force = searchParams.get('force') === 'true';
+    const supabase = createSupabaseService();
 
     // Get before state
-    const { data: existingGame, error: fetchError } = await supabaseService
+    const { data: existingGame, error: fetchError } = await supabase
       .from('games')
       .select('*')
       .eq('id', id)
@@ -146,7 +156,7 @@ export const DELETE = requirePermission(async (request: Request, { user, params 
     if (fetchError) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     // 1. Delete associated pricing first (FK constraint)
-    const { error: pricingDeleteError } = await supabaseService
+    const { error: pricingDeleteError } = await supabase
       .from('game_pricing')
       .delete()
       .eq('game_id', id);
@@ -154,7 +164,7 @@ export const DELETE = requirePermission(async (request: Request, { user, params 
     if (pricingDeleteError) throw pricingDeleteError;
 
     // 2. Delete the game itself
-    const { error: deleteError } = await supabaseService
+    const { error: deleteError } = await supabase
       .from('games')
       .delete()
       .eq('id', id);
@@ -163,7 +173,7 @@ export const DELETE = requirePermission(async (request: Request, { user, params 
 
     // 3. Audit log (Table name is 'audit_logs' per migration 011)
     try {
-      await supabaseService.from('audit_logs').insert({
+      await supabase.from('audit_logs').insert({
         action: 'delete_game',
         entity_type: 'games',
         entity_id: id,
@@ -176,6 +186,15 @@ export const DELETE = requirePermission(async (request: Request, { user, params 
       });
     } catch (auditErr) {
       console.warn("Audit logging failed (non-critical):", auditErr);
+    }
+
+    }
+
+    // After successful delete, revalidate public pages
+    try {
+      revalidatePath('/', 'layout');
+    } catch (err) {
+      console.error('Revalidation error:', err);
     }
 
     return NextResponse.json({ success: true });

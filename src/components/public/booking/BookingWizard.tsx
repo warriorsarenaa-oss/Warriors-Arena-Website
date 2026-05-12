@@ -11,6 +11,7 @@ import { Step2Configure } from "./Step2Configure";
 import { StepMission, SpecialMission } from "./StepMission";
 import { Step3Date } from "./Step3Date";
 import { Step5Customer } from "./Step5Customer";
+import { Step6Summary } from "./Step6Summary";
 import { SuccessScreen } from "./SuccessScreen";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
@@ -125,6 +126,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
       case 3: return true; // Mission is optional
       case 4: return !!draft.date && !!draft.start_time;
       case 5: return isStep5Valid;
+      case 6: return true; // Handled within Step6Summary
       default: return false;
     }
   }, [draft, isStep5Valid]);
@@ -160,6 +162,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
       customer_phone: normalizePhone(formData.customer_phone),
       customer_email: formData.customer_email?.trim() || null, 
       customer_notes: formData.customer_notes?.trim() || null,
+      whatsapp_confirmed: true,
     };
 
     // Pre-flight check
@@ -253,19 +256,19 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
       <div className="flex-1 w-full order-2 lg:order-1">
         <WizardShell
           currentStep={draft.currentStep}
-          totalSteps={5}
+          totalSteps={6}
           title={t(`Step${draft.currentStep === 3 ? "Mission" : (draft.currentStep > 3 ? draft.currentStep : draft.currentStep)}.title`)}
           description={t(`Step${draft.currentStep === 3 ? "Mission" : (draft.currentStep > 3 ? draft.currentStep : draft.currentStep)}.description`)}
           onBack={() => goToStep(draft.currentStep - 1)}
           onNext={() => {
             if (draft.currentStep === 5) {
-              document.getElementById("booking-form")?.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+              goToStep(6);
             } else {
               goToStep(draft.currentStep + 1);
             }
           }}
           isNextDisabled={!isStepValid || isNavigating}
-          nextLabel={draft.currentStep === 5 ? t("confirm") : undefined}
+          showNext={draft.currentStep < 6}
           isSubmitting={isSubmitting || isNavigating}
         >
           {draft.currentStep === 1 && (
@@ -313,9 +316,20 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
           {draft.currentStep === 5 && (
             <Step5Customer 
               defaultValues={draft}
-              onSubmit={handleFinalSubmit}
+              onSubmit={() => goToStep(6)}
               onValidationChange={setIsStep5Valid}
               isSubmitting={isSubmitting}
+            />
+          )}
+          {draft.currentStep === 6 && (
+            <Step6Summary 
+              bookingData={draft}
+              gameName={displayGameName || "Game"}
+              missionName={selectedMission ? (locale === "ar" ? selectedMission.name_ar : selectedMission.name_en) : null}
+              totalAmount={((selectedPricing?.price_per_player || 0) + (draft.mission_additional_price || 0)) * draft.player_count}
+              onSubmit={() => handleFinalSubmit(draft)}
+              isSubmitting={isSubmitting}
+              locale={locale as "en" | "ar"}
             />
           )}
         </WizardShell>

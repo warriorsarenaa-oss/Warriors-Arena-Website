@@ -23,7 +23,7 @@ export function AdminLayoutShell({
       {/* Mobile Menu Button - Top Left */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="lg:hidden absolute top-4 left-4 z-50 p-2 bg-wa-panel border border-wa-green/50 text-wa-green rounded transition-colors hover:bg-wa-green/10"
+        className="lg:hidden fixed top-3 left-4 z-[60] p-2 bg-wa-bg border border-wa-green/50 text-wa-green rounded shadow-[0_0_15px_rgba(143,224,74,0.2)] transition-all hover:bg-wa-green/10 active:scale-95"
         aria-label="Toggle menu"
       >
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -46,9 +46,9 @@ export function AdminLayoutShell({
       {/* Sidebar Navigation */}
       <div
         className={`
-          fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out
+          fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out
           lg:relative lg:translate-x-0
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          ${sidebarOpen ? "translate-x-0 shadow-[0_0_50px_rgba(0,0,0,0.8)]" : "-translate-x-full"}
         `}
       >
         <AdminSidebar permissions={permissions} onNavigate={() => setSidebarOpen(false)} />
@@ -56,10 +56,7 @@ export function AdminLayoutShell({
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10 w-full">
-        {/* Pass an extra class to push Topbar content right on mobile to avoid overlap with hamburger */}
-        <div className="pl-16 lg:pl-0">
-          <AdminTopbar user={user} role={permissions.role || "unknown"} />
-        </div>
+        <AdminTopbar user={user} role={permissions.role || "unknown"} />
         
         <main className="flex-1 overflow-y-auto p-4 lg:p-6 relative">
           {/* Global noise overlay for admin */}

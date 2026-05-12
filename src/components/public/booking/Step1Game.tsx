@@ -132,7 +132,7 @@ export const Step1Game: React.FC<Step1GameProps> = ({ selectedGameId, onSelect, 
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => onSelect(game)}
-              className="text-left rtl:text-right group outline-none relative"
+              className="text-start group outline-none relative"
             >
               <WAPanel
                 hot={isSelected}

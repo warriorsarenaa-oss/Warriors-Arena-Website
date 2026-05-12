@@ -16,6 +16,9 @@ export const metadata = {
   description: "Cairo's tactical arena for laser tag & gel blasters. Exclusive 30-minute slots. Six players max. Book your mission.",
 };
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'Landing' });
@@ -25,8 +28,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   let operatingHours = "6 PM - 9 PM";
   try {
     const [hoursRes, cmsRes] = await Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/v1/operating-hours/display`).then(r => r.json()),
-      fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/v1/cms/hero`).then(r => r.json()),
+      fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/v1/operating-hours/display`, { cache: 'no-store' }).then(r => r.json()),
+      fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/v1/cms/hero`, { cache: 'no-store' }).then(r => r.json()),
     ]);
     if (hoursRes?.displayText) operatingHours = hoursRes.displayText;
     if (cmsRes) heroCms = cmsRes[locale] || cmsRes.en || null;
@@ -37,7 +40,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // Fetch Missions CMS
   let missionsHeader = { heading: t("bundlesTitle"), subheading: t("bundlesLine") };
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/v1/cms/missions`);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/v1/cms/missions`, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       const content = data[locale] || data.en || {};
