@@ -21,6 +21,7 @@ interface WizardShellProps {
   isSubmitting?: boolean;
   showNext?: boolean;
   isSuccess?: boolean;
+  formId?: string;
 }
 
 export const WizardShell: React.FC<WizardShellProps> = ({
@@ -36,6 +37,7 @@ export const WizardShell: React.FC<WizardShellProps> = ({
   isSubmitting = false,
   showNext = true,
   isSuccess = false,
+  formId,
 }) => {
   const t = useTranslations("Booking");
 
@@ -111,7 +113,9 @@ export const WizardShell: React.FC<WizardShellProps> = ({
           {showNext && (
             <WAButton
               variant="primary"
-              onClick={onNext}
+              onClick={formId ? undefined : onNext}
+              type={formId ? "submit" : "button"}
+              form={formId}
               disabled={isNextDisabled || isSubmitting}
               className="flex items-center gap-2 group min-w-[140px] justify-center"
             >

@@ -280,6 +280,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
           isNextDisabled={!isStepValid || isNavigating}
           showNext={draft.currentStep < 6}
           isSubmitting={isSubmitting || isNavigating}
+          formId={draft.currentStep === 5 ? "booking-form" : undefined}
         >
           {draft.currentStep === 1 && (
             <Step1Game 
