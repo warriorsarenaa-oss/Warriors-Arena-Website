@@ -7,9 +7,11 @@ import { Gallery } from '@/components/Landing/Gallery';
 import { FAQ } from '@/components/Landing/FAQ';
 import { LocationSection } from '@/components/Landing/LocationSection';
 import { ParkNotice } from '@/components/Landing/ParkNotice';
-import { Footer } from '@/components/Landing/Footer';
 import { Navbar } from '@/components/Landing/Navbar';
+import { Footer } from '@/components/Landing/Footer';
 import { SectionHeader } from '@/components/UI/SectionHeader';
+import { supabaseAnon } from '@/lib/db/supabase-anon';
+import { unstable_noStore as noStore } from 'next/cache';
 
 export const metadata = {
   title: 'Warriors Arena — Laser Tag & Gel Blasters · Heliopolis, Cairo',
@@ -20,34 +22,43 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
+  noStore();
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'Landing' });
 
-  // Fetch Hero CMS and Hours
-  let heroCms = null;
+  // Fetch Hero CMS and Hours directly from Supabase
+  let heroCms: any = null;
   let operatingHours = "6 PM - 9 PM";
-  try {
-    const [hoursRes, cmsRes] = await Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/v1/operating-hours/display`, { cache: 'no-store' }).then(r => r.json()),
-      fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/v1/cms/hero`, { cache: 'no-store' }).then(r => r.json()),
-    ]);
-    if (hoursRes?.displayText) operatingHours = hoursRes.displayText;
-    if (cmsRes) heroCms = cmsRes[locale] || cmsRes.en || null;
-  } catch (err) {
-    console.error("Failed to fetch Hero data", err);
-  }
-
-  // Fetch Missions CMS
   let missionsHeader = { heading: t("bundlesTitle"), subheading: t("bundlesLine") };
+
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/v1/cms/missions`, { cache: 'no-store' });
-    if (res.ok) {
-      const data = await res.json();
-      const content = data[locale] || data.en || {};
-      if (content.heading) missionsHeader.heading = content.heading;
-      if (content.subheading) missionsHeader.subheading = content.subheading;
+    const [hoursData, cmsData] = await Promise.all([
+      supabaseAnon.from('settings').select('value').eq('key', 'operating_hours_display').single(),
+      supabaseAnon.from('cms_content').select('*')
+    ]);
+
+    if (hoursData.data) operatingHours = hoursData.data.value;
+    
+    if (cmsData.data) {
+      // Process Hero CMS
+      const heroItems = cmsData.data.filter((item: any) => item.section === 'hero');
+      const processedHero: any = { en: {}, ar: {} };
+      heroItems.forEach((item: any) => {
+        processedHero.en[item.key] = item.value_en;
+        processedHero.ar[item.key] = item.value_ar;
+      });
+      heroCms = processedHero[locale] || processedHero.en || null;
+
+      // Process Missions Header
+      const missionsItems = cmsData.data.filter((item: any) => item.section === 'missions');
+      missionsItems.forEach((item: any) => {
+        if (item.key === 'heading') missionsHeader.heading = (locale === 'ar' ? item.value_ar : item.value_en) || item.value_en;
+        if (item.key === 'subheading') missionsHeader.subheading = (locale === 'ar' ? item.value_ar : item.value_en) || item.value_en;
+      });
     }
-  } catch (err) {}
+  } catch (err) {
+    console.error("Failed to fetch CMS data directly:", err);
+  }
 
   return (
     <main id="main-content" className="w-full bg-wa-bg relative overflow-x-hidden">

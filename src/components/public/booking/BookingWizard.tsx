@@ -317,8 +317,12 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
             <Step5Customer 
               defaultValues={draft}
               onSubmit={(data) => {
-                updateDraft(data);
-                goToStep(6);
+                // Atomic update of both customer data AND the step to prevent race conditions
+                updateDraft({ ...data, currentStep: 6 });
+                // Manually sync history since we are bypassing goToStep
+                if (typeof window !== "undefined" && window.location.pathname.endsWith("/book")) {
+                  window.history.pushState({ step: 6 }, "", "#step=6");
+                }
               }}
               onValidationChange={setIsStep5Valid}
               isSubmitting={isSubmitting}
