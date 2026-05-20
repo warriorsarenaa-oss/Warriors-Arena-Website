@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
+import chromium from '@sparticuz/chromium-min';
 import React from 'react';
 import { supabaseService } from '@/lib/db/supabase-service';
 import { ReceiptTemplate } from './receipt-template';
@@ -91,10 +91,12 @@ export async function generateReceipt(
           headless: true,
         }
       : {
-          args: (chromium as any).args,
-          defaultViewport: (chromium as any).defaultViewport || { width: 1280, height: 720 },
-          executablePath: await (chromium as any).executablePath(),
-          headless: (chromium as any).headless,
+          args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
+          defaultViewport: chromium.defaultViewport || { width: 1280, height: 720 },
+          executablePath: await chromium.executablePath(
+            "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
+          ),
+          headless: chromium.headless,
           ignoreHTTPSErrors: true,
         };
 

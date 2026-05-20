@@ -68,7 +68,6 @@ export const StepMission: React.FC<StepMissionProps> = ({
         <button
           onClick={() => {
             onSelect(null);
-            onNext();
           }}
           className="text-start group outline-none"
         >
@@ -115,7 +114,6 @@ export const StepMission: React.FC<StepMissionProps> = ({
               key={mission.id}
               onClick={() => {
                 onSelect(mission);
-                onNext();
               }}
               className="text-start group outline-none"
             >

@@ -36,6 +36,8 @@ const envSchema = z.object({
   
   SENTRY_AUTH_TOKEN: z.string().optional(),
   NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
+  
+  RESEND_API_KEY: z.string().optional(),
 });
 
 // We catch the error early to provide a clean message during boot

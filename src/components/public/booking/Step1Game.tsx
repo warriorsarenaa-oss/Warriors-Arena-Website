@@ -100,7 +100,6 @@ export const Step1Game: React.FC<Step1GameProps> = ({ selectedGameId, onSelect, 
 
   return (
     <div className="space-y-8">
-      <StrategicNotice className="mb-8" />
       
       <motion.div 
         initial="hidden"

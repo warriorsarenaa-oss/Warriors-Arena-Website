@@ -171,8 +171,7 @@ export const Hero: React.FC<HeroProps> = ({ locale, hours = "6 PM - 9 PM", cms }
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="wa-panel border border-wa-line absolute inset-0 overflow-hidden"
-            style={{ clipPath: "polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px))" }}>
+          <div className="absolute inset-0 overflow-hidden rounded-3xl shadow-2xl">
             {/* Immersive Action Shot */}
             <Image 
               src={getCmsValue('hero_image_url', "https://images.unsplash.com/photo-1552072092-7f9b8d63efcb?auto=format&fit=crop&w=1200")} 
