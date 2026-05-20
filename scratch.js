@@ -1,30 +1,9 @@
 const { createClient } = require('@supabase/supabase-js');
-const fs = require('fs');
-const dotenv = require('dotenv');
-
-dotenv.config({ path: '.env.local' });
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  console.error("Missing Supabase credentials");
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+require('dotenv').config({ path: '.env.local' });
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 async function run() {
-  const { data, error } = await supabase
-    .from('system_settings')
-    .update({ value: { number: '+201226557592' } })
-    .eq('key', 'whatsapp_number');
-    
-  if (error) {
-    console.error('Update failed:', error);
-  } else {
-    console.log('Update successful:', data);
-  }
+  const { data, error } = await supabase.from('payroll_records').select('id, hours_pay, commission_pay, total_pay');
+  console.log(data, error);
 }
-
 run();

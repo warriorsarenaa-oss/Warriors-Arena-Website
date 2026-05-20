@@ -43,7 +43,13 @@ export const POST = requirePermission(async (request: Request, { user, params })
       category_id: category.id,
       amount: payroll.total_pay,
       expense_date: new Date().toISOString().split('T')[0],
-      notes: `Payroll record ID: ${id}. Method: ${payment_method}. ${notes || ''}`,
+      notes: [
+        `Hours: ${payroll.total_hours}h × ${payroll.hourly_rate} EGP = ${payroll.hours_pay} EGP`,
+        `Commission: ${payroll.games_count} games = ${payroll.commission_pay} EGP`,
+        `Total: ${payroll.total_pay} EGP`,
+        payment_method ? `Payment method: ${payment_method}` : null,
+        notes ?? null,
+      ].filter(Boolean).join(' | '),
       created_by_user_id: user.id,
     });
   }
