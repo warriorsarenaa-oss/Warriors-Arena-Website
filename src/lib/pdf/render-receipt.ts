@@ -92,11 +92,11 @@ export async function generateReceipt(
         }
       : {
           args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
-          defaultViewport: chromium.defaultViewport || { width: 1280, height: 720 },
+          defaultViewport: { width: 1280, height: 720 },
           executablePath: await chromium.executablePath(
             "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
           ),
-          headless: chromium.headless,
+          headless: true,
           ignoreHTTPSErrors: true,
         };
 
