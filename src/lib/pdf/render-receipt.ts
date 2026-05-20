@@ -84,27 +84,49 @@ export async function generateReceipt(
     // 5. PDF Generation via Puppeteer
     const isLocal = process.env.NODE_ENV === 'development';
     
-    const launchOptions = isLocal 
-      ? {
-          args: [],
-          executablePath: process.env.CHROME_BIN || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-          headless: true,
-        }
-      : {
-          args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
-          defaultViewport: { width: 1280, height: 720 },
-          executablePath: await chromium.executablePath(
-            "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
-          ),
-          headless: true,
-          ignoreHTTPSErrors: true,
-        };
+    let launchOptions: any;
+    if (isLocal) {
+      launchOptions = {
+        args: [],
+        executablePath: process.env.CHROME_BIN || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+        headless: true,
+      };
+    } else {
+      const executablePath = await chromium.executablePath(
+        "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
+      );
+      launchOptions = {
+        args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
+        defaultViewport: { width: 1280, height: 720 },
+        executablePath,
+        headless: true,
+        ignoreHTTPSErrors: true,
+      };
+    }
 
-    browser = await puppeteer.launch(launchOptions as any);
+    // Retry loop for ETXTBSY error
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        browser = await puppeteer.launch(launchOptions);
+        break;
+      } catch (err: any) {
+        if (err.message && err.message.includes("ETXTBSY") && retries > 1) {
+          retries--;
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        } else {
+          throw err;
+        }
+      }
+    }
+
+    if (!browser) {
+      throw new Error("Failed to launch browser after retries.");
+    }
     const page = await browser.newPage();
     
     // Set content and wait for it to render
-    await page.setContent(`<!DOCTYPE html><html><body>${html}</body></html>`, {
+    await page.setContent(`<!DOCTYPE html><html><body style="margin:0;padding:0;">${html}</body></html>`, {
       waitUntil: 'networkidle0'
     });
 
@@ -112,6 +134,7 @@ export async function generateReceipt(
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
+      pageRanges: '1',
       margin: { top: 0, right: 0, bottom: 0, left: 0 }
     });
 

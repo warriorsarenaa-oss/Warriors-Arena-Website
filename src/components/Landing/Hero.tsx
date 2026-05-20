@@ -166,21 +166,17 @@ export const Hero: React.FC<HeroProps> = ({ locale, hours = "6 PM - 9 PM", cms }
         {/* Right: tactical card placeholder */}
         <motion.div
           style={{ y: yCard }}
-          className="relative h-[300px] sm:h-[400px] lg:h-[520px]"
+          className="relative w-full flex justify-center lg:justify-end"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="absolute inset-0 overflow-hidden rounded-3xl shadow-2xl">
-            {/* Immersive Action Shot */}
-            <Image 
-              src={getCmsValue('hero_image_url', "https://images.unsplash.com/photo-1552072092-7f9b8d63efcb?auto=format&fit=crop&w=1200")} 
-              alt="Arena Tactical" 
-              fill
-              priority
-              className="object-cover"
-            />
-          </div>
+          {/* Immersive Action Shot */}
+          <img 
+            src={getCmsValue('hero_image_url', "https://images.unsplash.com/photo-1552072092-7f9b8d63efcb?auto=format&fit=crop&w=1200")} 
+            alt="Arena Tactical" 
+            className="w-full h-auto max-h-[80vh] object-contain rounded-3xl shadow-2xl"
+          />
         </motion.div>
       </motion.div>
 
