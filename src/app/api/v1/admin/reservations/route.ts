@@ -16,6 +16,10 @@ const AdminBookingSchema = z.object({
   customer_email: z.string().email().optional().or(z.literal("")),
   customer_notes: z.string().max(500).optional(),
   special_mission_id: z.string().uuid().optional().nullable(),
+  discount_type: z.union([z.literal('percentage'), z.literal('flat')]).nullable().optional(),
+  discount_value: z.number().min(0).optional(),
+  discount_amount: z.number().min(0).optional(),
+  total_price_at_booking: z.number().min(0).optional(),
 });
 
 function calculateOccupiedSlots(startTime: string, durationMinutes: number): string[] {
@@ -161,9 +165,17 @@ export const POST = requirePermission(async (request: Request, { user }) => {
 
     // ✅ New: Populate occupied_slots after creation
     // This ensures multi-slot blocking works even before the RPC is updated
+    const postCreateUpdate: any = { occupied_slots: requestedSlots };
+    if (data.discount_amount !== undefined && data.discount_amount > 0) {
+      postCreateUpdate.discount_type = data.discount_type;
+      postCreateUpdate.discount_value = data.discount_value;
+      postCreateUpdate.discount_amount = data.discount_amount;
+      postCreateUpdate.total_price_at_booking = data.total_price_at_booking;
+    }
+
     await supabaseService
       .from("bookings")
-      .update({ occupied_slots: requestedSlots })
+      .update(postCreateUpdate)
       .eq("id", booking.booking_id);
 
     // Since RPC is atomic, the audit log should ideally be inside the RPC.
@@ -208,6 +220,7 @@ export const GET = requirePermission(async (request: Request) => {
         customer_name,
         customer_phone,
         total_price_at_booking,
+        discount_amount,
         deposit_amount,
         deposit_status,
         occupied_slots,

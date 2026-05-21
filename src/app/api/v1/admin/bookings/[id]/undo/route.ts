@@ -65,4 +65,4 @@ export const POST = requirePermission(async (request: Request, { user, params })
   );
 
   return NextResponse.json({ success: true, booking: updatedBooking });
-}, "manage_reservations");
+}, "cancel_booking");

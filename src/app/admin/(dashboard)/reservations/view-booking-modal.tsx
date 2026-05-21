@@ -102,7 +102,7 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
         let errMsg = 'Action failed';
         try {
           const errJson = JSON.parse(errText);
-          errMsg = errJson.error || errJson.message || errMsg;
+          errMsg = errJson.message || errJson.error || errMsg;
         } catch {
           errMsg = errText || `Action failed (HTTP ${res.status})`;
         }
@@ -155,7 +155,7 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
           let errMsg = 'Failed to undo booking';
           try {
             const errJson = JSON.parse(errText);
-            errMsg = errJson.error || errJson.message || errMsg;
+            errMsg = errJson.message || errJson.error || errMsg;
           } catch {
             errMsg = errText || `Failed to undo booking (HTTP ${res.status})`;
           }
