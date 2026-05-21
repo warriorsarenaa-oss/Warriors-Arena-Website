@@ -70,10 +70,62 @@ export function AdminLayoutShell({
           </div>
 
           <div className="max-w-7xl mx-auto w-full">
-            {children}
+            <RouteGuard permissions={permissions.permissionKeys}>
+              {children}
+            </RouteGuard>
           </div>
         </main>
       </div>
+    </div>
+  );
+}
+
+function RouteGuard({ permissions, children }: { permissions: string[], children: React.ReactNode }) {
+  const { usePathname } = require("next/navigation");
+  const pathname = usePathname();
+
+  const routeRequirements: Record<string, string> = {
+    "/admin/reservations": "view_bookings",
+    "/admin/schedules/weekly-planner": "manage_users",
+    "/admin/revenue": "view_revenue",
+    "/admin/financials": "view_financials",
+    "/admin/financials/payroll": "manage_financials",
+    "/admin/content": "manage_content",
+    "/admin/hours": "manage_hours",
+    "/admin/pricing": "manage_pricing",
+    "/admin/games": "manage_games",
+    "/admin/missions": "manage_content",
+    "/admin/export": "export_data",
+    "/admin/users": "manage_users",
+    "/admin/audit": "view_audit",
+  };
+
+  // Find if current path requires a permission
+  let requiredPermission = null;
+  for (const [route, perm] of Object.entries(routeRequirements)) {
+    if (pathname === route || pathname.startsWith(route + "/")) {
+      requiredPermission = perm;
+      break;
+    }
+  }
+
+  // Dashboard root is view_dashboard
+  if (pathname === "/admin" && !permissions.includes("view_dashboard")) {
+    return <AccessDenied />;
+  }
+
+  if (requiredPermission && !permissions.includes(requiredPermission)) {
+    return <AccessDenied />;
+  }
+
+  return <>{children}</>;
+}
+
+function AccessDenied() {
+  return (
+    <div className="flex flex-col items-center justify-center h-[60vh] text-wa-error">
+      <h2 className="text-4xl font-bold uppercase tracking-widest mb-4">Access Denied</h2>
+      <p className="opacity-80">You do not have the required clearance to view this module.</p>
     </div>
   );
 }

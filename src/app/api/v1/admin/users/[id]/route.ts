@@ -5,10 +5,14 @@ import { supabaseService } from "@/lib/db/supabase-service";
 import { logAuditAction } from "@/lib/admin/audit-log";
 
 const UpdateUserSchema = z.object({
+  full_name: z.string().optional(),
+  username: z.string().optional(),
+  email: z.string().email().optional(),
+  password: z.string().min(6).optional(),
+  role_id: z.string().uuid().optional(),
   commission_rate: z.number().min(0).optional(),
   hourly_rate: z.number().min(0).optional(),
   is_active: z.boolean().optional(),
-  permissions: z.array(z.string()).optional(),
 });
 
 export const PATCH = requirePermission(async (request: Request, context: any) => {
@@ -21,12 +25,12 @@ export const PATCH = requirePermission(async (request: Request, context: any) =>
       return NextResponse.json({ error: "Validation failed", details: parsed.error.format() }, { status: 400 });
     }
 
-    const { permissions, ...userUpdates } = parsed.data;
+    const { email, password, ...userUpdates } = parsed.data;
     const { user } = context;
 
     const { data: existingUser, error: fetchError } = await supabaseService
       .from('users')
-      .select('*, roles!role_id(id)')
+      .select('*')
       .eq('id', id)
       .single();
 
@@ -36,52 +40,45 @@ export const PATCH = requirePermission(async (request: Request, context: any) =>
        return NextResponse.json({ error: "Cannot change your own commission" }, { status: 400 });
     }
 
-    // 1. Handle Permission Updates if provided
-    if (permissions) {
-      const roleId = (existingUser.roles as any)?.id;
-      if (roleId) {
-        // Clear old permissions
-        await supabaseService.from('role_permissions').delete().eq('role_id', roleId);
-        
-        // Add new permissions
-        const { data: permRecords } = await supabaseService
-          .from('permissions')
-          .select('id, key')
-          .in('key', permissions);
-        
-        if (permRecords && permRecords.length > 0) {
-          const newRolePerms = permRecords.map(p => ({
-            role_id: roleId,
-            permission_id: p.id
-          }));
-          await supabaseService.from('role_permissions').insert(newRolePerms);
-        }
+    // 1. Handle Auth Level Updates (Email, Password)
+    if (email || password) {
+      const authUpdates: any = {};
+      if (email) authUpdates.email = email;
+      if (password) authUpdates.password = password;
+      
+      const { error: authError } = await supabaseService.auth.admin.updateUserById(id, authUpdates);
+      if (authError) {
+        return NextResponse.json({ error: `Auth update failed: ${authError.message}` }, { status: 400 });
       }
     }
 
     // 2. Handle User Field Updates
-    const { data: updatedUser, error: updateError } = await supabaseService
-      .from('users')
-      .update(userUpdates)
-      .eq('id', id)
-      .select()
-      .single();
+    if (Object.keys(userUpdates).length > 0) {
+      const { data: updatedUser, error: updateError } = await supabaseService
+        .from('users')
+        .update(userUpdates)
+        .eq('id', id)
+        .select()
+        .single();
 
-    if (updateError) throw updateError;
+      if (updateError) throw updateError;
 
-    // Audit log
-    await logAuditAction({
-      request,
-      actor_user_id: user.id,
-      actor_email: user.email,
-      action: 'update_user',
-      entity_type: 'users',
-      entity_id: id,
-      before_state: existingUser,
-      after_state: updatedUser
-    });
+      // Audit log
+      await logAuditAction({
+        request,
+        actor_user_id: user.id,
+        actor_email: user.email,
+        action: 'update_user',
+        entity_type: 'users',
+        entity_id: id,
+        before_state: existingUser,
+        after_state: updatedUser
+      });
 
-    return NextResponse.json(updatedUser);
+      return NextResponse.json(updatedUser);
+    }
+
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[ADMIN_USERS_PATCH_ERROR]", error);
     return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
