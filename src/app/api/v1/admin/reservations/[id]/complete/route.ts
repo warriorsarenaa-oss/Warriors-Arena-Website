@@ -14,7 +14,7 @@ export const POST = requirePermission(async (request: Request, { user, params })
     let booking = null;
     let bookingError = null;
 
-    const selectFields = 'id, booking_code, booking_date, start_time, status, total_price_at_booking, game_name';
+    const selectFields = 'id, booking_code, booking_date, start_time, status, total_price_at_booking';
 
     if (isUuid) {
       const res = await supabaseService.from('bookings').select(selectFields).eq('id', id).maybeSingle();
