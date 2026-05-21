@@ -9,6 +9,12 @@ import { PreloadingScreen } from '@/components/UI/PreloadingScreen';
 import '../globals.css';
 import type { Metadata } from 'next';
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1.0,
+  maximumScale: 5.0,
+};
+
 export const metadata: Metadata = {
   title: 'Warriors Arena | Laser Tag & Gel Blasters · Cairo',
   description: "Cairo's tactical arena. 30-min exclusive slots. Up to 6 players. Book your mission in Heliopolis.",

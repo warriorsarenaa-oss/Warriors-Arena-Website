@@ -25,6 +25,8 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
     customerEmail: "",
     notes: "",
     specialMissionId: "",
+    discountType: "percentage" as "percentage" | "flat",
+    discountValue: 0,
   });
 
   const [games, setGames] = useState<any[]>([]);
@@ -153,16 +155,16 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
   // ✅ Safe pricing calculation
   const calculatePricing = () => {
     if (!games || games.length === 0 || !formData.gameId) {
-      return { pricePerPlayer: 0, total: 0 };
+      return { pricePerPlayer: 0, subtotal: 0, discountAmount: 0, total: 0 };
     }
 
     const game = games.find(g => g.id === formData.gameId);
     // ✅ Fix: use 'pricing' as returned by public API
     const pricingData = game?.pricing || game?.game_pricing;
-    if (!game || !pricingData) return { pricePerPlayer: 0, total: 0 };
+    if (!game || !pricingData) return { pricePerPlayer: 0, subtotal: 0, discountAmount: 0, total: 0 };
 
     const pricingTier = pricingData.find((p: any) => p.duration_minutes === formData.duration);
-    if (!pricingTier) return { pricePerPlayer: 0, total: 0 };
+    if (!pricingTier) return { pricePerPlayer: 0, subtotal: 0, discountAmount: 0, total: 0 };
 
     const pricePerPlayer = pricingTier.price_per_player || 0;
     
@@ -173,12 +175,23 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
       missionPrice = parseFloat(mission?.additional_price_per_player) || 0;
     }
 
-    const total = (pricePerPlayer + missionPrice) * (formData.playerCount || 0);
+    const subtotal = (pricePerPlayer + missionPrice) * (formData.playerCount || 0);
+    
+    let discountAmount = 0;
+    if (formData.discountValue > 0) {
+      if (formData.discountType === "percentage") {
+        discountAmount = subtotal * (formData.discountValue / 100);
+      } else {
+        discountAmount = formData.discountValue;
+      }
+    }
+    
+    const total = Math.max(subtotal - discountAmount, 0);
 
-    return { pricePerPlayer, total };
+    return { pricePerPlayer, subtotal, discountAmount, total };
   };
 
-  const { pricePerPlayer, total } = calculatePricing();
+  const { pricePerPlayer, subtotal, discountAmount, total } = calculatePricing();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -242,6 +255,10 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
         customer_email: formData.customerEmail?.trim() || undefined,
         customer_notes: formData.notes?.trim() || undefined,
         special_mission_id: formData.specialMissionId || null,
+        discount_type: formData.discountValue > 0 ? formData.discountType : null,
+        discount_value: formData.discountValue > 0 ? formData.discountValue : 0,
+        discount_amount: discountAmount,
+        total_price_at_booking: subtotal // Maintain original pre-discount price
       };
 
       const res = await fetch("/api/v1/admin/reservations", {
@@ -334,7 +351,7 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
                     <select
                       value={formData.gameId}
                       onChange={(e) => setFormData({ ...formData, gameId: e.target.value })}
-                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green appearance-none cursor-pointer"
+                      className="bg-wa-bg border border-wa-green/20 p-3 text-base rounded outline-none focus:border-wa-green appearance-none cursor-pointer"
                       required
                     >
                       {availableGames.map(g => (
@@ -353,7 +370,7 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
                       onChange={(e) => handleDateChange(e.target.value)}
                       min={format(new Date(), "yyyy-MM-dd")}
                       max={format(addDays(new Date(), 90), "yyyy-MM-dd")}
-                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green"
+                      className="bg-wa-bg border border-wa-green/20 p-3 text-base rounded outline-none focus:border-wa-green"
                       required
                     />
                   </div>
@@ -363,7 +380,7 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
                     <select
                       value={formData.duration}
                       onChange={(e) => setFormData({ ...formData, duration: Number(e.target.value) })}
-                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green font-mono uppercase text-xs appearance-none cursor-pointer"
+                      className="bg-wa-bg border border-wa-green/20 p-3 text-base rounded outline-none focus:border-wa-green font-mono uppercase appearance-none cursor-pointer"
                     >
                       {(() => {
                         const game = games.find(g => g.id === formData.gameId);
@@ -413,7 +430,7 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
                     <select
                       value={formData.specialMissionId}
                       onChange={(e) => setFormData({ ...formData, specialMissionId: e.target.value })}
-                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green appearance-none cursor-pointer"
+                      className="bg-wa-bg border border-wa-green/20 p-3 text-base rounded outline-none focus:border-wa-green appearance-none cursor-pointer"
                     >
                       <option value="">Standard Mission Protocol (No Augmentation)</option>
                       {missions
@@ -492,7 +509,7 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
                       type="text"
                       value={formData.customerName}
                       onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green placeholder:opacity-20"
+                      className="bg-wa-bg border border-wa-green/20 p-3 text-base rounded outline-none focus:border-wa-green placeholder:opacity-20"
                       placeholder="e.g. John Wick"
                       required
                     />
@@ -505,7 +522,7 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
                       value={formData.customerPhone}
                       onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
                       placeholder="01xxxxxxxxx"
-                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green font-mono"
+                      className="bg-wa-bg border border-wa-green/20 p-3 text-base rounded outline-none focus:border-wa-green font-mono"
                       required
                     />
                   </div>
@@ -516,7 +533,7 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
                       type="email"
                       value={formData.customerEmail}
                       onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green placeholder:opacity-20"
+                      className="bg-wa-bg border border-wa-green/20 p-3 text-base rounded outline-none focus:border-wa-green placeholder:opacity-20"
                       placeholder="optional@intel.com"
                     />
                   </div>
@@ -527,15 +544,53 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
                       type="text"
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green placeholder:opacity-20"
+                      className="bg-wa-bg border border-wa-green/20 p-3 text-base rounded outline-none focus:border-wa-green placeholder:opacity-20"
                       placeholder="Any specific mission requests..."
+                    />
+                  </div>
+                </div>
+                {/* DISCOUNT INPUT */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-widest opacity-70 font-bold text-wa-green/60">Discount Type</label>
+                    <select
+                      value={formData.discountType}
+                      onChange={(e) => setFormData({ ...formData, discountType: e.target.value as "percentage" | "flat" })}
+                      className="bg-wa-bg border border-wa-green/20 p-3 text-base rounded outline-none focus:border-wa-green appearance-none cursor-pointer"
+                    >
+                      <option value="percentage">Percentage (%)</option>
+                      <option value="flat">Flat Amount (EGP)</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-widest opacity-70 font-bold text-wa-green/60">Discount Value</label>
+                    <input
+                      type="number"
+                      value={formData.discountValue === 0 ? "" : formData.discountValue}
+                      onChange={(e) => setFormData({ ...formData, discountValue: parseFloat(e.target.value) || 0 })}
+                      min="0"
+                      max={formData.discountType === "percentage" ? "100" : undefined}
+                      className="bg-wa-bg border border-wa-green/20 p-3 text-base rounded outline-none focus:border-wa-green placeholder:opacity-20 font-mono"
+                      placeholder="0"
                     />
                   </div>
                 </div>
               </section>
 
               {/* 4. Financial Summary */}
-              <div className="bg-wa-green/5 p-6 rounded-lg border border-wa-green/30 flex justify-center items-center backdrop-blur-sm mt-4">
+              <div className="bg-wa-green/5 p-6 rounded-lg border border-wa-green/30 flex flex-col items-center justify-center backdrop-blur-sm mt-4 gap-2">
+                {discountAmount > 0 && (
+                  <div className="flex justify-between w-full max-w-xs text-[10px] uppercase font-mono opacity-60">
+                    <span>Subtotal:</span>
+                    <span>{subtotal} EGP</span>
+                  </div>
+                )}
+                {discountAmount > 0 && (
+                  <div className="flex justify-between w-full max-w-xs text-[10px] uppercase font-mono text-wa-orange mb-2">
+                    <span>Discount Applied:</span>
+                    <span>-{discountAmount} EGP</span>
+                  </div>
+                )}
                 <div className="flex flex-col items-center">
                   <span className="text-[10px] uppercase tracking-[0.2em] text-wa-green/60 font-bold mb-1">Total Mission Investment</span>
                   <span className="font-bold text-wa-green text-3xl font-mono shadow-wa-green/20 drop-shadow-lg">{total} <span className="text-sm">EGP</span></span>

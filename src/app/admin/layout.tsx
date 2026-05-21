@@ -1,6 +1,12 @@
 import "../globals.css";
 import { archivo, barlow, cairo, plex } from '@/lib/fonts';
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1.0,
+  maximumScale: 5.0,
+};
+
 export const metadata = {
   title: "Warriors Arena | Admin Console",
   description: "Secure Administrative Interface",

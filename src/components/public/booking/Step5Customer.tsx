@@ -81,7 +81,7 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
             {...register("customer_name")}
             aria-invalid={!!errors.customer_name}
             aria-describedby={errors.customer_name ? "name-error" : undefined}
-            className={`bg-wa-text/5 border-2 p-4 text-wa-text outline-none transition-all ${
+            className={`bg-wa-text/5 border-2 p-4 text-base text-wa-text outline-none transition-all ${
               errors.customer_name ? "border-wa-error/50" : "border-wa-text/10 focus:border-wa-green shadow-[inset_0_0_10px_rgba(255,255,255,0.02)]"
             }`}
             placeholder="e.g. Ahmed Hassan"
@@ -105,7 +105,7 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
             {...register("customer_phone")}
             aria-invalid={!!errors.customer_phone}
             aria-describedby={errors.customer_phone ? "phone-error" : undefined}
-            className={`bg-wa-text/5 border-2 p-4 text-wa-text outline-none transition-all ${
+            className={`bg-wa-text/5 border-2 p-4 text-base text-wa-text outline-none transition-all ${
               errors.customer_phone ? "border-wa-error/50" : "border-wa-text/10 focus:border-wa-green shadow-[inset_0_0_10px_rgba(255,255,255,0.02)]"
             }`}
             placeholder="01xxxxxxxxx"
@@ -128,7 +128,7 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
             {...register("customer_email")}
             aria-invalid={!!errors.customer_email}
             aria-describedby={errors.customer_email ? "email-error" : undefined}
-            className={`bg-wa-text/5 border-2 p-4 text-wa-text outline-none transition-all border-wa-text/10 focus:border-wa-green shadow-[inset_0_0_10px_rgba(255,255,255,0.02)] ${
+            className={`bg-wa-text/5 border-2 p-4 text-base text-wa-text outline-none transition-all border-wa-text/10 focus:border-wa-green shadow-[inset_0_0_10px_rgba(255,255,255,0.02)] ${
               errors.customer_email ? "border-wa-error/50" : ""
             }`}
             placeholder="email@example.com"
@@ -149,7 +149,7 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
             autoComplete="off"
             {...register("customer_notes")}
             rows={3}
-            className="bg-wa-text/5 border-2 border-wa-text/10 p-4 text-wa-text outline-none focus:border-wa-green transition-all shadow-[inset_0_0_10px_rgba(255,255,255,0.02)]"
+            className="bg-wa-text/5 border-2 border-wa-text/10 p-4 text-base text-wa-text outline-none focus:border-wa-green transition-all shadow-[inset_0_0_10px_rgba(255,255,255,0.02)]"
             placeholder={t("notesPlaceholder")}
           />
         </div>
@@ -163,7 +163,7 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
             {...register("terms_agreed")}
             className="peer sr-only"
           />
-          <label htmlFor="terms_agreed" className="flex items-start gap-4 cursor-pointer group select-none">
+          <label htmlFor="terms_agreed" className="flex items-start gap-4 cursor-pointer group select-none min-h-[48px] py-2">
             {/* Custom checkbox box */}
             <div className={`
               w-6 h-6 border-2 shrink-0 mt-0.5 flex items-center justify-center transition-all duration-200
