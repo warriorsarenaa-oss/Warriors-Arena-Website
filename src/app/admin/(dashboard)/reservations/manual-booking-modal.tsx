@@ -467,7 +467,9 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
                     {availableSlots.map((slot: any, index: number) => {
                       const timeDisplay = (slot.start_time || slot.slot_time || "??:??").substring(0, 5);
-                      const isBooked = slot.is_booked === true;
+                      // Block if the slot itself is booked OR if it's a 60min game but the next 30min block is unavailable
+                      const isUnavailableForDuration = formData.duration === 60 ? slot.available_60 === false : (slot.is_booked === true || slot.available_30 === false);
+                      const isBooked = slot.is_booked === true || isUnavailableForDuration;
                       const isSelected = formData.startTime === (slot.start_time || slot.slot_time);
 
                       return (

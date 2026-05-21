@@ -8,7 +8,7 @@ export const POST = requirePermission(async (request: Request, { user, params })
 
   try {
     const body = await request.json();
-    const { final_amount_paid, payment_method, lead_staff_id } = body;
+    const { final_amount_paid, payment_method, lead_staff_id, discount_amount, discount_type, discount_value } = body;
 
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     let booking = null;
@@ -38,6 +38,7 @@ export const POST = requirePermission(async (request: Request, { user, params })
         completed_at: new Date().toISOString(),
         completed_by: user.id,
         final_amount_paid: final_amount_paid,
+        ...(discount_amount !== undefined ? { discount_amount, discount_type, discount_value } : {}),
         payment_method: payment_method || 'cash',
         updated_at: new Date().toISOString(),
       })

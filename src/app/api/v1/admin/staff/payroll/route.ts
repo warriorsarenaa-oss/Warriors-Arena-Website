@@ -46,10 +46,37 @@ export const GET = requirePermission(async (request: Request) => {
       payrollData[staffId].commission_pay += games.reduce((acc: number, g: any) => acc + Number(g.commission_amount), 0);
     });
 
-    const result = Object.values(payrollData).map(p => ({
-      ...p,
-      total_pay: p.hours_pay + p.commission_pay
-    }));
+    // 3. For each staff member, look up how much has already been paid this week
+    const staffIds = Object.keys(payrollData);
+    const alreadyPaidMap: Record<string, number> = {};
+
+    if (staffIds.length > 0) {
+      const { data: payrollRecords } = await supabaseService
+        .from('payroll_records')
+        .select('staff_id, total_pay')
+        .in('staff_id', staffIds)
+        .gte('week_start', weekStart)
+        .lte('week_end', weekEnd)
+        .eq('is_paid', true);
+
+      (payrollRecords || []).forEach((rec: any) => {
+        alreadyPaidMap[rec.staff_id] = (alreadyPaidMap[rec.staff_id] || 0) + Number(rec.total_pay);
+      });
+    }
+
+    const result = Object.values(payrollData).map(p => {
+      const totalEarned = p.hours_pay + p.commission_pay;
+      const alreadyPaid = alreadyPaidMap[p.staff.id] || 0;
+      const deltaDue = Math.max(0, totalEarned - alreadyPaid);
+      return {
+        ...p,
+        total_pay: totalEarned,
+        already_paid: alreadyPaid,
+        delta_due: deltaDue,
+        // is_paid only if delta is 0 AND something has been paid (fully settled)
+        is_paid: deltaDue === 0 && alreadyPaid > 0,
+      };
+    });
 
     return NextResponse.json(result);
   } catch (error) {
@@ -61,14 +88,22 @@ export const GET = requirePermission(async (request: Request) => {
 export const POST = requirePermission(async (request: Request, { user }) => {
   try {
     const body = await request.json();
-    const { staff_id, week_start, week_end, total_hours, hourly_rate, hours_pay, games_count, commission_per_game, commission_pay, total_pay, payment_method, notes } = body;
+    const { staff_id, week_start, week_end, total_hours, hourly_rate, hours_pay, games_count, commission_per_game, commission_pay, total_pay, delta_due, payment_method, notes } = body;
 
-    // 1. Create payroll record
+    // ✅ DELTA ALGORITHM: Only pay the delta (new unpaid amount), not the full total
+    const amountToPay = Number(delta_due ?? total_pay ?? 0);
+    if (amountToPay <= 0) {
+      return NextResponse.json({ error: "Nothing new to pay. Staff member is fully settled for this week." }, { status: 400 });
+    }
+
+    // 1. Create a new payroll record for just the delta amount
     const { data: payroll, error: payrollError } = await supabaseService
       .from('payroll_records')
       .insert({
         staff_id, week_start, week_end, total_hours, hourly_rate, hours_pay, 
-        games_count, commission_per_game, commission_pay, total_pay,
+        games_count, commission_per_game, commission_pay,
+        // Record only the delta in this payment record
+        total_pay: amountToPay,
         is_paid: true, paid_at: new Date().toISOString(), paid_by: user.id,
         payment_method, notes
       })
@@ -84,13 +119,13 @@ export const POST = requirePermission(async (request: Request, { user }) => {
       .eq('name', 'Payroll')
       .single();
 
-    // 3. Create expense record
+    // 3. Create expense record for only the delta amount
     const { error: expenseError } = await supabaseService
       .from('expenses')
       .insert({
         title: `Payroll: ${week_start} to ${week_end}`,
         category_id: category?.id,
-        amount: total_pay,
+        amount: amountToPay,
         expense_date: new Date().toISOString().split('T')[0],
         payroll_record_id: payroll.id,
         created_by_user_id: user.id,
@@ -99,7 +134,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
 
     if (expenseError) throw expenseError;
 
-    return NextResponse.json(payroll);
+    return NextResponse.json({ ...payroll, amount_paid: amountToPay });
   } catch (error) {
     console.error("[ADMIN_PAYROLL_POST_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
