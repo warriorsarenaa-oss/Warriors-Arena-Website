@@ -135,6 +135,24 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
     }
   };
 
+  const handleUndo = async () => {
+    if (confirm('Are you sure you want to UNDO this booking? This will recalculate financials and payroll.')) {
+      setIsProcessing(true);
+      try {
+        const res = await fetch(`/api/v1/admin/bookings/${bookingIdentifier}/undo`, {
+          method: 'POST'
+        });
+        if (!res.ok) throw new Error('Failed to undo booking');
+        onUpdate();
+        onClose();
+      } catch (err: any) {
+        alert(`Error: ${err.message}`);
+      } finally {
+        setIsProcessing(false);
+      }
+    }
+  };
+
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-2 sm:p-4 backdrop-blur-sm">
@@ -379,6 +397,16 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
                   NO SHOW
                 </button>
               </div>
+            )}
+
+            {localBooking.status === 'completed' && (
+              <button
+                onClick={handleUndo}
+                disabled={isProcessing}
+                className="w-full sm:w-auto px-6 py-3 border border-wa-orange text-wa-orange hover:bg-wa-orange/10 font-bold rounded uppercase tracking-[0.2em] text-[10px] transition-all"
+              >
+                UNDO COMPLETION
+              </button>
             )}
 
             {['pending', 'confirmed'].includes(localBooking.status) && (
