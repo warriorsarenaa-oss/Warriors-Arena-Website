@@ -21,7 +21,12 @@ export const GET = requirePermission(async (_request: Request) => {
       created_at,
       roles!role_id (
         id,
-        name
+        name,
+        role_permissions (
+          permissions (
+            key
+          )
+        )
       )
     `);
 
@@ -43,10 +48,17 @@ export const GET = requirePermission(async (_request: Request) => {
       });
     }
 
-    const results = filteredData.map((user: any) => ({
-      ...user,
-      role_name: user.roles?.name,
-    }));
+    const results = filteredData.map((user: any) => {
+      const permissionKeys = (user.roles as any)?.role_permissions?.map(
+        (rp: any) => rp.permissions?.key
+      ).filter(Boolean) || [];
+
+      return {
+        ...user,
+        role_name: user.roles?.name,
+        permissions: permissionKeys,
+      };
+    });
 
     return NextResponse.json(results);
   } catch (error) {

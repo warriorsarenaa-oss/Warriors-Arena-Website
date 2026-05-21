@@ -28,21 +28,18 @@ export const POST = requirePermission(async (
       { auth: { persistSession: false } }
     );
 
-    // Robust lookup (Try UUID, then code)
-    let { data: booking, error: findError } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('id', identifier)
-      .maybeSingle();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+    let booking = null;
+    let findError = null;
 
-    if (!booking && !findError) {
-      const { data: bookingByCode, error: codeError } = await supabase
-        .from('bookings')
-        .select('*')
-        .eq('booking_code', identifier)
-        .maybeSingle();
-      booking = bookingByCode;
-      findError = codeError;
+    if (isUuid) {
+      const res = await supabase.from('bookings').select('*').eq('id', identifier).maybeSingle();
+      booking = res.data;
+      findError = res.error;
+    } else {
+      const res = await supabase.from('bookings').select('*').eq('booking_code', identifier).maybeSingle();
+      booking = res.data;
+      findError = res.error;
     }
 
     if (findError || !booking) {

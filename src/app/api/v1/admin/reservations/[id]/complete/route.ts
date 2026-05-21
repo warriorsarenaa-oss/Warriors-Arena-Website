@@ -10,21 +10,20 @@ export const POST = requirePermission(async (request: Request, { user, params })
     const body = await request.json();
     const { final_amount_paid, payment_method, lead_staff_id } = body;
 
-    // 1. Robust lookup (Try UUID, then code)
-    let { data: booking, error: bookingError } = await supabaseService
-      .from('bookings')
-      .select('id, booking_code, booking_date, start_time, status, total_price_at_booking')
-      .eq('id', id)
-      .maybeSingle();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    let booking = null;
+    let bookingError = null;
 
-    if (!booking && !bookingError) {
-      const { data: bookingByCode, error: codeError } = await supabaseService
-        .from('bookings')
-        .select('id, booking_code, booking_date, start_time, status, total_price_at_booking')
-        .eq('booking_code', id)
-        .maybeSingle();
-      booking = bookingByCode;
-      bookingError = codeError;
+    const selectFields = 'id, booking_code, booking_date, start_time, status, total_price_at_booking, game_name';
+
+    if (isUuid) {
+      const res = await supabaseService.from('bookings').select(selectFields).eq('id', id).maybeSingle();
+      booking = res.data;
+      bookingError = res.error;
+    } else {
+      const res = await supabaseService.from('bookings').select(selectFields).eq('booking_code', id).maybeSingle();
+      booking = res.data;
+      bookingError = res.error;
     }
 
     if (bookingError || !booking) {

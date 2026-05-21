@@ -13,6 +13,7 @@ const UpdateUserSchema = z.object({
   commission_rate: z.number().min(0).optional(),
   hourly_rate: z.number().min(0).optional(),
   is_active: z.boolean().optional(),
+  permissions: z.array(z.string()).optional(),
 });
 
 export const PATCH = requirePermission(async (request: Request, context: any) => {
@@ -25,7 +26,7 @@ export const PATCH = requirePermission(async (request: Request, context: any) =>
       return NextResponse.json({ error: "Validation failed", details: parsed.error.format() }, { status: 400 });
     }
 
-    const { email, password, ...userUpdates } = parsed.data;
+    const { email, password, permissions, ...userUpdates } = parsed.data;
     const { user } = context;
 
     const { data: existingUser, error: fetchError } = await supabaseService
@@ -40,7 +41,42 @@ export const PATCH = requirePermission(async (request: Request, context: any) =>
        return NextResponse.json({ error: "Cannot change your own commission" }, { status: 400 });
     }
 
-    // 1. Handle Auth Level Updates (Email, Password)
+    // 1. Handle Permissions Updates
+    if (permissions !== undefined) {
+      const roleId = existingUser.role_id;
+      if (roleId) {
+        // Delete existing role permissions
+        const { error: deleteError } = await supabaseService
+          .from('role_permissions')
+          .delete()
+          .eq('role_id', roleId);
+
+        if (deleteError) throw deleteError;
+
+        // Insert new ones
+        if (permissions.length > 0) {
+          const { data: permRecords, error: permsFetchError } = await supabaseService
+            .from("permissions")
+            .select("id, key")
+            .in("key", permissions);
+
+          if (permsFetchError) throw permsFetchError;
+
+          if (permRecords && permRecords.length > 0) {
+            const rolePerms = permRecords.map((p) => ({
+              role_id: roleId,
+              permission_id: p.id,
+            }));
+            const { error: linkError } = await supabaseService
+              .from("role_permissions")
+              .insert(rolePerms);
+            if (linkError) throw linkError;
+          }
+        }
+      }
+    }
+
+    // 2. Handle Auth Level Updates (Email, Password)
     if (email || password) {
       const authUpdates: any = {};
       if (email) authUpdates.email = email;
@@ -52,7 +88,7 @@ export const PATCH = requirePermission(async (request: Request, context: any) =>
       }
     }
 
-    // 2. Handle User Field Updates
+    // 3. Handle User Field Updates
     if (Object.keys(userUpdates).length > 0) {
       const { data: updatedUser, error: updateError } = await supabaseService
         .from('users')

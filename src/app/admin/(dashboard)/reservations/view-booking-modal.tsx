@@ -98,8 +98,15 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
       });
 
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Action failed');
+        const errText = await res.text().catch(() => '');
+        let errMsg = 'Action failed';
+        try {
+          const errJson = JSON.parse(errText);
+          errMsg = errJson.error || errJson.message || errMsg;
+        } catch {
+          errMsg = errText || `Action failed (HTTP ${res.status})`;
+        }
+        throw new Error(errMsg);
       }
 
       onUpdate();
@@ -115,12 +122,13 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
   
   const handleComplete = () => {
     const baseAmount = Number(localBooking.total_price_at_booking || localBooking.total_amount);
+    const discountAmount = Number(localBooking.discount_amount || 0);
     const refillAmount = Number(localBooking.total_refill_cost || 0);
-    const totalToCollect = baseAmount + refillAmount;
+    const totalToCollect = baseAmount - discountAmount + refillAmount;
     const deposit = Number(localBooking.deposit_amount || 0);
     const remaining = totalToCollect - deposit;
 
-    if (confirm(`Collect remaining ${remaining} EGP from customer? (Base: ${baseAmount} + Refills: ${refillAmount})`)) {
+    if (confirm(`Collect remaining ${remaining} EGP from customer? (Base: ${baseAmount} - Discount: ${discountAmount} + Refills: ${refillAmount})`)) {
       handleAction('complete', 'POST', {
         final_amount_paid: totalToCollect,
         payment_method: 'cash',
@@ -142,7 +150,17 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
         const res = await fetch(`/api/v1/admin/bookings/${bookingIdentifier}/undo`, {
           method: 'POST'
         });
-        if (!res.ok) throw new Error('Failed to undo booking');
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '');
+          let errMsg = 'Failed to undo booking';
+          try {
+            const errJson = JSON.parse(errText);
+            errMsg = errJson.error || errJson.message || errMsg;
+          } catch {
+            errMsg = errText || `Failed to undo booking (HTTP ${res.status})`;
+          }
+          throw new Error(errMsg);
+        }
         onUpdate();
         onClose();
       } catch (err: any) {
@@ -271,6 +289,13 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
                       <span className="text-wa-text font-bold">{(localBooking.total_price_at_booking || localBooking.total_amount)} EGP</span>
                     </div>
 
+                    {Number(localBooking.discount_amount) > 0 && (
+                      <div className="flex justify-between items-center text-xs uppercase tracking-wider">
+                        <span className="text-wa-text/40">Discount Applied:</span>
+                        <span className="text-wa-orange font-bold">-{localBooking.discount_amount} EGP</span>
+                      </div>
+                    )}
+
                     {Number(localBooking.total_refill_cost) > 0 && (
                       <div className="flex justify-between items-center text-xs uppercase tracking-wider">
                         <span className="text-wa-text/40">Field Refills:</span>
@@ -289,7 +314,7 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
                       <span className="text-wa-green font-bold uppercase text-[10px] tracking-[0.2em]">Balance to Collect:</span>
                       <div className="flex flex-col items-end">
                         <span className="text-3xl font-bold text-wa-green font-mono drop-shadow-[0_0_10px_rgba(0,255,65,0.3)]">
-                          {(Number(localBooking.total_price_at_booking || localBooking.total_amount) + Number(localBooking.total_refill_cost || 0)) - (Number(localBooking.deposit_amount) || 0)} <span className="text-xs">EGP</span>
+                          {(Number(localBooking.total_price_at_booking || localBooking.total_amount) - Number(localBooking.discount_amount || 0) + Number(localBooking.total_refill_cost || 0)) - (Number(localBooking.deposit_amount) || 0)} <span className="text-xs">EGP</span>
                         </span>
                       </div>
                     </div>

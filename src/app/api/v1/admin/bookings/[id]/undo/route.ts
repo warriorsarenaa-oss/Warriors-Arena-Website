@@ -7,15 +7,19 @@ import { emitEvent } from "@/lib/events/eventBus";
 export const POST = requirePermission(async (request: Request, { user, params }) => {
   const { id } = await params;
 
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
   // 1. Fetch current booking state
-  const { data: booking, error: fetchError } = await supabaseService
-    .from('bookings')
-    .select('*')
-    .eq('id', id)
-    .single();
+  let query = supabaseService.from('bookings').select('*');
+  if (isUuid) {
+    query = query.eq('id', id);
+  } else {
+    query = query.eq('booking_code', id);
+  }
+  const { data: booking, error: fetchError } = await query.maybeSingle();
 
   if (fetchError || !booking) {
-    return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    return NextResponse.json({ error: fetchError?.message || "Booking not found" }, { status: 404 });
   }
 
   if (booking.status !== 'completed') {
