@@ -15,10 +15,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
       games_count, 
       commission_rate,
       total_revenue,
-      is_paid,
-      hours_pay,
-      commission_pay,
-      total_pay
+      is_paid
     } = body;
 
     // Check for existing record
@@ -39,9 +36,6 @@ export const POST = requirePermission(async (request: Request, { user }) => {
       games_count,
       commission_rate: commission_rate || 0,
       total_revenue: total_revenue || 0,
-      hours_pay: hours_pay || (total_hours * hourly_rate) || 0,
-      commission_pay: commission_pay || 0,
-      total_pay: total_pay || ((hours_pay || (total_hours * hourly_rate) || 0) + (commission_pay || 0)),
       is_paid,
       paid_at: is_paid ? new Date().toISOString() : null,
       paid_by: is_paid ? user.id : null,

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseService } from "@/lib/db/supabase-service";
 import { logAuditAction } from "@/lib/admin/audit-log";
 import { requirePermission } from "@/lib/auth/permission-middleware";
+import { emitEvent } from "@/lib/events/eventBus";
 
 export const DELETE = requirePermission(async (request: Request, { user, params }) => {
   const { id } = await params;
@@ -14,6 +15,9 @@ export const DELETE = requirePermission(async (request: Request, { user, params 
     .single();
 
   if (!shift) return NextResponse.json({ error: "Shift not found" }, { status: 404 });
+
+  const { data: schedule } = await supabaseService.from('staff_schedules').select('is_published').eq('id', shift.schedule_id).single();
+  const isPublished = schedule?.is_published;
 
   // 2. Delete shift
   const { error } = await supabaseService
@@ -31,6 +35,18 @@ export const DELETE = requirePermission(async (request: Request, { user, params 
     entity_id: id,
     before_state: shift
   });
+
+  if (isPublished) {
+    await supabaseService.from('schedule_edits').insert({
+      schedule_id: shift.schedule_id,
+      shift_id: id,
+      affected_staff_id: shift.staff_id,
+      edited_by_user_id: user.id,
+      edit_type: 'shift_removed',
+      old_state: shift,
+    });
+    await emitEvent('SCHEDULE_EDITED', 'schedule', shift.schedule_id, { type: 'shift_removed', shift }, user.id);
+  }
 
   return NextResponse.json({ success: true });
 }, "manage_users");
