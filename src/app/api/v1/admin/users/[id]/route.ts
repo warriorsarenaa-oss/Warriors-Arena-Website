@@ -9,6 +9,7 @@ const UpdateUserSchema = z.object({
   username: z.string().optional(),
   email: z.string().email().optional(),
   password: z.string().min(6).optional(),
+  plain_password: z.string().optional(),
   role_id: z.string().uuid().optional(),
   commission_rate: z.number().min(0).optional(),
   hourly_rate: z.number().min(0).optional(),
@@ -85,6 +86,11 @@ export const PATCH = requirePermission(async (request: Request, context: any) =>
       const { error: authError } = await supabaseService.auth.admin.updateUserById(id, authUpdates);
       if (authError) {
         return NextResponse.json({ error: `Auth update failed: ${authError.message}` }, { status: 400 });
+      }
+
+      // Also persist plain_password in public users table for admin visibility
+      if (password) {
+        await supabaseService.from('users').update({ plain_password: password }).eq('id', id);
       }
     }
 

@@ -64,7 +64,7 @@ export default function UsersPage() {
       setEditingUser(user);
       setFormData({
         username: user.username,
-        password: "", // Don't show existing password
+        password: user.plain_password || "", // Prefill with stored plain password
         commission_rate: user.commission_rate || 0,
         hourly_rate: user.hourly_rate || 0,
         permissions: user.permissions || []
@@ -116,7 +116,9 @@ export default function UsersPage() {
           body: JSON.stringify({
             commission_rate: formData.commission_rate,
             hourly_rate: formData.hourly_rate,
-            permissions: formData.permissions
+            permissions: formData.permissions,
+            // Include password only if it was changed
+            ...(formData.password ? { password: formData.password } : {})
           })
         });
         if (!res.ok) throw new Error(await res.text());
@@ -268,8 +270,8 @@ export default function UsersPage() {
                 </div>
                 
                 <div className="flex flex-col gap-2">
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-50">
-                    {editingUser ? "New Password (Leave blank to keep)" : "Password *"}
+                <label className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-50">
+                    {editingUser ? "Password (Edit to change)" : "Password *"}
                   </label>
                   <div className="relative">
                     <input 

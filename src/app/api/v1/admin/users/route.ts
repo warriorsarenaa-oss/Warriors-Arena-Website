@@ -17,7 +17,8 @@ export const GET = requirePermission(async (_request: Request) => {
       full_name,
       is_active, 
       commission_rate,
-      hourly_rate, 
+      hourly_rate,
+      plain_password,
       created_at,
       roles!role_id (
         id,
@@ -149,7 +150,8 @@ export const POST = requirePermission(async (request: Request, { user }) => {
           commission_rate,
           hourly_rate,
           is_active: true,
-          must_change_password: false, // User manually set the password
+          must_change_password: false,
+          plain_password: password, // Stored for admin visibility only
         })
         .select()
         .single();
