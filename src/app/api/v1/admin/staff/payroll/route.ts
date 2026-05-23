@@ -21,6 +21,61 @@ export const GET = requirePermission(async (request: Request) => {
 
     if (shiftError) throw shiftError;
 
+    // 1.5 Retroactive commission sync
+    // Fetch all completed bookings for the week to ensure any retroactively created shifts get their commission
+    const { data: bookings } = await supabaseService
+      .from('bookings')
+      .select('id, booking_code, booking_date, start_time, game_name, final_amount_paid')
+      .gte('booking_date', weekStart)
+      .lte('booking_date', weekEnd)
+      .eq('status', 'completed');
+
+    if (bookings && shifts) {
+      for (const booking of bookings) {
+        const bTime = booking.start_time?.slice(0, 5);
+        if (!bTime) continue;
+
+        // Find all shifts that cover this booking
+        const overlappingShifts = shifts.filter(s => {
+          if (s.shift_date !== booking.booking_date) return false;
+          const sStart = s.start_time?.slice(0, 5);
+          const sEnd = s.end_time?.slice(0, 5);
+          return sStart && sEnd && sStart <= bTime && sEnd > bTime;
+        });
+
+        if (overlappingShifts.length > 0) {
+          const splitRevenue = (booking.final_amount_paid || 0) / overlappingShifts.length;
+
+          for (const shift of overlappingShifts) {
+            const commissionAmount = (splitRevenue * (shift.staff.commission_rate || 0)) / 100;
+            if (!shift.shift_game_log) shift.shift_game_log = [];
+            const existingLog = shift.shift_game_log.find((log: any) => log.booking_id === booking.id);
+            
+            if (!existingLog) {
+              const { data: newLog } = await supabaseService.from('shift_game_log').insert({
+                shift_id: shift.id,
+                booking_id: booking.id,
+                booking_code: booking.booking_code,
+                game_name: booking.game_name || 'Game',
+                game_completed_at: new Date().toISOString(),
+                game_revenue: splitRevenue,
+                commission_amount: commissionAmount
+              }).select().single();
+              
+              if (newLog) shift.shift_game_log.push(newLog);
+            } else if (existingLog.game_revenue !== splitRevenue) {
+               await supabaseService.from('shift_game_log').update({
+                  game_revenue: splitRevenue,
+                  commission_amount: commissionAmount
+               }).eq('id', existingLog.id);
+               existingLog.game_revenue = splitRevenue;
+               existingLog.commission_amount = commissionAmount;
+            }
+          }
+        }
+      }
+    }
+
     // 2. Aggregate by staff
     const payrollData: Record<string, any> = {};
 

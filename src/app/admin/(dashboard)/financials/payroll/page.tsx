@@ -1,313 +1,428 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from "date-fns";
-import { 
-  DollarSign, 
-  ChevronLeft, 
-  ChevronRight, 
-  Clock, 
-  Gamepad2, 
-  CheckCircle2, 
-  AlertCircle,
-  TrendingUp,
-  Receipt,
-  Send
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Calendar, User as UserIcon, CheckCircle2, AlertCircle, Loader2, X, History, DollarSign, Send } from "lucide-react";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
-import { SectionHeader } from "@/components/UI/SectionHeader";
-import { toast } from "sonner";
-
-interface PayrollEntry {
-  staff_id: string;
-  staff_name: string;
-  hourly_rate: number;
-  total_hours: number;
-  hours_pay: number;
-  games_count: number;
-  commission_rate: number;
-  commission_pay: number;
-  total_pay: number;
-  is_paid?: boolean;
-}
+import { format, startOfWeek, addDays } from "date-fns";
 
 export default function PayrollPage() {
-  const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
-  const [entries, setEntries] = useState<PayrollEntry[]>([]);
+  const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
+  const [payroll, setPayroll] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [schedule, setSchedule] = useState<any>(null);
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
-  const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 0 });
+  // Modals state
+  const [paymentModal, setPaymentModal] = useState<{ isOpen: boolean; staffPayroll: any; amount: number; notes: string } | null>(null);
+  const [historyModal, setHistoryModal] = useState<{ isOpen: boolean; staffPayroll: any } | null>(null);
+  const [pushModal, setPushModal] = useState<{ isOpen: boolean; isProcessing: boolean } | null>(null);
 
-  useEffect(() => {
-    fetchPayroll();
-  }, [currentWeekStart]);
-
-  const fetchPayroll = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
-      const startStr = format(currentWeekStart, "yyyy-MM-dd");
-      const endStr = format(weekEnd, "yyyy-MM-dd");
-      
-      // 1. Get schedule to know the ID
-      const schedRes = await fetch(`/api/v1/admin/schedules?week_start=${startStr}`);
-      const schedData = await schedRes.json();
-      const currentSched = Array.isArray(schedData) && schedData.length > 0 ? schedData[0] : null;
-      setSchedule(currentSched);
-
-      if (currentSched) {
-        // 2. Calculate payroll
-        const payrollRes = await fetch(`/api/v1/admin/payroll/calculate?week_start=${startStr}&week_end=${endStr}&schedule_id=${currentSched.id}`);
-        const payrollData = await payrollRes.json();
-        setEntries(Array.isArray(payrollData) ? payrollData : []);
-      } else {
-        setEntries([]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch payroll:", error);
-      toast.error("Failed to calculate payroll");
+      const weekStartStr = format(currentWeek, "yyyy-MM-dd");
+      const weekEndStr = format(addDays(currentWeek, 6), "yyyy-MM-dd");
+      const res = await fetch(`/api/v1/admin/staff/payroll?week_start=${weekStartStr}&week_end=${weekEndStr}`);
+      if (res.ok) setPayroll(await res.json());
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const [isFinishing, setIsFinishing] = useState<string | null>(null);
+  useEffect(() => { loadData(); }, [currentWeek]);
 
-  const markAsPaid = async (entry: PayrollEntry) => {
-    setIsFinishing(entry.staff_id);
-    const toastId = toast.loading(`Finalizing payment for ${entry.staff_name}...`);
-    
+  const submitPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!paymentModal) return;
+
+    const { staffPayroll, amount, notes } = paymentModal;
+
+    if (amount <= 0 || amount > staffPayroll.remaining_balance) {
+      alert(`Payment must be between 1 and ${staffPayroll.remaining_balance} EGP.`);
+      return;
+    }
+
+    setIsProcessing(staffPayroll.staff.id);
+    setPaymentModal(null);
+
     try {
-      const res = await fetch("/api/v1/admin/payroll/finalize", {
+      const res = await fetch("/api/v1/admin/staff/payroll", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          staff_id: entry.staff_id,
-          week_start: format(currentWeekStart, "yyyy-MM-dd"),
-          week_end: format(weekEnd, "yyyy-MM-dd"),
-          total_hours: entry.total_hours,
-          hourly_rate: entry.hourly_rate,
-          hours_pay: entry.hours_pay,
-          games_count: entry.games_count,
-          commission_rate: entry.commission_rate,
-          commission_pay: entry.commission_pay,
-          total_pay: entry.total_pay,
-          is_paid: true
-        }),
+          payroll_record_id: staffPayroll.id,
+          amount_paid: amount,
+          payment_method: "cash",
+          notes: notes || `Weekly payroll partial payment`
+        })
       });
 
-      const data = await res.json();
-      console.log("[PAYROLL_FINALIZE_RESPONSE]", data);
-
-      if (res.ok) {
-        toast.success(`Payment marked for ${entry.staff_name}`, { id: toastId });
-        await fetchPayroll();
-      } else {
-        toast.error(data.error || "Failed to finalize payment", { id: toastId });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Payment failed");
       }
-    } catch (error) {
-      console.error("Payroll finalize error:", error);
-      toast.error("Network error while marking as paid", { id: toastId });
+
+      await loadData();
+    } catch (err: any) {
+      console.error(err);
+      alert(`Error: ${err.message}`);
     } finally {
-      setIsFinishing(null);
+      setIsProcessing(null);
     }
   };
 
-  const pushToExpenses = async () => {
-    const unpaidStaff = entries.filter(e => !e.is_paid);
-    if (unpaidStaff.length > 0) {
-      if (!confirm(`There are ${unpaidStaff.length} staff members not yet marked as paid. Push total for all paid staff?`)) return;
-    }
-    
+  const confirmPush = async () => {
+    setPushModal({ isOpen: true, isProcessing: true });
     try {
       const res = await fetch("/api/v1/admin/payroll/push-to-expenses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          week_start: format(currentWeekStart, "yyyy-MM-dd"),
-          week_end: format(weekEnd, "yyyy-MM-dd"),
-        }),
+          week_start: format(currentWeek, "yyyy-MM-dd"),
+        })
       });
+
       const data = await res.json();
-      if (res.ok) {
-        toast.success(`Pushed ${data.amount} EGP to Financials/Expenses`);
-        fetchPayroll();
-      } else {
-        toast.error(data.error || "Failed to push to expenses");
-      }
-    } catch (error) {
-      toast.error("Failed to push to expenses");
+      if (!res.ok) throw new Error(data.error || "Failed to push to expenses");
+
+      alert(data.message || `Successfully pushed ${data.amount} EGP (${data.count} staff records) to expenses.`);
+      setPushModal(null);
+      await loadData();
+    } catch (err: any) {
+      console.error(err);
+      alert(`Error: ${err.message}`);
+      setPushModal({ isOpen: true, isProcessing: false });
     }
   };
 
-  const totalPayroll = entries.reduce((sum, e) => sum + e.total_pay, 0);
-  const totalHours = entries.reduce((sum, e) => sum + e.total_hours, 0);
-  const totalGames = entries.reduce((sum, e) => sum + e.games_count, 0);
+  const totalOutstanding = payroll.reduce((acc, p) => acc + Number(p.remaining_balance || 0), 0);
+  const totalAlreadyPaid = payroll.reduce((acc, p) => acc + Number(p.total_paid_so_far || 0), 0);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <SectionHeader
-        title="Weekly Payroll Management"
-        line="Transparent salary and commission calculations"
-      />
-
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <WAPanel className="p-6 bg-gradient-to-br from-wa-green/10 to-transparent">
-          <div className="text-wa-text-dim text-[10px] uppercase font-mono tracking-widest mb-1">Weekly Payout</div>
-          <div className="text-3xl font-archivo text-wa-green flex items-baseline gap-1">
-            {totalPayroll.toLocaleString()} <span className="text-sm">EGP</span>
+    <div className="max-w-6xl mx-auto flex flex-col gap-8 pb-20">
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-bold font-heading uppercase tracking-widest text-wa-green mb-2">WEEKLY PAYROLL</h1>
+          <p className="text-wa-text/60 uppercase text-xs tracking-wider">Calculate and authorize staff compensation</p>
+        </div>
+        <div className="text-right flex flex-col gap-1">
+          {totalAlreadyPaid > 0 && (
+            <div>
+              <div className="text-[10px] uppercase tracking-widest opacity-40 mb-0.5">Total Paid This Week</div>
+              <div className="text-lg font-mono font-bold text-wa-text/50">{totalAlreadyPaid.toLocaleString()} EGP</div>
+            </div>
+          )}
+          <div>
+            <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Outstanding Liability</div>
+            <div className="text-3xl font-mono font-bold text-wa-green">{totalOutstanding.toLocaleString()} EGP</div>
           </div>
-          <TrendingUp className="w-4 h-4 text-wa-green/50 mt-2" />
-        </WAPanel>
-
-        <WAPanel className="p-6">
-          <div className="text-wa-text-dim text-[10px] uppercase font-mono tracking-widest mb-1">Operational Hours</div>
-          <div className="text-2xl font-archivo text-wa-text">
-            {totalHours} <span className="text-sm font-mono text-wa-text-dim">HRS</span>
-          </div>
-          <Clock className="w-4 h-4 text-wa-text-dim mt-2" />
-        </WAPanel>
-
-        <WAPanel className="p-6">
-          <div className="text-wa-text-dim text-[10px] uppercase font-mono tracking-widest mb-1">Total Games</div>
-          <div className="text-2xl font-archivo text-wa-text">
-            {totalGames} <span className="text-sm font-mono text-wa-text-dim">Missions</span>
-          </div>
-          <Gamepad2 className="w-4 h-4 text-wa-text-dim mt-2" />
-        </WAPanel>
-
-        <WAPanel className="p-6">
-          <div className="text-wa-text-dim text-[10px] uppercase font-mono tracking-widest mb-1">Personnel Cost</div>
-          <div className="text-2xl font-archivo text-wa-text">
-            {entries.length} <span className="text-sm font-mono text-wa-text-dim">Staff</span>
-          </div>
-          <Receipt className="w-4 h-4 text-wa-text-dim mt-2" />
-        </WAPanel>
+        </div>
       </div>
 
-      {/* Week Selector */}
-      <div className="flex items-center justify-between bg-wa-panel p-4 border border-wa-line rounded-sm">
-        <div className="flex items-center gap-4">
-          <WAButton variant="ghost" size="sm" onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}>
-            <ChevronLeft className="w-4 h-4" />
-          </WAButton>
-          <span className="font-archivo text-sm uppercase tracking-widest">
-            {format(currentWeekStart, "MMM dd")} - {format(weekEnd, "MMM dd, yyyy")}
+      <div className="flex items-center justify-between bg-wa-bg/30 border border-wa-green/20 p-4 rounded-xl">
+        <button type="button" onClick={() => setCurrentWeek(addDays(currentWeek, -7))} className="p-2 hover:bg-wa-green/10 rounded-lg text-wa-green transition-colors">
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <div className="flex items-center gap-3">
+          <Calendar className="w-5 h-5 text-wa-green" />
+          <span className="font-mono font-bold text-lg tracking-widest uppercase">
+            {format(currentWeek, "MMM d")} - {format(addDays(currentWeek, 6), "MMM d, yyyy")}
           </span>
-          <WAButton variant="ghost" size="sm" onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}>
-            <ChevronRight className="w-4 h-4" />
-          </WAButton>
         </div>
-        
-        <div className="flex gap-4">
-          {schedule?.is_published ? (
-            <div className="flex items-center gap-2 text-wa-green font-mono text-[10px] uppercase">
-              <CheckCircle2 className="w-4 h-4" /> Schedule Published
+        <button type="button" onClick={() => setCurrentWeek(addDays(currentWeek, 7))} className="p-2 hover:bg-wa-green/10 rounded-lg text-wa-green transition-colors">
+          <ChevronRight className="w-6 h-6" />
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center p-20 gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-wa-green/30" />
+          <p className="font-mono text-[10px] uppercase tracking-[0.3em] opacity-40">Calculating payouts...</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {payroll.map(p => {
+            const remainingBalance = Number(p.remaining_balance || 0);
+            const alreadyPaid = Number(p.total_paid_so_far || 0);
+            const totalEarned = Number(p.total_calculated_payroll || 0);
+            const isFullyPaid = remainingBalance <= 0 && alreadyPaid >= totalEarned && totalEarned > 0;
+            const isOverpaid = remainingBalance < 0;
+
+            return (
+              <WAPanel key={p.staff.id} className="p-6 border-wa-green/10 bg-wa-bg/40 backdrop-blur-md flex flex-col md:flex-row items-center gap-8 group hover:border-wa-green/30 transition-all relative">
+                
+                {isOverpaid && (
+                  <div className="absolute -top-3 left-6 bg-red-500/20 border border-red-500/50 text-red-400 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full backdrop-blur-md">
+                    OVERPAID BY {Math.abs(remainingBalance)} EGP
+                  </div>
+                )}
+
+                <div className="flex items-center gap-4 min-w-[240px]">
+                  <div className="w-12 h-12 bg-wa-green/10 rounded-full flex items-center justify-center border border-wa-green/20">
+                    <UserIcon className="w-6 h-6 text-wa-green" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-lg uppercase tracking-wider">{p.staff.full_name}</div>
+                    <div className="text-[10px] opacity-40 font-mono">STAFF ID: {p.staff.id.substring(0, 8)}</div>
+                    
+                    {p.payment_history?.length > 0 && (
+                      <button 
+                        onClick={() => setHistoryModal({ isOpen: true, staffPayroll: p })}
+                        className="flex items-center gap-1 text-[10px] text-wa-green/70 hover:text-wa-green uppercase tracking-widest mt-1 transition-colors"
+                      >
+                        <History className="w-3 h-3" /> View {p.payment_history.length} Payments
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Hours Worked</span>
+                    <span className="font-mono font-bold text-wa-green">
+                      {p.total_hours}h <span className="text-wa-text/30 text-[10px]">@ {p.staff.hourly_rate}/h</span>
+                    </span>
+                    <span className="font-bold text-sm">{Number(p.hours_pay).toLocaleString()} EGP</span>
+                  </div>
+                  <div className="flex flex-col border-l border-wa-text/5 pl-4">
+                    <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Commission</span>
+                    <span className="font-mono font-bold text-wa-green">
+                      {p.games_count} games
+                    </span>
+                    <span className="font-bold text-sm">{Number(p.commission_pay).toLocaleString()} EGP</span>
+                  </div>
+                  <div className="flex flex-col border-l border-wa-text/5 pl-4">
+                    <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Total Earned</span>
+                    <span className="text-xl font-mono font-bold text-wa-text">{totalEarned.toLocaleString()} EGP</span>
+                    {alreadyPaid > 0 && (
+                      <span className="text-[10px] text-wa-text/40 font-mono">— {alreadyPaid} paid</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col border-l border-wa-text/5 pl-4">
+                    <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Due Now</span>
+                    <span className={`text-xl font-mono font-bold ${isFullyPaid ? 'text-wa-green/40' : (isOverpaid ? 'text-red-400' : 'text-wa-green')}`}>
+                      {remainingBalance > 0 ? remainingBalance.toLocaleString() : '0'} EGP
+                    </span>
+                  </div>
+                </div>
+
+                <div className="min-w-[160px] flex justify-end">
+                  {isFullyPaid && !isOverpaid ? (
+                    <div className="flex items-center gap-2 text-wa-green bg-wa-green/10 px-4 py-2 rounded-lg border border-wa-green/20">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span className="text-[10px] font-bold uppercase tracking-[0.2em]">SETTLED</span>
+                    </div>
+                  ) : (
+                    <WAButton
+                      type="button"
+                      onClick={() => setPaymentModal({ isOpen: true, staffPayroll: p, amount: remainingBalance > 0 ? remainingBalance : 0, notes: '' })}
+                      disabled={isProcessing === p.staff.id || remainingBalance <= 0}
+                      className="bg-wa-green text-wa-bg font-bold flex items-center gap-2 group-hover:scale-105 transition-all"
+                    >
+                      {isProcessing === p.staff.id ? "PROCESSING..." : "RECORD PAYMENT"}
+                    </WAButton>
+                  )}
+                </div>
+              </WAPanel>
+            );
+          })}
+
+          {payroll.length === 0 && (
+            <div className="p-20 border border-dashed border-wa-text/10 rounded-3xl flex flex-col items-center gap-4 text-wa-text/30">
+              <AlertCircle className="w-12 h-12" />
+              <p className="uppercase tracking-[0.3em] text-[10px] font-bold">No active shifts or games recorded for this period</p>
             </div>
-          ) : (
-            <div className="flex items-center gap-2 text-wa-orange font-mono text-[10px] uppercase">
-              <AlertCircle className="w-4 h-4" /> Schedule in Draft
+          )}
+
+          {payroll.length > 0 && (
+            <div className="flex justify-center pt-8 border-t border-wa-green/10 mt-4">
+              <WAButton 
+                onClick={() => setPushModal({ isOpen: true, isProcessing: false })}
+                className="px-12 py-6 text-lg bg-wa-bg border border-wa-green/50 text-wa-green hover:bg-wa-green/10 flex items-center gap-3"
+              >
+                <Send className="w-5 h-5" />
+                PUSH WEEKLY TOTAL TO EXPENSES
+              </WAButton>
             </div>
           )}
         </div>
-      </div>
+      )}
 
-      {/* Payroll Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {loading ? (
-          <div className="col-span-2 py-20 text-center text-wa-text-dim font-mono animate-pulse">
-            CALCULATING WEEKLY PAYROLL SILOS...
-          </div>
-        ) : entries.length === 0 ? (
-          <div className="col-span-2 py-20 text-center border-2 border-dashed border-wa-line rounded-lg">
-            <p className="text-wa-text-dim font-mono uppercase tracking-widest">No published shifts found for this week</p>
-            <Link href="/admin/schedules/weekly-planner">
-              <WAButton variant="ghost" className="mt-4">
-                Go to Planner
-              </WAButton>
-            </Link>
-          </div>
-        ) : (
-          entries.map((entry) => (
-            <WAPanel key={entry.staff_id} className="p-0 overflow-hidden border-wa-line hover:border-wa-green/30 transition-all">
-              <div className="p-6 border-b border-wa-line flex items-center justify-between bg-wa-text/5">
+      {/* Payment Modal */}
+      {paymentModal && paymentModal.isOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <WAPanel className="max-w-md w-full p-8 border-wa-green/30 relative shadow-2xl shadow-wa-green/10">
+            <button onClick={() => setPaymentModal(null)} className="absolute top-6 right-6 opacity-50 hover:opacity-100 transition-opacity">
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-2 bg-wa-green/10 rounded border border-wa-green/20">
+                <DollarSign className="w-6 h-6 text-wa-green" />
+              </div>
+              <div>
+                <h3 className="font-bold uppercase tracking-widest text-wa-green">Record Payment</h3>
+                <p className="text-[10px] opacity-50 uppercase tracking-widest font-mono">For {paymentModal.staffPayroll.staff.full_name}</p>
+              </div>
+            </div>
+
+            <form onSubmit={submitPayment} className="flex flex-col gap-6">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-white/5 rounded-xl border border-white/10 mb-2">
                 <div>
-                  <h3 className="text-wa-text font-archivo text-xl uppercase tracking-wider">{entry.staff_name}</h3>
-                  <p className="text-[10px] text-wa-text-dim font-mono mt-1 uppercase">Personnel ID: {entry.staff_id.substring(0, 8)}</p>
+                  <div className="text-[10px] uppercase opacity-50 mb-1 tracking-widest">Total Earned</div>
+                  <div className="font-mono">{Number(paymentModal.staffPayroll.total_calculated_payroll).toLocaleString()} EGP</div>
                 </div>
-                <div className="text-right">
-                  <div className="text-wa-green font-archivo text-2xl">{entry.total_pay} EGP</div>
-                  <div className="text-[10px] text-wa-green/60 font-mono uppercase">Calculated Total</div>
+                <div>
+                  <div className="text-[10px] uppercase opacity-50 mb-1 tracking-widest">Remaining Balance</div>
+                  <div className="font-mono text-wa-green font-bold">{Number(paymentModal.staffPayroll.remaining_balance).toLocaleString()} EGP</div>
                 </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold opacity-50 uppercase tracking-widest">Payment Amount (EGP)</label>
+                <input 
+                  type="number" 
+                  min="1" 
+                  max={paymentModal.staffPayroll.remaining_balance}
+                  required 
+                  value={paymentModal.amount || ""} 
+                  onChange={(e) => setPaymentModal({ ...paymentModal, amount: Number(e.target.value) })}
+                  className="bg-transparent border border-wa-green/30 rounded-xl p-4 text-xl font-mono text-wa-green outline-none focus:border-wa-green"
+                />
               </div>
               
-              <div className="p-6 grid grid-cols-2 gap-8">
-                {/* Hours Side */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-wa-text-dim text-[10px] font-mono uppercase tracking-widest border-b border-wa-line pb-2">
-                    <Clock className="w-3 h-3" /> Hours worked
-                  </div>
-                  <div className="flex justify-between items-end">
-                    <span className="text-wa-text text-lg font-archivo">{entry.total_hours} <span className="text-xs text-wa-text-dim">hrs</span></span>
-                    <span className="text-wa-text-dim text-xs font-mono">× {entry.hourly_rate}</span>
-                  </div>
-                  <div className="text-wa-text text-xl font-archivo pt-2 border-t border-wa-line/30 flex justify-between">
-                    <span className="text-[10px] text-wa-text-dim uppercase">Hours Pay</span>
-                    <span>{entry.hours_pay} <span className="text-xs">EGP</span></span>
-                  </div>
-                </div>
-
-                {/* Commission Side */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-wa-text-dim text-[10px] font-mono uppercase tracking-widest border-b border-wa-line pb-2">
-                    <Gamepad2 className="w-3 h-3" /> Commissions ({entry.games_count} games)
-                  </div>
-                  <div className="flex justify-between items-end">
-                    <span className="text-wa-text text-lg font-archivo">{entry.games_count || 0} <span className="text-xs text-wa-text-dim">games</span></span>
-                    <span className="text-wa-text-dim text-xs font-mono">× {entry.commission_rate}% revenue</span>
-                  </div>
-                  <div className="text-wa-text text-xl font-archivo pt-2 border-t border-wa-line/30 flex justify-between">
-                    <span className="text-[10px] text-wa-text-dim uppercase">Comm. Pay</span>
-                    <span>{Number(entry.commission_pay).toFixed(2)} <span className="text-xs">EGP</span></span>
-                  </div>
-                </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold opacity-50 uppercase tracking-widest">Notes (Optional)</label>
+                <input 
+                  type="text" 
+                  value={paymentModal.notes} 
+                  onChange={(e) => setPaymentModal({ ...paymentModal, notes: e.target.value })}
+                  placeholder="e.g. Cash handed by Admin"
+                  className="bg-transparent border border-wa-green/30 rounded-xl p-4 text-sm font-mono outline-none focus:border-wa-green"
+                />
               </div>
 
-              <div className="p-4 bg-wa-bg/50 border-t border-wa-line flex justify-end">
-                {entry.is_paid ? (
-                  <div className="flex items-center gap-2 text-wa-green font-mono text-[10px] uppercase px-4 py-2 bg-wa-green/10 rounded">
-                    <CheckCircle2 className="w-4 h-4" /> Paid & Settled
-                  </div>
-                ) : (
-                  <WAButton 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => markAsPaid(entry)}
-                    disabled={isFinishing === entry.staff_id}
-                  >
-                    {isFinishing === entry.staff_id ? (
-                      "Processing..."
-                    ) : (
-                      <>
-                        <DollarSign className="w-4 h-4 mr-2" /> Mark as Paid
-                      </>
+              <WAButton type="submit" className="w-full bg-wa-green text-black font-bold mt-4 py-4">
+                CONFIRM PAYMENT OF {paymentModal.amount} EGP
+              </WAButton>
+            </form>
+          </WAPanel>
+        </div>
+      )}
+
+      {/* Push to Expenses Modal */}
+      {pushModal && pushModal.isOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <WAPanel className="max-w-xl w-full p-8 border-wa-green/30 relative shadow-2xl shadow-wa-green/10 max-h-[90vh] flex flex-col">
+            <button onClick={() => setPushModal(null)} className="absolute top-6 right-6 opacity-50 hover:opacity-100 transition-opacity disabled:opacity-20" disabled={pushModal.isProcessing}>
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-2 bg-wa-green/10 rounded border border-wa-green/20">
+                <Send className="w-6 h-6 text-wa-green" />
+              </div>
+              <div>
+                <h3 className="font-bold uppercase tracking-widest text-wa-green">Push to Expenses Ledger</h3>
+                <p className="text-[10px] opacity-50 uppercase tracking-widest font-mono">Week of {format(currentWeek, "MMM d, yyyy")}</p>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-2 mb-6">
+              <table className="w-full text-left text-sm font-mono border-collapse">
+                <thead>
+                  <tr className="border-b border-wa-green/20 text-[10px] uppercase tracking-widest opacity-50">
+                    <th className="py-2">Staff</th>
+                    <th className="py-2 text-right">Total Paid</th>
+                    <th className="py-2 text-right">Prev Pushed</th>
+                    <th className="py-2 text-right text-wa-green">Net New</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payroll.map(p => {
+                    const totalPaid = Number(p.total_paid_so_far || 0);
+                    const prevPushed = Number(p.previously_pushed_to_expenses || 0);
+                    const netNew = totalPaid - prevPushed;
+                    
+                    if (netNew <= 0) return null; // Only show positive net new
+
+                    return (
+                      <tr key={p.staff.id} className="border-b border-white/5">
+                        <td className="py-3">{p.staff.full_name}</td>
+                        <td className="py-3 text-right">{totalPaid.toLocaleString()}</td>
+                        <td className="py-3 text-right">{prevPushed.toLocaleString()}</td>
+                        <td className="py-3 text-right text-wa-green font-bold">+{netNew.toLocaleString()}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {payroll.filter(p => (Number(p.total_paid_so_far || 0) - Number(p.previously_pushed_to_expenses || 0)) > 0).length === 0 && (
+                <div className="text-center py-8 opacity-50 italic text-sm">No new payments to push. Everything is up to date.</div>
+              )}
+            </div>
+
+            <WAButton 
+              onClick={confirmPush} 
+              disabled={pushModal.isProcessing || payroll.filter(p => (Number(p.total_paid_so_far || 0) - Number(p.previously_pushed_to_expenses || 0)) > 0).length === 0} 
+              className="w-full bg-wa-green text-black font-bold py-4 flex justify-center items-center gap-2"
+            >
+              {pushModal.isProcessing ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> PUSHING TO LEDGER...</>
+              ) : (
+                <><Send className="w-4 h-4" /> CONFIRM PUSH</>
+              )}
+            </WAButton>
+          </WAPanel>
+        </div>
+      )}
+
+      {/* History Modal */}
+      {historyModal && historyModal.isOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <WAPanel className="max-w-lg w-full p-8 border-wa-green/30 relative shadow-2xl shadow-wa-green/10 max-h-[80vh] flex flex-col">
+            <button onClick={() => setHistoryModal(null)} className="absolute top-6 right-6 opacity-50 hover:opacity-100 transition-opacity">
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-2 bg-wa-green/10 rounded border border-wa-green/20">
+                <History className="w-6 h-6 text-wa-green" />
+              </div>
+              <div>
+                <h3 className="font-bold uppercase tracking-widest text-wa-green">Payment Ledger</h3>
+                <p className="text-[10px] opacity-50 uppercase tracking-widest font-mono">For {historyModal.staffPayroll.staff.full_name}</p>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto flex flex-col gap-3 pr-2">
+              {historyModal.staffPayroll.payment_history?.map((payment: any, index: number) => (
+                <div key={payment.id} className="p-4 border border-wa-green/10 bg-white/5 rounded-xl flex justify-between items-center">
+                  <div>
+                    <div className="font-mono text-wa-green font-bold text-lg">{Number(payment.amount_paid).toLocaleString()} EGP</div>
+                    <div className="text-[10px] opacity-50 uppercase tracking-widest font-mono mt-1">
+                      {format(new Date(payment.paid_at), "MMM d, yyyy 'at' h:mm a")}
+                    </div>
+                    {payment.notes && (
+                      <div className="text-xs mt-2 italic opacity-70">"{payment.notes}"</div>
                     )}
-                  </WAButton>
-                )}
-              </div>
-            </WAPanel>
-          ))
-        )}
-      </div>
-
-      {entries.length > 0 && (
-        <div className="flex justify-center pt-8">
-          <WAButton className="px-12 py-6 text-lg" onClick={pushToExpenses}>
-            <Send className="w-5 h-5 mr-3" /> Push Weekly Total to Expenses
-          </WAButton>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] bg-white/10 px-2 py-1 rounded font-mono uppercase inline-block">
+                      {payment.payment_method}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {(!historyModal.staffPayroll.payment_history || historyModal.staffPayroll.payment_history.length === 0) && (
+                <div className="text-center p-8 opacity-50 italic text-sm">No payment history found.</div>
+              )}
+            </div>
+          </WAPanel>
         </div>
       )}
     </div>
