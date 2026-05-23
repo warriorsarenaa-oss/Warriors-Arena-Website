@@ -17,15 +17,26 @@ export default function PayrollPage() {
   const [historyModal, setHistoryModal] = useState<{ isOpen: boolean; staffPayroll: any } | null>(null);
   const [pushModal, setPushModal] = useState<{ isOpen: boolean; isProcessing: boolean } | null>(null);
 
+  const [error, setError] = useState<string | null>(null);
+
   const loadData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const weekStartStr = format(currentWeek, "yyyy-MM-dd");
       const weekEndStr = format(addDays(currentWeek, 6), "yyyy-MM-dd");
       const res = await fetch(`/api/v1/admin/staff/payroll?week_start=${weekStartStr}&week_end=${weekEndStr}`);
-      if (res.ok) setPayroll(await res.json());
-    } catch (err) {
-      console.error(err);
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('[PAYROLL_FETCH_ERROR]', data);
+        setError(data.error || `Server error ${res.status}`);
+        setPayroll([]);
+      } else {
+        setPayroll(Array.isArray(data) ? data : []);
+      }
+    } catch (err: any) {
+      console.error('[PAYROLL_NETWORK_ERROR]', err);
+      setError(err.message || 'Network error');
     } finally {
       setLoading(false);
     }
@@ -137,6 +148,12 @@ export default function PayrollPage() {
           <ChevronRight className="w-6 h-6" />
         </button>
       </div>
+
+      {error && (
+        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 font-mono text-sm">
+          <span className="font-bold uppercase">API Error:</span> {error}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex flex-col items-center justify-center p-20 gap-4">

@@ -19,7 +19,15 @@ export const GET = requirePermission(async (request: Request) => {
       .gte('shift_date', weekStart)
       .lte('shift_date', weekEnd);
 
-    if (shiftError) throw shiftError;
+    if (shiftError) {
+      console.error('[PAYROLL] shift fetch error:', shiftError);
+      throw shiftError;
+    }
+
+    if (!shifts || shifts.length === 0) {
+      // No shifts at all for this period — return empty array (expected)
+      return NextResponse.json([]);
+    }
 
     // 1.5 Retroactive commission sync
     // Fetch all completed bookings for the week to ensure any retroactively created shifts get their commission
@@ -88,7 +96,8 @@ export const GET = requirePermission(async (request: Request) => {
           games_count: 0,
           commission_pay: 0,
           hours_pay: 0,
-          total_calculated_payroll: 0
+          total_calculated_payroll: 0,
+          games: []  // track all game logs for total_revenue calculation
         };
       }
 
@@ -98,6 +107,7 @@ export const GET = requirePermission(async (request: Request) => {
       
       const games = shift.shift_game_log || [];
       payrollData[staffId].games_count += games.length;
+      payrollData[staffId].games.push(...games);
       payrollData[staffId].commission_pay += games.reduce((acc: number, g: any) => acc + Number(g.commission_amount), 0);
     });
 
@@ -105,12 +115,12 @@ export const GET = requirePermission(async (request: Request) => {
     const result: any[] = [];
 
     if (staffIds.length > 0) {
-      // 3. Upsert payroll_records with new calculations
+      // 3. Upsert payroll_records — only write non-generated columns
+      // hours_pay, commission_pay, total_pay are GENERATED columns in Postgres — cannot be written
       for (const staffId of staffIds) {
         const p = payrollData[staffId];
         p.total_calculated_payroll = p.hours_pay + p.commission_pay;
 
-        // Upsert to maintain a single record per staff per week
         const { error: upsertError } = await supabaseService
           .from('payroll_records')
           .upsert({
@@ -119,14 +129,18 @@ export const GET = requirePermission(async (request: Request) => {
             week_end: weekEnd,
             total_hours: p.total_hours,
             hourly_rate: p.staff.hourly_rate,
-            hours_pay: p.hours_pay,
+            // total_revenue drives the generated commission_pay column
+            total_revenue: p.games.reduce((acc: number, g: any) => acc + Number(g.game_revenue || 0), 0),
             games_count: p.games_count,
-            commission_per_game: p.staff.commission_per_game,
-            commission_pay: p.commission_pay,
+            commission_rate: p.staff.commission_rate ?? 0,
+            // total_calculated_payroll is our NEW non-generated column
             total_calculated_payroll: p.total_calculated_payroll
           }, { onConflict: 'staff_id, week_start' });
-        
-        if (upsertError) throw upsertError;
+
+        if (upsertError) {
+          console.error('[PAYROLL] upsert error for staff', staffId, ':', JSON.stringify(upsertError));
+          throw upsertError;
+        }
       }
 
       // 4. Fetch the updated records with payment history
@@ -143,19 +157,21 @@ export const GET = requirePermission(async (request: Request) => {
       if (recordsError) throw recordsError;
 
       // Map back staff details and calculate remaining balance
+      // Use our own computed hours_pay/commission_pay (not the DB generated columns which may be stale)
       records?.forEach(record => {
-        const staffDetails = payrollData[record.staff_id].staff;
-        const totalCalculated = Number(record.total_calculated_payroll || 0);
+        const agg = payrollData[record.staff_id];
+        const staffDetails = agg.staff;
+        const totalCalculated = agg.total_calculated_payroll;  // always live-computed
         const totalPaid = Number(record.total_paid_so_far || 0);
         const remainingBalance = totalCalculated - totalPaid;
 
         result.push({
           id: record.id,
           staff: staffDetails,
-          total_hours: record.total_hours,
-          hours_pay: record.hours_pay,
-          games_count: record.games_count,
-          commission_pay: record.commission_pay,
+          total_hours: agg.total_hours,
+          hours_pay: agg.hours_pay,
+          games_count: agg.games_count,
+          commission_pay: agg.commission_pay,
           total_calculated_payroll: totalCalculated,
           total_paid_so_far: totalPaid,
           previously_pushed_to_expenses: Number(record.previously_pushed_to_expenses || 0),
