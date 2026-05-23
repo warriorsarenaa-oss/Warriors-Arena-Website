@@ -33,7 +33,7 @@ export const GET = requirePermission(async (request: Request) => {
           games_count: 0,
           commission_pay: 0,
           hours_pay: 0,
-          total_pay: 0
+          total_calculated_payroll: 0
         };
       }
 
@@ -46,37 +46,69 @@ export const GET = requirePermission(async (request: Request) => {
       payrollData[staffId].commission_pay += games.reduce((acc: number, g: any) => acc + Number(g.commission_amount), 0);
     });
 
-    // 3. For each staff member, look up how much has already been paid this week
     const staffIds = Object.keys(payrollData);
-    const alreadyPaidMap: Record<string, number> = {};
+    const result: any[] = [];
 
     if (staffIds.length > 0) {
-      const { data: payrollRecords } = await supabaseService
+      // 3. Upsert payroll_records with new calculations
+      for (const staffId of staffIds) {
+        const p = payrollData[staffId];
+        p.total_calculated_payroll = p.hours_pay + p.commission_pay;
+
+        // Upsert to maintain a single record per staff per week
+        const { error: upsertError } = await supabaseService
+          .from('payroll_records')
+          .upsert({
+            staff_id: staffId,
+            week_start: weekStart,
+            week_end: weekEnd,
+            total_hours: p.total_hours,
+            hourly_rate: p.staff.hourly_rate,
+            hours_pay: p.hours_pay,
+            games_count: p.games_count,
+            commission_per_game: p.staff.commission_per_game,
+            commission_pay: p.commission_pay,
+            total_calculated_payroll: p.total_calculated_payroll
+          }, { onConflict: 'staff_id, week_start' });
+        
+        if (upsertError) throw upsertError;
+      }
+
+      // 4. Fetch the updated records with payment history
+      const { data: records, error: recordsError } = await supabaseService
         .from('payroll_records')
-        .select('staff_id, total_pay')
+        .select(`
+          *,
+          payroll_payments (*)
+        `)
         .in('staff_id', staffIds)
         .gte('week_start', weekStart)
-        .lte('week_end', weekEnd)
-        .eq('is_paid', true);
+        .lte('week_end', weekEnd);
 
-      (payrollRecords || []).forEach((rec: any) => {
-        alreadyPaidMap[rec.staff_id] = (alreadyPaidMap[rec.staff_id] || 0) + Number(rec.total_pay);
+      if (recordsError) throw recordsError;
+
+      // Map back staff details and calculate remaining balance
+      records?.forEach(record => {
+        const staffDetails = payrollData[record.staff_id].staff;
+        const totalCalculated = Number(record.total_calculated_payroll || 0);
+        const totalPaid = Number(record.total_paid_so_far || 0);
+        const remainingBalance = totalCalculated - totalPaid;
+
+        result.push({
+          id: record.id,
+          staff: staffDetails,
+          total_hours: record.total_hours,
+          hours_pay: record.hours_pay,
+          games_count: record.games_count,
+          commission_pay: record.commission_pay,
+          total_calculated_payroll: totalCalculated,
+          total_paid_so_far: totalPaid,
+          previously_pushed_to_expenses: Number(record.previously_pushed_to_expenses || 0),
+          remaining_balance: remainingBalance,
+          payment_history: record.payroll_payments || []
+        });
       });
     }
-
-    const result = Object.values(payrollData).map(p => {
-      const totalEarned = p.hours_pay + p.commission_pay;
-      const alreadyPaid = alreadyPaidMap[p.staff.id] || 0;
-      const deltaDue = Math.max(0, totalEarned - alreadyPaid);
-      return {
-        ...p,
-        total_pay: totalEarned,
-        already_paid: alreadyPaid,
-        delta_due: deltaDue,
-        // is_paid only if delta is 0 AND something has been paid (fully settled)
-        is_paid: deltaDue === 0 && alreadyPaid > 0,
-      };
-    });
 
     return NextResponse.json(result);
   } catch (error) {
@@ -88,53 +120,55 @@ export const GET = requirePermission(async (request: Request) => {
 export const POST = requirePermission(async (request: Request, { user }) => {
   try {
     const body = await request.json();
-    const { staff_id, week_start, week_end, total_hours, hourly_rate, hours_pay, games_count, commission_per_game, commission_pay, total_pay, delta_due, payment_method, notes } = body;
+    const { payroll_record_id, amount_paid, payment_method, notes } = body;
 
-    // ✅ DELTA ALGORITHM: Only pay the delta (new unpaid amount), not the full total
-    const amountToPay = Number(delta_due ?? total_pay ?? 0);
-    if (amountToPay <= 0) {
-      return NextResponse.json({ error: "Nothing new to pay. Staff member is fully settled for this week." }, { status: 400 });
+    if (!payroll_record_id || !amount_paid || amount_paid <= 0) {
+      return NextResponse.json({ error: "Invalid payment details" }, { status: 400 });
     }
 
-    // 1. Create a new payroll record for just the delta amount
-    const { data: payroll, error: payrollError } = await supabaseService
+    // 1. Fetch current payroll record
+    const { data: record, error: fetchError } = await supabaseService
       .from('payroll_records')
+      .select('total_calculated_payroll, total_paid_so_far')
+      .eq('id', payroll_record_id)
+      .single();
+
+    if (fetchError || !record) {
+      return NextResponse.json({ error: "Payroll record not found" }, { status: 404 });
+    }
+
+    const remainingBalance = Number(record.total_calculated_payroll) - Number(record.total_paid_so_far);
+
+    // Validate payment amount against remaining balance
+    if (amount_paid > remainingBalance) {
+       return NextResponse.json({ error: `Cannot pay more than remaining balance (${remainingBalance} EGP)` }, { status: 400 });
+    }
+
+    // 2. Insert payment history
+    const { data: payment, error: paymentError } = await supabaseService
+      .from('payroll_payments')
       .insert({
-        staff_id, week_start, week_end, total_hours, hourly_rate, hours_pay, 
-        games_count, commission_per_game, commission_pay,
-        // Record only the delta in this payment record
-        total_pay: amountToPay,
-        is_paid: true, paid_at: new Date().toISOString(), paid_by: user.id,
-        payment_method, notes
+        payroll_record_id,
+        amount_paid,
+        paid_by: user.id,
+        payment_method: payment_method || 'cash',
+        notes
       })
       .select()
       .single();
 
-    if (payrollError) throw payrollError;
+    if (paymentError) throw paymentError;
 
-    // 2. Get Payroll Category ID
-    const { data: category } = await supabaseService
-      .from('expense_categories')
-      .select('id')
-      .eq('name', 'Payroll')
-      .single();
+    // 3. Update total_paid_so_far
+    const newTotalPaid = Number(record.total_paid_so_far) + Number(amount_paid);
+    const { error: updateError } = await supabaseService
+      .from('payroll_records')
+      .update({ total_paid_so_far: newTotalPaid })
+      .eq('id', payroll_record_id);
 
-    // 3. Create expense record for only the delta amount
-    const { error: expenseError } = await supabaseService
-      .from('expenses')
-      .insert({
-        title: `Payroll: ${week_start} to ${week_end}`,
-        category_id: category?.id,
-        amount: amountToPay,
-        expense_date: new Date().toISOString().split('T')[0],
-        payroll_record_id: payroll.id,
-        created_by_user_id: user.id,
-        currency: 'EGP'
-      });
+    if (updateError) throw updateError;
 
-    if (expenseError) throw expenseError;
-
-    return NextResponse.json({ ...payroll, amount_paid: amountToPay });
+    return NextResponse.json({ payment });
   } catch (error) {
     console.error("[ADMIN_PAYROLL_POST_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

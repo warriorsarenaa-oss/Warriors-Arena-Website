@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Calendar, User as UserIcon, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, User as UserIcon, CheckCircle2, AlertCircle, Loader2, X, History, DollarSign, Send } from "lucide-react";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
 import { format, startOfWeek, addDays } from "date-fns";
@@ -11,6 +11,11 @@ export default function PayrollPage() {
   const [payroll, setPayroll] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+
+  // Modals state
+  const [paymentModal, setPaymentModal] = useState<{ isOpen: boolean; staffPayroll: any; amount: number; notes: string } | null>(null);
+  const [historyModal, setHistoryModal] = useState<{ isOpen: boolean; staffPayroll: any } | null>(null);
+  const [pushModal, setPushModal] = useState<{ isOpen: boolean; isProcessing: boolean } | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -28,39 +33,29 @@ export default function PayrollPage() {
 
   useEffect(() => { loadData(); }, [currentWeek]);
 
-  const handlePay = async (staffPayroll: any) => {
-    const deltaDue = Number(staffPayroll.delta_due ?? 0);
-    if (deltaDue <= 0) {
-      alert("This staff member is fully paid for this week.");
+  const submitPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!paymentModal) return;
+
+    const { staffPayroll, amount, notes } = paymentModal;
+
+    if (amount <= 0 || amount > staffPayroll.remaining_balance) {
+      alert(`Payment must be between 1 and ${staffPayroll.remaining_balance} EGP.`);
       return;
     }
 
-    const alreadyPaid = Number(staffPayroll.already_paid ?? 0);
-    const confirmMsg = alreadyPaid > 0
-      ? `Pay remaining ${deltaDue} EGP to ${staffPayroll.staff.full_name}?\n\nTotal earned: ${staffPayroll.total_pay} EGP\nAlready paid: ${alreadyPaid} EGP\nNow paying: ${deltaDue} EGP`
-      : `Pay ${deltaDue} EGP to ${staffPayroll.staff.full_name}?`;
-
-    if (!confirm(confirmMsg)) return;
-
     setIsProcessing(staffPayroll.staff.id);
+    setPaymentModal(null);
+
     try {
       const res = await fetch("/api/v1/admin/staff/payroll", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          staff_id: staffPayroll.staff.id,
-          week_start: format(currentWeek, "yyyy-MM-dd"),
-          week_end: format(addDays(currentWeek, 6), "yyyy-MM-dd"),
-          total_hours: staffPayroll.total_hours,
-          hourly_rate: staffPayroll.staff.hourly_rate,
-          hours_pay: staffPayroll.hours_pay,
-          games_count: staffPayroll.games_count,
-          commission_per_game: staffPayroll.staff.commission_per_game,
-          commission_pay: staffPayroll.commission_pay,
-          total_pay: staffPayroll.total_pay,
-          delta_due: deltaDue,
+          payroll_record_id: staffPayroll.id,
+          amount_paid: amount,
           payment_method: "cash",
-          notes: `Weekly payroll — delta payment (${deltaDue} EGP of ${staffPayroll.total_pay} EGP total)`
+          notes: notes || `Weekly payroll partial payment`
         })
       });
 
@@ -69,7 +64,6 @@ export default function PayrollPage() {
         throw new Error(errData.error || "Payment failed");
       }
 
-      alert(`Payment of ${deltaDue} EGP recorded for ${staffPayroll.staff.full_name}`);
       await loadData();
     } catch (err: any) {
       console.error(err);
@@ -79,8 +73,32 @@ export default function PayrollPage() {
     }
   };
 
-  const totalOutstanding = payroll.reduce((acc, p) => acc + Number(p.delta_due ?? p.total_pay ?? 0), 0);
-  const totalAlreadyPaid = payroll.reduce((acc, p) => acc + Number(p.already_paid ?? 0), 0);
+  const confirmPush = async () => {
+    setPushModal({ isOpen: true, isProcessing: true });
+    try {
+      const res = await fetch("/api/v1/admin/payroll/push-to-expenses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          week_start: format(currentWeek, "yyyy-MM-dd"),
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to push to expenses");
+
+      alert(data.message || `Successfully pushed ${data.amount} EGP (${data.count} staff records) to expenses.`);
+      setPushModal(null);
+      await loadData();
+    } catch (err: any) {
+      console.error(err);
+      alert(`Error: ${err.message}`);
+      setPushModal({ isOpen: true, isProcessing: false });
+    }
+  };
+
+  const totalOutstanding = payroll.reduce((acc, p) => acc + Number(p.remaining_balance || 0), 0);
+  const totalAlreadyPaid = payroll.reduce((acc, p) => acc + Number(p.total_paid_so_far || 0), 0);
 
   return (
     <div className="max-w-6xl mx-auto flex flex-col gap-8 pb-20">
@@ -92,7 +110,7 @@ export default function PayrollPage() {
         <div className="text-right flex flex-col gap-1">
           {totalAlreadyPaid > 0 && (
             <div>
-              <div className="text-[10px] uppercase tracking-widest opacity-40 mb-0.5">Already Paid This Week</div>
+              <div className="text-[10px] uppercase tracking-widest opacity-40 mb-0.5">Total Paid This Week</div>
               <div className="text-lg font-mono font-bold text-wa-text/50">{totalAlreadyPaid.toLocaleString()} EGP</div>
             </div>
           )}
@@ -126,13 +144,21 @@ export default function PayrollPage() {
       ) : (
         <div className="flex flex-col gap-4">
           {payroll.map(p => {
-            const deltaDue = Number(p.delta_due ?? 0);
-            const alreadyPaid = Number(p.already_paid ?? 0);
-            const isFullyPaid = deltaDue === 0 && alreadyPaid > 0;
-            const isPartiallyPaid = alreadyPaid > 0 && deltaDue > 0;
+            const remainingBalance = Number(p.remaining_balance || 0);
+            const alreadyPaid = Number(p.total_paid_so_far || 0);
+            const totalEarned = Number(p.total_calculated_payroll || 0);
+            const isFullyPaid = remainingBalance <= 0 && alreadyPaid >= totalEarned && totalEarned > 0;
+            const isOverpaid = remainingBalance < 0;
 
             return (
-              <WAPanel key={p.staff.id} className="p-6 border-wa-green/10 bg-wa-bg/40 backdrop-blur-md flex flex-col md:flex-row items-center gap-8 group hover:border-wa-green/30 transition-all">
+              <WAPanel key={p.staff.id} className="p-6 border-wa-green/10 bg-wa-bg/40 backdrop-blur-md flex flex-col md:flex-row items-center gap-8 group hover:border-wa-green/30 transition-all relative">
+                
+                {isOverpaid && (
+                  <div className="absolute -top-3 left-6 bg-red-500/20 border border-red-500/50 text-red-400 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full backdrop-blur-md">
+                    OVERPAID BY {Math.abs(remainingBalance)} EGP
+                  </div>
+                )}
+
                 <div className="flex items-center gap-4 min-w-[240px]">
                   <div className="w-12 h-12 bg-wa-green/10 rounded-full flex items-center justify-center border border-wa-green/20">
                     <UserIcon className="w-6 h-6 text-wa-green" />
@@ -140,13 +166,14 @@ export default function PayrollPage() {
                   <div>
                     <div className="font-bold text-lg uppercase tracking-wider">{p.staff.full_name}</div>
                     <div className="text-[10px] opacity-40 font-mono">STAFF ID: {p.staff.id.substring(0, 8)}</div>
-                    {isPartiallyPaid && (
-                      <div className="text-[10px] text-wa-orange font-mono mt-0.5">
-                        {alreadyPaid} EGP paid — {deltaDue} EGP pending
-                      </div>
-                    )}
-                    {isFullyPaid && (
-                      <div className="text-[10px] text-wa-green font-mono mt-0.5">Fully settled — {alreadyPaid} EGP paid</div>
+                    
+                    {p.payment_history?.length > 0 && (
+                      <button 
+                        onClick={() => setHistoryModal({ isOpen: true, staffPayroll: p })}
+                        className="flex items-center gap-1 text-[10px] text-wa-green/70 hover:text-wa-green uppercase tracking-widest mt-1 transition-colors"
+                      >
+                        <History className="w-3 h-3" /> View {p.payment_history.length} Payments
+                      </button>
                     )}
                   </div>
                 </div>
@@ -157,32 +184,32 @@ export default function PayrollPage() {
                     <span className="font-mono font-bold text-wa-green">
                       {p.total_hours}h <span className="text-wa-text/30 text-[10px]">@ {p.staff.hourly_rate}/h</span>
                     </span>
-                    <span className="font-bold text-sm">{p.hours_pay.toLocaleString()} EGP</span>
+                    <span className="font-bold text-sm">{Number(p.hours_pay).toLocaleString()} EGP</span>
                   </div>
                   <div className="flex flex-col border-l border-wa-text/5 pl-4">
                     <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Commission</span>
                     <span className="font-mono font-bold text-wa-green">
                       {p.games_count} games
                     </span>
-                    <span className="font-bold text-sm">{p.commission_pay.toLocaleString()} EGP</span>
+                    <span className="font-bold text-sm">{Number(p.commission_pay).toLocaleString()} EGP</span>
                   </div>
                   <div className="flex flex-col border-l border-wa-text/5 pl-4">
                     <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Total Earned</span>
-                    <span className="text-xl font-mono font-bold text-wa-text">{p.total_pay.toLocaleString()} EGP</span>
+                    <span className="text-xl font-mono font-bold text-wa-text">{totalEarned.toLocaleString()} EGP</span>
                     {alreadyPaid > 0 && (
                       <span className="text-[10px] text-wa-text/40 font-mono">— {alreadyPaid} paid</span>
                     )}
                   </div>
                   <div className="flex flex-col border-l border-wa-text/5 pl-4">
                     <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Due Now</span>
-                    <span className={`text-xl font-mono font-bold ${isFullyPaid ? 'text-wa-green/40' : 'text-wa-green'}`}>
-                      {deltaDue.toLocaleString()} EGP
+                    <span className={`text-xl font-mono font-bold ${isFullyPaid ? 'text-wa-green/40' : (isOverpaid ? 'text-red-400' : 'text-wa-green')}`}>
+                      {remainingBalance > 0 ? remainingBalance.toLocaleString() : '0'} EGP
                     </span>
                   </div>
                 </div>
 
                 <div className="min-w-[160px] flex justify-end">
-                  {isFullyPaid ? (
+                  {isFullyPaid && !isOverpaid ? (
                     <div className="flex items-center gap-2 text-wa-green bg-wa-green/10 px-4 py-2 rounded-lg border border-wa-green/20">
                       <CheckCircle2 className="w-4 h-4" />
                       <span className="text-[10px] font-bold uppercase tracking-[0.2em]">SETTLED</span>
@@ -190,11 +217,11 @@ export default function PayrollPage() {
                   ) : (
                     <WAButton
                       type="button"
-                      onClick={() => handlePay(p)}
-                      disabled={isProcessing === p.staff.id || deltaDue <= 0}
+                      onClick={() => setPaymentModal({ isOpen: true, staffPayroll: p, amount: remainingBalance > 0 ? remainingBalance : 0, notes: '' })}
+                      disabled={isProcessing === p.staff.id || remainingBalance <= 0}
                       className="bg-wa-green text-wa-bg font-bold flex items-center gap-2 group-hover:scale-105 transition-all"
                     >
-                      {isProcessing === p.staff.id ? "PROCESSING..." : `PAY ${deltaDue.toLocaleString()} EGP`}
+                      {isProcessing === p.staff.id ? "PROCESSING..." : "RECORD PAYMENT"}
                     </WAButton>
                   )}
                 </div>
@@ -208,6 +235,194 @@ export default function PayrollPage() {
               <p className="uppercase tracking-[0.3em] text-[10px] font-bold">No active shifts or games recorded for this period</p>
             </div>
           )}
+
+          {payroll.length > 0 && (
+            <div className="flex justify-center pt-8 border-t border-wa-green/10 mt-4">
+              <WAButton 
+                onClick={() => setPushModal({ isOpen: true, isProcessing: false })}
+                className="px-12 py-6 text-lg bg-wa-bg border border-wa-green/50 text-wa-green hover:bg-wa-green/10 flex items-center gap-3"
+              >
+                <Send className="w-5 h-5" />
+                PUSH WEEKLY TOTAL TO EXPENSES
+              </WAButton>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Payment Modal */}
+      {paymentModal && paymentModal.isOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <WAPanel className="max-w-md w-full p-8 border-wa-green/30 relative shadow-2xl shadow-wa-green/10">
+            <button onClick={() => setPaymentModal(null)} className="absolute top-6 right-6 opacity-50 hover:opacity-100 transition-opacity">
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-2 bg-wa-green/10 rounded border border-wa-green/20">
+                <DollarSign className="w-6 h-6 text-wa-green" />
+              </div>
+              <div>
+                <h3 className="font-bold uppercase tracking-widest text-wa-green">Record Payment</h3>
+                <p className="text-[10px] opacity-50 uppercase tracking-widest font-mono">For {paymentModal.staffPayroll.staff.full_name}</p>
+              </div>
+            </div>
+
+            <form onSubmit={submitPayment} className="flex flex-col gap-6">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-white/5 rounded-xl border border-white/10 mb-2">
+                <div>
+                  <div className="text-[10px] uppercase opacity-50 mb-1 tracking-widest">Total Earned</div>
+                  <div className="font-mono">{Number(paymentModal.staffPayroll.total_calculated_payroll).toLocaleString()} EGP</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase opacity-50 mb-1 tracking-widest">Remaining Balance</div>
+                  <div className="font-mono text-wa-green font-bold">{Number(paymentModal.staffPayroll.remaining_balance).toLocaleString()} EGP</div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold opacity-50 uppercase tracking-widest">Payment Amount (EGP)</label>
+                <input 
+                  type="number" 
+                  min="1" 
+                  max={paymentModal.staffPayroll.remaining_balance}
+                  required 
+                  value={paymentModal.amount || ""} 
+                  onChange={(e) => setPaymentModal({ ...paymentModal, amount: Number(e.target.value) })}
+                  className="bg-transparent border border-wa-green/30 rounded-xl p-4 text-xl font-mono text-wa-green outline-none focus:border-wa-green"
+                />
+              </div>
+              
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold opacity-50 uppercase tracking-widest">Notes (Optional)</label>
+                <input 
+                  type="text" 
+                  value={paymentModal.notes} 
+                  onChange={(e) => setPaymentModal({ ...paymentModal, notes: e.target.value })}
+                  placeholder="e.g. Cash handed by Admin"
+                  className="bg-transparent border border-wa-green/30 rounded-xl p-4 text-sm font-mono outline-none focus:border-wa-green"
+                />
+              </div>
+
+              <WAButton type="submit" className="w-full bg-wa-green text-black font-bold mt-4 py-4">
+                CONFIRM PAYMENT OF {paymentModal.amount} EGP
+              </WAButton>
+            </form>
+          </WAPanel>
+        </div>
+      )}
+
+      {/* Push to Expenses Modal */}
+      {pushModal && pushModal.isOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <WAPanel className="max-w-xl w-full p-8 border-wa-green/30 relative shadow-2xl shadow-wa-green/10 max-h-[90vh] flex flex-col">
+            <button onClick={() => setPushModal(null)} className="absolute top-6 right-6 opacity-50 hover:opacity-100 transition-opacity disabled:opacity-20" disabled={pushModal.isProcessing}>
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-2 bg-wa-green/10 rounded border border-wa-green/20">
+                <Send className="w-6 h-6 text-wa-green" />
+              </div>
+              <div>
+                <h3 className="font-bold uppercase tracking-widest text-wa-green">Push to Expenses Ledger</h3>
+                <p className="text-[10px] opacity-50 uppercase tracking-widest font-mono">Week of {format(currentWeek, "MMM d, yyyy")}</p>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-2 mb-6">
+              <table className="w-full text-left text-sm font-mono border-collapse">
+                <thead>
+                  <tr className="border-b border-wa-green/20 text-[10px] uppercase tracking-widest opacity-50">
+                    <th className="py-2">Staff</th>
+                    <th className="py-2 text-right">Total Paid</th>
+                    <th className="py-2 text-right">Prev Pushed</th>
+                    <th className="py-2 text-right text-wa-green">Net New</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payroll.map(p => {
+                    const totalPaid = Number(p.total_paid_so_far || 0);
+                    const prevPushed = Number(p.previously_pushed_to_expenses || 0);
+                    const netNew = totalPaid - prevPushed;
+                    
+                    if (netNew <= 0) return null; // Only show positive net new
+
+                    return (
+                      <tr key={p.staff.id} className="border-b border-white/5">
+                        <td className="py-3">{p.staff.full_name}</td>
+                        <td className="py-3 text-right">{totalPaid.toLocaleString()}</td>
+                        <td className="py-3 text-right">{prevPushed.toLocaleString()}</td>
+                        <td className="py-3 text-right text-wa-green font-bold">+{netNew.toLocaleString()}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {payroll.filter(p => (Number(p.total_paid_so_far || 0) - Number(p.previously_pushed_to_expenses || 0)) > 0).length === 0 && (
+                <div className="text-center py-8 opacity-50 italic text-sm">No new payments to push. Everything is up to date.</div>
+              )}
+            </div>
+
+            <WAButton 
+              onClick={confirmPush} 
+              disabled={pushModal.isProcessing || payroll.filter(p => (Number(p.total_paid_so_far || 0) - Number(p.previously_pushed_to_expenses || 0)) > 0).length === 0} 
+              className="w-full bg-wa-green text-black font-bold py-4 flex justify-center items-center gap-2"
+            >
+              {pushModal.isProcessing ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> PUSHING TO LEDGER...</>
+              ) : (
+                <><Send className="w-4 h-4" /> CONFIRM PUSH</>
+              )}
+            </WAButton>
+          </WAPanel>
+        </div>
+      )}
+
+      {/* History Modal */}
+      {historyModal && historyModal.isOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <WAPanel className="max-w-lg w-full p-8 border-wa-green/30 relative shadow-2xl shadow-wa-green/10 max-h-[80vh] flex flex-col">
+            <button onClick={() => setHistoryModal(null)} className="absolute top-6 right-6 opacity-50 hover:opacity-100 transition-opacity">
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-8">
+              <div className="p-2 bg-wa-green/10 rounded border border-wa-green/20">
+                <History className="w-6 h-6 text-wa-green" />
+              </div>
+              <div>
+                <h3 className="font-bold uppercase tracking-widest text-wa-green">Payment Ledger</h3>
+                <p className="text-[10px] opacity-50 uppercase tracking-widest font-mono">For {historyModal.staffPayroll.staff.full_name}</p>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto flex flex-col gap-3 pr-2">
+              {historyModal.staffPayroll.payment_history?.map((payment: any, index: number) => (
+                <div key={payment.id} className="p-4 border border-wa-green/10 bg-white/5 rounded-xl flex justify-between items-center">
+                  <div>
+                    <div className="font-mono text-wa-green font-bold text-lg">{Number(payment.amount_paid).toLocaleString()} EGP</div>
+                    <div className="text-[10px] opacity-50 uppercase tracking-widest font-mono mt-1">
+                      {format(new Date(payment.paid_at), "MMM d, yyyy 'at' h:mm a")}
+                    </div>
+                    {payment.notes && (
+                      <div className="text-xs mt-2 italic opacity-70">"{payment.notes}"</div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] bg-white/10 px-2 py-1 rounded font-mono uppercase inline-block">
+                      {payment.payment_method}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {(!historyModal.staffPayroll.payment_history || historyModal.staffPayroll.payment_history.length === 0) && (
+                <div className="text-center p-8 opacity-50 italic text-sm">No payment history found.</div>
+              )}
+            </div>
+          </WAPanel>
         </div>
       )}
     </div>

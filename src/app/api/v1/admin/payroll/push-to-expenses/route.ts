@@ -5,36 +5,22 @@ import { logAuditAction } from "@/lib/admin/audit-log";
 
 export const POST = requirePermission(async (request: Request, { user }) => {
   try {
-    const { week_start, week_end } = await request.json();
+    const { week_start } = await request.json();
 
-    // 1. Find paid payroll records for this week that aren't pushed yet
-    const { data: records, error: fetchError } = await supabaseService.rpc('fn_get_unpushed_payroll', {
-      p_week_start: week_start
-    });
-    
-    // If RPC doesn't exist, we fallback to a query (but RPC is safer for complex join logic)
-    // Let's assume we might need a query here for now or I'll create the RPC.
-    
-    // Fallback Query Logic:
+    if (!week_start) {
+      return NextResponse.json({ error: "week_start required" }, { status: 400 });
+    }
+
+    // 1. Find payroll records for this week
     const { data: allRecords, error: recordsError } = await supabaseService
       .from('payroll_records')
       .select('*, users!staff_id(full_name)')
-      .eq('week_start', week_start)
-      .eq('is_paid', true);
+      .eq('week_start', week_start);
 
     if (recordsError) throw recordsError;
 
-    // 2. Filter out those already in expenses
-    const { data: existingExpenses } = await supabaseService
-      .from('expenses')
-      .select('payroll_record_id')
-      .not('payroll_record_id', 'is', null);
-
-    const pushedIds = new Set((existingExpenses || []).map(e => e.payroll_record_id));
-    const unpushedRecords = allRecords.filter(r => !pushedIds.has(r.id));
-
-    if (unpushedRecords.length === 0) {
-      return NextResponse.json({ error: "No new paid records to push for this week." }, { status: 400 });
+    if (!allRecords || allRecords.length === 0) {
+      return NextResponse.json({ error: "No payroll records found for this week." }, { status: 400 });
     }
 
     // 2. Get Payroll Category ID
@@ -60,42 +46,54 @@ export const POST = requirePermission(async (request: Request, { user }) => {
     let pushedCount = 0;
 
     for (const record of allRecords) {
-      totalAmount += Number(record.total_pay);
-      
-      const staffName = (record as any).users?.full_name || 'Staff';
-      const title = `Payroll Settlement: ${staffName} (Week ${week_start})`;
-      const notes = `Hours: ${record.total_hours}h (${record.hours_pay} EGP), Games: ${record.games_count} (${record.commission_pay} EGP)`;
+      const totalPaid = Number(record.total_paid_so_far || 0);
+      const previouslyPushed = Number(record.previously_pushed_to_expenses || 0);
+      const netNewExpense = totalPaid - previouslyPushed;
 
-      const expenseData = {
-        amount: record.total_pay,
-        title,
-        expense_date: new Date().toISOString().substring(0, 10),
-        category_id: categoryId,
-        payroll_record_id: record.id,
-        created_by_user_id: user.id,
-        notes
-      };
+      // Only push positive net new expenses
+      if (netNewExpense > 0) {
+        totalAmount += netNewExpense;
+        
+        const staffName = (record as any).users?.full_name || 'Staff';
+        const title = `Payroll Settlement: ${staffName} (Week ${week_start})`;
+        const notes = `Delta Payment - Total Paid: ${totalPaid} EGP, Previously Pushed: ${previouslyPushed} EGP`;
 
-      // Check if expense already exists for this payroll record
-      const { data: existing } = await supabaseService
-        .from('expenses')
-        .select('id')
-        .eq('payroll_record_id', record.id)
-        .maybeSingle();
+        const expenseData = {
+          amount: netNewExpense,
+          title,
+          expense_date: new Date().toISOString().substring(0, 10),
+          category_id: categoryId,
+          payroll_record_id: record.id,
+          created_by_user_id: user.id,
+          currency: 'EGP',
+          notes
+        };
 
-      if (existing) {
-        const { error: updateError } = await supabaseService
-          .from('expenses')
-          .update(expenseData)
-          .eq('id', existing.id);
-        if (updateError) throw updateError;
-      } else {
         const { error: insertError } = await supabaseService
           .from('expenses')
           .insert(expenseData);
+          
         if (insertError) throw insertError;
+
+        // Update previously_pushed_to_expenses
+        const { error: updateError } = await supabaseService
+          .from('payroll_records')
+          .update({ previously_pushed_to_expenses: totalPaid })
+          .eq('id', record.id);
+          
+        if (updateError) throw updateError;
+
+        pushedCount++;
       }
-      pushedCount++;
+    }
+
+    if (pushedCount === 0) {
+       return NextResponse.json({ 
+        success: true, 
+        message: "No new payments to push. Everything is up to date.",
+        count: 0, 
+        amount: 0 
+      });
     }
 
     await logAuditAction({
