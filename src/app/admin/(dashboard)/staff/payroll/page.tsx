@@ -39,11 +39,13 @@ export default function PayrollPage() {
 
     const { staffPayroll, amount, notes } = paymentModal;
 
-    if (amount <= 0 || amount > staffPayroll.remaining_balance) {
-      alert(`Payment must be between 1 and ${staffPayroll.remaining_balance} EGP.`);
+    if (amount <= 0) {
+      alert(`Payment amount must be greater than 0 EGP.`);
       return;
     }
 
+    // Allow the server to be the source of truth for remaining balance validation
+    // (handles the case where total_calculated_payroll changed since page load)
     setIsProcessing(staffPayroll.staff.id);
     setPaymentModal(null);
 
@@ -147,8 +149,9 @@ export default function PayrollPage() {
             const remainingBalance = Number(p.remaining_balance || 0);
             const alreadyPaid = Number(p.total_paid_so_far || 0);
             const totalEarned = Number(p.total_calculated_payroll || 0);
-            const isFullyPaid = remainingBalance <= 0 && alreadyPaid >= totalEarned && totalEarned > 0;
-            const isOverpaid = remainingBalance < 0;
+            // Fully paid = paid amount matches or exceeds calculated total (with float tolerance)
+            const isFullyPaid = totalEarned > 0 && alreadyPaid >= totalEarned - 0.01;
+            const isOverpaid = alreadyPaid > totalEarned + 0.01;
 
             return (
               <WAPanel key={p.staff.id} className="p-6 border-wa-green/10 bg-wa-bg/40 backdrop-blur-md flex flex-col md:flex-row items-center gap-8 group hover:border-wa-green/30 transition-all relative">
@@ -218,7 +221,7 @@ export default function PayrollPage() {
                     <WAButton
                       type="button"
                       onClick={() => setPaymentModal({ isOpen: true, staffPayroll: p, amount: remainingBalance > 0 ? remainingBalance : 0, notes: '' })}
-                      disabled={isProcessing === p.staff.id || remainingBalance <= 0}
+                      disabled={isProcessing === p.staff.id}
                       className="bg-wa-green text-wa-bg font-bold flex items-center gap-2 group-hover:scale-105 transition-all"
                     >
                       {isProcessing === p.staff.id ? "PROCESSING..." : "RECORD PAYMENT"}

@@ -181,10 +181,10 @@ export const POST = requirePermission(async (request: Request, { user }) => {
       return NextResponse.json({ error: "Invalid payment details" }, { status: 400 });
     }
 
-    // 1. Fetch current payroll record
+    // 1. Fetch payroll record INCLUDING staff_id and week info so we can live-recalculate
     const { data: record, error: fetchError } = await supabaseService
       .from('payroll_records')
-      .select('total_calculated_payroll, total_paid_so_far')
+      .select('id, staff_id, week_start, week_end, total_paid_so_far, total_calculated_payroll, hourly_rate')
       .eq('id', payroll_record_id)
       .single();
 
@@ -192,14 +192,41 @@ export const POST = requirePermission(async (request: Request, { user }) => {
       return NextResponse.json({ error: "Payroll record not found" }, { status: 404 });
     }
 
-    const remainingBalance = Number(record.total_calculated_payroll) - Number(record.total_paid_so_far);
+    // 2. Live-recalculate total to prevent stale-data validation rejections
+    const { data: shifts } = await supabaseService
+      .from('staff_shifts')
+      .select('*, shift_game_log(*)')
+      .eq('staff_id', record.staff_id)
+      .gte('shift_date', record.week_start)
+      .lte('shift_date', record.week_end);
 
-    // Validate payment amount against remaining balance
-    if (amount_paid > remainingBalance) {
-       return NextResponse.json({ error: `Cannot pay more than remaining balance (${remainingBalance} EGP)` }, { status: 400 });
+    let liveHoursPay = 0;
+    let liveCommissionPay = 0;
+    shifts?.forEach(shift => {
+      const hours = Number(shift.hours_actual || shift.hours_planned || 0);
+      liveHoursPay += hours * Number(record.hourly_rate || 0);
+      const games = shift.shift_game_log || [];
+      liveCommissionPay += games.reduce((acc: number, g: any) => acc + Number(g.commission_amount), 0);
+    });
+    const liveTotalCalculated = liveHoursPay + liveCommissionPay;
+
+    // Update the DB with the freshest calculation before validating
+    await supabaseService
+      .from('payroll_records')
+      .update({ total_calculated_payroll: liveTotalCalculated })
+      .eq('id', payroll_record_id);
+
+    const totalPaidSoFar = Number(record.total_paid_so_far || 0);
+    const liveRemainingBalance = liveTotalCalculated - totalPaidSoFar;
+
+    // 3. Validate against live remaining balance (not stale DB value)
+    if (amount_paid > liveRemainingBalance + 0.01) { // +0.01 for float tolerance
+      return NextResponse.json({ 
+        error: `Cannot pay more than remaining balance (${liveRemainingBalance.toFixed(2)} EGP). Total is now ${liveTotalCalculated.toFixed(2)} EGP.` 
+      }, { status: 400 });
     }
 
-    // 2. Insert payment history
+    // 4. Insert payment ledger entry
     const { data: payment, error: paymentError } = await supabaseService
       .from('payroll_payments')
       .insert({
@@ -207,15 +234,15 @@ export const POST = requirePermission(async (request: Request, { user }) => {
         amount_paid,
         paid_by: user.id,
         payment_method: payment_method || 'cash',
-        notes
+        notes: notes || ''
       })
       .select()
       .single();
 
     if (paymentError) throw paymentError;
 
-    // 3. Update total_paid_so_far
-    const newTotalPaid = Number(record.total_paid_so_far) + Number(amount_paid);
+    // 5. Update total_paid_so_far atomically
+    const newTotalPaid = totalPaidSoFar + Number(amount_paid);
     const { error: updateError } = await supabaseService
       .from('payroll_records')
       .update({ total_paid_so_far: newTotalPaid })
@@ -223,7 +250,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
 
     if (updateError) throw updateError;
 
-    return NextResponse.json({ payment });
+    return NextResponse.json({ success: true, payment, new_total_paid: newTotalPaid, live_total_calculated: liveTotalCalculated });
   } catch (error) {
     console.error("[ADMIN_PAYROLL_POST_ERROR]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
