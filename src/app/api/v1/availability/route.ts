@@ -24,6 +24,7 @@ const CAIRO_TZ = "Africa/Cairo";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const dateStr = searchParams.get("date");
+  const gameId = searchParams.get("game_id");
   const isAdmin = searchParams.get("admin") === "true";
 
   // 1. Rate Limiting: 60/min per IP
@@ -118,6 +119,52 @@ export async function GET(request: Request) {
     return NextResponse.json([]);
   }
 
+  // Fetch game-specific hour bounds if a game_id was provided
+  let gameOpenMins = -1;
+  let gameCloseMins = 9999;
+  
+  if (gameId) {
+    const { data: override } = await supabase
+      .from("game_date_overrides")
+      .select("is_available, start_time, end_time")
+      .eq("game_id", gameId)
+      .eq("override_date", dateStr)
+      .single();
+
+    if (override && !override.is_available) {
+      return NextResponse.json([]); // Game not available today at all
+    }
+    
+    if (override && override.start_time && override.end_time) {
+      const toMinutes = (t: string) => {
+        const [h, m] = t.split(":").map(Number);
+        return h * 60 + m;
+      };
+      gameOpenMins = toMinutes(override.start_time);
+      gameCloseMins = toMinutes(override.end_time);
+    } else {
+      const { data: dayConfig } = await supabase
+        .from("game_day_availability")
+        .select("is_available, start_time, end_time")
+        .eq("game_id", gameId)
+        .eq("day_of_week", dayOfWeek)
+        .single();
+        
+      if (dayConfig && !dayConfig.is_available) {
+        return NextResponse.json([]); // Game not available today at all
+      }
+      
+      if (dayConfig && dayConfig.start_time && dayConfig.end_time) {
+        const toMinutes = (t: string) => {
+          const [h, m] = t.split(":").map(Number);
+          return h * 60 + m;
+        };
+        gameOpenMins = toMinutes(dayConfig.start_time);
+        gameCloseMins = toMinutes(dayConfig.end_time);
+      }
+    }
+  }
+
   // 4. Load ALL existing bookings for this date (CRITICAL FIX)
   const { data: allBookings, error: bookingsError } = await supabase
     .from("bookings")
@@ -193,11 +240,16 @@ export async function GET(request: Request) {
     const slotUtc = fromZonedTime(`${dateStr}T${hh}:${mm}:00`, CAIRO_TZ);
     const isPast = isAdmin ? false : slotUtc <= nowUtc;
 
-    const available30 = !isBooked && !isPast;
-    const available60 = !isBooked && !nextBooked && (mins + 60) <= closeMins && !isPast;
+    // Check if slot falls outside the game-specific operating hours
+    const isOutsideGameHours = gameId ? (mins < gameOpenMins || (mins + 30) > gameCloseMins) : false;
+    const isOutsideGameHoursNext = gameId ? (mins < gameOpenMins || (mins + 60) > gameCloseMins) : false;
+
+    const available30 = !isBooked && !isPast && !isOutsideGameHours;
+    const available60 = !isBooked && !nextBooked && (mins + 60) <= closeMins && !isPast && !isOutsideGameHoursNext;
 
     let reason: string | null = null;
-    if (isPast) reason = "past";
+    if (isOutsideGameHours) reason = "game_closed";
+    else if (isPast) reason = "past";
     else if (isBooked) reason = "booked";
     else if ((mins + 60) > closeMins) reason = "closing";
 

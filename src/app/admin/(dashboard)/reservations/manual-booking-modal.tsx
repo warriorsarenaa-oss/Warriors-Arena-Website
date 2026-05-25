@@ -117,7 +117,7 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
     const fetchSlots = async () => {
       try {
         // ✅ Pass admin=true to see today's past slots
-        const response = await fetch(`/api/v1/availability?date=${formData.date}&duration_minutes=${formData.duration}&admin=true`);
+        const response = await fetch(`/api/v1/availability?date=${formData.date}&duration_minutes=${formData.duration}&admin=true&game_id=${formData.gameId}`);
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${await response.text()}`);

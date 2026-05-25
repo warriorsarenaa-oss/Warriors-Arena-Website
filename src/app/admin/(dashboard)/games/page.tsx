@@ -75,6 +75,8 @@ export default function GamesPage() {
   const [overrideForm, setOverrideForm] = useState({
     override_date: format(new Date(), "yyyy-MM-dd"),
     is_available: true,
+    start_time: "",
+    end_time: "",
     reason: ""
   });
 
@@ -275,17 +277,30 @@ export default function GamesPage() {
     }
   };
 
-  const handleToggleDay = async (dayOfWeek: number) => {
-    const current = dayConfigs.find(c => c.day_of_week === dayOfWeek);
-    const newAvailable = current ? !current.is_available : false;
+  const handleUpdateDayConfig = async (dayOfWeek: number, field: string, value: any) => {
+    let current = dayConfigs.find(c => c.day_of_week === dayOfWeek);
+    if (!current) {
+      current = { day_of_week: dayOfWeek, is_available: false, start_time: null, end_time: null };
+    }
+    const updated = { ...current, [field]: value };
     
-    setDayConfigs(dayConfigs.map(c => c.day_of_week === dayOfWeek ? { ...c, is_available: newAvailable } : c));
+    setDayConfigs(prev => {
+      const exists = prev.find(c => c.day_of_week === dayOfWeek);
+      if (exists) return prev.map(c => c.day_of_week === dayOfWeek ? updated : c);
+      return [...prev, updated];
+    });
     
     await fetch(`/api/v1/admin/games/${selectedGameId}/availability`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify([{ day_of_week: dayOfWeek, is_available: newAvailable }])
+      body: JSON.stringify([updated])
     });
+  };
+
+  const handleToggleDay = async (dayOfWeek: number) => {
+    const current = dayConfigs.find(c => c.day_of_week === dayOfWeek);
+    const newAvailable = current ? !current.is_available : false;
+    await handleUpdateDayConfig(dayOfWeek, 'is_available', newAvailable);
   };
 
   const handleSaveOverride = async (e: React.FormEvent) => {
@@ -301,7 +316,7 @@ export default function GamesPage() {
         })
       });
       if (!res.ok) throw new Error("Failed to save override");
-      setOverrideForm({ override_date: format(new Date(), "yyyy-MM-dd"), is_available: true, reason: "" });
+      setOverrideForm({ override_date: format(new Date(), "yyyy-MM-dd"), is_available: true, start_time: "", end_time: "", reason: "" });
       await loadOverrides();
     } catch (err: any) {
       // If it failed to save but the user says it works, maybe it's a transient error or a weird response
@@ -398,17 +413,32 @@ export default function GamesPage() {
                     const config = dayConfigs.find(c => c.day_of_week === idx);
                     const isAvailable = config ? config.is_available : true;
                     return (
-                      <div key={day} className={`flex items-center justify-between p-4 border rounded transition-colors ${isAvailable ? 'border-wa-green/20 bg-wa-green/5' : 'border-wa-error/20 bg-wa-error/5 opacity-60'}`}>
-                        <div className="flex flex-col">
-                          <span className="font-bold uppercase tracking-widest text-sm">{day}</span>
-                          <span className={`text-[10px] font-mono ${isAvailable ? 'text-wa-green' : 'text-wa-error'}`}>
-                            {isAvailable ? "ACTIVE DUTY" : "MAINTENANCE / CLOSED"}
-                          </span>
+                      <div key={day} className={`flex flex-col gap-3 p-4 border rounded transition-colors ${isAvailable ? 'border-wa-green/20 bg-wa-green/5' : 'border-wa-error/20 bg-wa-error/5 opacity-60'}`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-col">
+                            <span className="font-bold uppercase tracking-widest text-sm">{day}</span>
+                            <span className={`text-[10px] font-mono ${isAvailable ? 'text-wa-green' : 'text-wa-error'}`}>
+                              {isAvailable ? "ACTIVE DUTY" : "MAINTENANCE / CLOSED"}
+                            </span>
+                          </div>
+                          <label className="flex items-center cursor-pointer">
+                            <input type="checkbox" className="sr-only peer" checked={isAvailable} onChange={() => handleToggleDay(idx)} />
+                            <div className="relative w-11 h-6 bg-wa-text/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-wa-bg after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-wa-green"></div>
+                          </label>
                         </div>
-                        <label className="flex items-center cursor-pointer">
-                          <input type="checkbox" className="sr-only peer" checked={isAvailable} onChange={() => handleToggleDay(idx)} />
-                          <div className="relative w-11 h-6 bg-wa-text/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-wa-bg after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-wa-green"></div>
-                        </label>
+                        {isAvailable && (
+                          <div className="flex gap-2 items-center justify-between mt-2 pt-2 border-t border-wa-green/10">
+                            <div className="flex flex-col w-full">
+                              <span className="text-[9px] uppercase tracking-widest opacity-60">Start Time</span>
+                              <input type="time" value={config?.start_time || ""} onChange={e => handleUpdateDayConfig(idx, 'start_time', e.target.value)} className="bg-wa-bg/50 border border-wa-text/10 p-1 rounded text-xs outline-none focus:border-wa-green" />
+                            </div>
+                            <span className="opacity-40">-</span>
+                            <div className="flex flex-col w-full">
+                              <span className="text-[9px] uppercase tracking-widest opacity-60">End Time</span>
+                              <input type="time" value={config?.end_time || ""} onChange={e => handleUpdateDayConfig(idx, 'end_time', e.target.value)} className="bg-wa-bg/50 border border-wa-text/10 p-1 rounded text-xs outline-none focus:border-wa-green" />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -476,13 +506,35 @@ export default function GamesPage() {
                     </button>
                     <button 
                       type="button" 
-                      onClick={() => setOverrideForm({...overrideForm, is_available: false})}
+                      onClick={() => setOverrideForm({...overrideForm, is_available: false, start_time: "", end_time: ""})}
                       className={`flex-1 p-3 border font-bold text-[10px] uppercase tracking-widest transition-all ${!overrideForm.is_available ? 'bg-wa-error text-wa-bg border-wa-error' : 'border-wa-text/20 opacity-40'}`}
                     >
                       Blocked
                     </button>
                   </div>
                 </div>
+                {overrideForm.is_available && (
+                  <div className="flex gap-4">
+                    <div className="flex flex-col gap-2 w-full">
+                      <label className="text-xs uppercase tracking-widest opacity-70">Start Time</label>
+                      <input 
+                        type="time" 
+                        value={overrideForm.start_time} 
+                        onChange={e => setOverrideForm({...overrideForm, start_time: e.target.value})}
+                        className="bg-wa-bg border border-wa-text/20 p-2 rounded focus:border-wa-green outline-none" 
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2 w-full">
+                      <label className="text-xs uppercase tracking-widest opacity-70">End Time</label>
+                      <input 
+                        type="time" 
+                        value={overrideForm.end_time} 
+                        onChange={e => setOverrideForm({...overrideForm, end_time: e.target.value})}
+                        className="bg-wa-bg border border-wa-text/20 p-2 rounded focus:border-wa-green outline-none" 
+                      />
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-col gap-2">
                   <label className="text-xs uppercase tracking-widest opacity-70">Reason / Memo</label>
                   <textarea 

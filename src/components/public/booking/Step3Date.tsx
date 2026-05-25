@@ -85,7 +85,7 @@ export const Step3Date: React.FC<Step3DateProps> = ({
       setSlotsLoading(true);
       setSlotsError(null);
       try {
-        const res = await fetch(`/api/v1/availability?date=${selectedDate}`);
+        const res = await fetch(`/api/v1/availability?date=${selectedDate}${gameId ? `&game_id=${gameId}` : ''}`);
         if (!res.ok) throw new Error("Failed to fetch availability");
         const data = await res.json();
         setSlots(Array.isArray(data) ? data : (data.slots || []));
