@@ -37,7 +37,8 @@ export async function POST(
         body.map((item: any) => ({
           game_id: id,
           day_of_week: item.day_of_week,
-          is_available: item.is_available
+          is_available: item.is_available,
+          allowed_times: item.allowed_times || null
         })),
         { onConflict: "game_id,day_of_week" }
       );

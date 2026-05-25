@@ -75,10 +75,28 @@ export default function GamesPage() {
   const [overrideForm, setOverrideForm] = useState({
     override_date: format(new Date(), "yyyy-MM-dd"),
     is_available: true,
-    start_time: "",
-    end_time: "",
+    allowed_times: null as string[] | null,
     reason: ""
   });
+
+  const ALL_SLOTS = Array.from({ length: 48 }, (_, i) => {
+    const h = Math.floor(i / 2);
+    const m = i % 2 === 0 ? "00" : "30";
+    return `${h.toString().padStart(2, '0')}:${m}`;
+  });
+
+  const toggleTimeSlot = (currentAllowed: string[] | null, time: string) => {
+    if (currentAllowed === null) {
+       return ALL_SLOTS.filter(t => t !== time);
+    }
+    if (currentAllowed.includes(time)) {
+       const next = currentAllowed.filter(t => t !== time);
+       return next.length === ALL_SLOTS.length ? null : next; // Reset to null if all selected somehow
+    } else {
+       const next = [...currentAllowed, time].sort();
+       return next.length === ALL_SLOTS.length ? null : next;
+    }
+  };
 
   const loadAdminGames = async () => {
     setLoading(true);
@@ -280,7 +298,7 @@ export default function GamesPage() {
   const handleUpdateDayConfig = async (dayOfWeek: number, field: string, value: any) => {
     let current = dayConfigs.find(c => c.day_of_week === dayOfWeek);
     if (!current) {
-      current = { day_of_week: dayOfWeek, is_available: false, start_time: null, end_time: null };
+      current = { day_of_week: dayOfWeek, is_available: false, allowed_times: null };
     }
     const updated = { ...current, [field]: value };
     
@@ -316,7 +334,7 @@ export default function GamesPage() {
         })
       });
       if (!res.ok) throw new Error("Failed to save override");
-      setOverrideForm({ override_date: format(new Date(), "yyyy-MM-dd"), is_available: true, start_time: "", end_time: "", reason: "" });
+      setOverrideForm({ override_date: format(new Date(), "yyyy-MM-dd"), is_available: true, allowed_times: null, reason: "" });
       await loadOverrides();
     } catch (err: any) {
       // If it failed to save but the user says it works, maybe it's a transient error or a weird response
@@ -427,15 +445,26 @@ export default function GamesPage() {
                           </label>
                         </div>
                         {isAvailable && (
-                          <div className="flex gap-2 items-center justify-between mt-2 pt-2 border-t border-wa-green/10">
-                            <div className="flex flex-col w-full">
-                              <span className="text-[9px] uppercase tracking-widest opacity-60">Start Time</span>
-                              <input type="time" value={config?.start_time || ""} onChange={e => handleUpdateDayConfig(idx, 'start_time', e.target.value)} className="bg-wa-bg/50 border border-wa-text/10 p-1 rounded text-xs outline-none focus:border-wa-green" />
+                          <div className="mt-2 pt-2 border-t border-wa-green/10">
+                            <span className="text-[9px] uppercase tracking-widest opacity-60 block mb-2">Available Time Slots</span>
+                            <div className="flex flex-wrap gap-1">
+                              {ALL_SLOTS.map(time => {
+                                // Default allowed is true if allowed_times is null
+                                const isAllowed = config?.allowed_times === null || config?.allowed_times?.includes(time) !== false;
+                                return (
+                                  <button
+                                    key={time}
+                                    onClick={() => handleUpdateDayConfig(idx, 'allowed_times', toggleTimeSlot(config?.allowed_times || null, time))}
+                                    className={`px-1.5 py-1 text-[10px] font-mono border rounded transition-all ${isAllowed ? 'bg-wa-green/20 border-wa-green text-wa-green' : 'bg-transparent border-wa-text/10 text-wa-text/30 hover:border-wa-text/30'}`}
+                                  >
+                                    {time}
+                                  </button>
+                                );
+                              })}
                             </div>
-                            <span className="opacity-40">-</span>
-                            <div className="flex flex-col w-full">
-                              <span className="text-[9px] uppercase tracking-widest opacity-60">End Time</span>
-                              <input type="time" value={config?.end_time || ""} onChange={e => handleUpdateDayConfig(idx, 'end_time', e.target.value)} className="bg-wa-bg/50 border border-wa-text/10 p-1 rounded text-xs outline-none focus:border-wa-green" />
+                            <div className="flex justify-end gap-2 mt-2">
+                               <button onClick={() => handleUpdateDayConfig(idx, 'allowed_times', null)} className="text-[9px] text-wa-green uppercase opacity-70 hover:opacity-100">Select All</button>
+                               <button onClick={() => handleUpdateDayConfig(idx, 'allowed_times', [])} className="text-[9px] text-wa-error uppercase opacity-70 hover:opacity-100">Clear All</button>
                             </div>
                           </div>
                         )}
@@ -506,7 +535,7 @@ export default function GamesPage() {
                     </button>
                     <button 
                       type="button" 
-                      onClick={() => setOverrideForm({...overrideForm, is_available: false, start_time: "", end_time: ""})}
+                      onClick={() => setOverrideForm({...overrideForm, is_available: false, allowed_times: null})}
                       className={`flex-1 p-3 border font-bold text-[10px] uppercase tracking-widest transition-all ${!overrideForm.is_available ? 'bg-wa-error text-wa-bg border-wa-error' : 'border-wa-text/20 opacity-40'}`}
                     >
                       Blocked
@@ -514,24 +543,26 @@ export default function GamesPage() {
                   </div>
                 </div>
                 {overrideForm.is_available && (
-                  <div className="flex gap-4">
-                    <div className="flex flex-col gap-2 w-full">
-                      <label className="text-xs uppercase tracking-widest opacity-70">Start Time</label>
-                      <input 
-                        type="time" 
-                        value={overrideForm.start_time} 
-                        onChange={e => setOverrideForm({...overrideForm, start_time: e.target.value})}
-                        className="bg-wa-bg border border-wa-text/20 p-2 rounded focus:border-wa-green outline-none" 
-                      />
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs uppercase tracking-widest opacity-70">Available Time Slots</label>
+                    <div className="flex flex-wrap gap-1 bg-wa-bg border border-wa-text/10 p-3 rounded">
+                      {ALL_SLOTS.map(time => {
+                        const isAllowed = overrideForm.allowed_times === null || overrideForm.allowed_times.includes(time);
+                        return (
+                          <button
+                            key={time}
+                            type="button"
+                            onClick={() => setOverrideForm({...overrideForm, allowed_times: toggleTimeSlot(overrideForm.allowed_times, time)})}
+                            className={`px-1.5 py-1 text-[10px] font-mono border rounded transition-all ${isAllowed ? 'bg-wa-green/20 border-wa-green text-wa-green' : 'bg-transparent border-wa-text/10 text-wa-text/30 hover:border-wa-text/30'}`}
+                          >
+                            {time}
+                          </button>
+                        );
+                      })}
                     </div>
-                    <div className="flex flex-col gap-2 w-full">
-                      <label className="text-xs uppercase tracking-widest opacity-70">End Time</label>
-                      <input 
-                        type="time" 
-                        value={overrideForm.end_time} 
-                        onChange={e => setOverrideForm({...overrideForm, end_time: e.target.value})}
-                        className="bg-wa-bg border border-wa-text/20 p-2 rounded focus:border-wa-green outline-none" 
-                      />
+                    <div className="flex justify-end gap-2 mt-1">
+                       <button type="button" onClick={() => setOverrideForm({...overrideForm, allowed_times: null})} className="text-[9px] text-wa-green uppercase opacity-70 hover:opacity-100">Select All</button>
+                       <button type="button" onClick={() => setOverrideForm({...overrideForm, allowed_times: []})} className="text-[9px] text-wa-error uppercase opacity-70 hover:opacity-100">Clear All</button>
                     </div>
                   </div>
                 )}

@@ -120,13 +120,12 @@ export async function GET(request: Request) {
   }
 
   // Fetch game-specific hour bounds if a game_id was provided
-  let gameOpenMins = -1;
-  let gameCloseMins = 9999;
+  let gameAllowedTimes: string[] | null = null;
   
   if (gameId) {
     const { data: override } = await supabase
       .from("game_date_overrides")
-      .select("is_available, start_time, end_time")
+      .select("is_available, allowed_times")
       .eq("game_id", gameId)
       .eq("override_date", dateStr)
       .single();
@@ -135,17 +134,12 @@ export async function GET(request: Request) {
       return NextResponse.json([]); // Game not available today at all
     }
     
-    if (override && override.start_time && override.end_time) {
-      const toMinutes = (t: string) => {
-        const [h, m] = t.split(":").map(Number);
-        return h * 60 + m;
-      };
-      gameOpenMins = toMinutes(override.start_time);
-      gameCloseMins = toMinutes(override.end_time);
+    if (override && override.allowed_times && override.allowed_times.length > 0) {
+      gameAllowedTimes = override.allowed_times.map((t: string) => t.substring(0, 5));
     } else {
       const { data: dayConfig } = await supabase
         .from("game_day_availability")
-        .select("is_available, start_time, end_time")
+        .select("is_available, allowed_times")
         .eq("game_id", gameId)
         .eq("day_of_week", dayOfWeek)
         .single();
@@ -154,13 +148,8 @@ export async function GET(request: Request) {
         return NextResponse.json([]); // Game not available today at all
       }
       
-      if (dayConfig && dayConfig.start_time && dayConfig.end_time) {
-        const toMinutes = (t: string) => {
-          const [h, m] = t.split(":").map(Number);
-          return h * 60 + m;
-        };
-        gameOpenMins = toMinutes(dayConfig.start_time);
-        gameCloseMins = toMinutes(dayConfig.end_time);
+      if (dayConfig && dayConfig.allowed_times && dayConfig.allowed_times.length > 0) {
+        gameAllowedTimes = dayConfig.allowed_times.map((t: string) => t.substring(0, 5));
       }
     }
   }
@@ -241,8 +230,16 @@ export async function GET(request: Request) {
     const isPast = isAdmin ? false : slotUtc <= nowUtc;
 
     // Check if slot falls outside the game-specific operating hours
-    const isOutsideGameHours = gameId ? (mins < gameOpenMins || (mins + 30) > gameCloseMins) : false;
-    const isOutsideGameHoursNext = gameId ? (mins < gameOpenMins || (mins + 60) > gameCloseMins) : false;
+    const timeStrHHMM = `${hh}:${mm}`;
+    const nextH = String(Math.floor((mins + 30) / 60)).padStart(2, "0");
+    const nextM = String((mins + 30) % 60).padStart(2, "0");
+    const nextTimeStrHHMM = `${nextH}:${nextM}`;
+    
+    // If gameAllowedTimes is null, it means no restrictions (all day available). 
+    // If it's an array, the slot must be in the array.
+    const isOutsideGameHours = gameAllowedTimes ? !gameAllowedTimes.includes(timeStrHHMM) : false;
+    // For 60 min, both the first and second 30-min block must be in allowed times
+    const isOutsideGameHoursNext = gameAllowedTimes ? (!gameAllowedTimes.includes(timeStrHHMM) || !gameAllowedTimes.includes(nextTimeStrHHMM)) : false;
 
     const available30 = !isBooked && !isPast && !isOutsideGameHours;
     const available60 = !isBooked && !nextBooked && (mins + 60) <= closeMins && !isPast && !isOutsideGameHoursNext;

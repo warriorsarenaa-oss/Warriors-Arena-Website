@@ -20,6 +20,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const body = await request.json(); // { game_id, override_date, is_available, reason }
+  if (body.allowed_times && body.allowed_times.length === 0) body.allowed_times = null;
 
   try {
     const { data, error } = await supabaseService
