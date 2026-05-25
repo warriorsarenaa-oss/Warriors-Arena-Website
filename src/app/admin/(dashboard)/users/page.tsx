@@ -105,6 +105,20 @@ export default function UsersPage() {
     });
   };
 
+  const handleDeleteUser = async (user: any) => {
+    if (!confirm(`Are you sure you want to permanently delete the user ${user.username}?`)) return;
+    try {
+      const res = await fetch(`/api/v1/admin/users/${user.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      loadData();
+    } catch (err: any) {
+      console.error(err);
+      alert("Failed to delete user: " + err.message);
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -114,6 +128,7 @@ export default function UsersPage() {
           method: "PATCH",
           headers: { "Content-Type": "application/json" }, 
           body: JSON.stringify({
+            username: formData.username,
             commission_rate: formData.commission_rate,
             hourly_rate: formData.hourly_rate,
             permissions: formData.permissions,
@@ -219,8 +234,11 @@ export default function UsersPage() {
                     <div className="relative w-10 h-5 bg-wa-text/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-wa-bg after:border-wa-text/20 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-wa-green"></div>
                   </label>
                 </td>
-                <td className="p-6 text-right">
+                <td className="p-6 text-right flex items-center justify-end gap-2">
                   <WAButton onClick={() => openModal(user)} variant="ghost" className="text-wa-green text-[10px] uppercase tracking-widest font-bold h-8 px-4 border border-wa-green/20 hover:border-wa-green">Edit</WAButton>
+                  {currentUser?.id !== user.id && (
+                    <WAButton onClick={() => handleDeleteUser(user)} variant="ghost" className="text-red-500 text-[10px] uppercase tracking-widest font-bold h-8 px-4 border border-red-500/20 hover:border-red-500 hover:bg-red-500/10">Delete</WAButton>
+                  )}
                 </td>
               </tr>
             ))}
@@ -261,7 +279,6 @@ export default function UsersPage() {
                   <input 
                     type="text" 
                     required 
-                    disabled={!!editingUser} 
                     value={formData.username} 
                     onChange={e => setFormData({...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')})} 
                     placeholder="john_doe"

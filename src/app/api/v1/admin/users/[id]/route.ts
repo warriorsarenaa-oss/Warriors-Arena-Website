@@ -126,3 +126,39 @@ export const PATCH = requirePermission(async (request: Request, context: any) =>
     return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
   }
 }, "manage_users");
+
+export const DELETE = requirePermission(async (request: Request, context: any) => {
+  try {
+    const { id } = await context.params;
+    const { user } = context;
+
+    if (user.id === id) {
+      return NextResponse.json({ error: "Cannot delete your own account" }, { status: 400 });
+    }
+
+    const { error: authError } = await supabaseService.auth.admin.deleteUser(id);
+    if (authError) {
+      console.warn("Could not delete from auth.users (might not exist):", authError.message);
+    }
+
+    const { error: dbError } = await supabaseService.from('users').delete().eq('id', id);
+    if (dbError) throw dbError;
+
+    await logAuditAction({
+      request,
+      actor_user_id: user.id,
+      actor_email: user.email,
+      action: 'delete_user',
+      entity_type: 'users',
+      entity_id: id,
+      before_state: { id },
+      after_state: null
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[ADMIN_USERS_DELETE_ERROR]", error);
+    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+  }
+}, "manage_users");
+
