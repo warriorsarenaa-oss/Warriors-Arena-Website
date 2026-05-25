@@ -120,7 +120,18 @@ export default function GamesPage() {
     if (!gameId) return;
     try {
       const res = await fetch(`/api/v1/admin/games/${gameId}/availability`);
-      if (res.ok) setDayConfigs(await res.json());
+      if (res.ok) {
+        const raw = await res.json();
+        // PostgreSQL TIME columns return 'HH:MM:SS'; UI slots use 'HH:MM'.
+        // Normalize here so slot buttons render as selected after page refresh.
+        const normalized = raw.map((c: any) => ({
+          ...c,
+          allowed_times: c.allowed_times
+            ? c.allowed_times.map((t: string) => t.substring(0, 5))
+            : null,
+        }));
+        setDayConfigs(normalized);
+      }
     } catch (err) {
       console.error(err);
     }

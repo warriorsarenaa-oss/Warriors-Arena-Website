@@ -20,7 +20,7 @@ const BookingRequestSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   start_time: z.string(),
   duration_minutes: z.union([z.literal(30), z.literal(60)]),
-  player_count: z.number().int().min(1).max(6),
+  player_count: z.number().int().min(1).max(100),
   customer_name: z.string().min(2).max(100).trim(),
   customer_phone: z.string().min(10).max(15),
   customer_email: z.string().email().optional().nullable(),
@@ -69,6 +69,20 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: { code: "RATE_LIMIT_EXCEEDED", message: "Too many bookings for this phone number. Try again later." } },
         { status: 429 }
+      );
+    }
+
+    // 4. Dynamic max_players check — validate against game's actual DB value
+    const { data: gameRow } = await supabaseAnon
+      .from("games")
+      .select("max_players")
+      .eq("id", data.game_id)
+      .single();
+    const maxAllowed = gameRow?.max_players ?? 6;
+    if (data.player_count > maxAllowed) {
+      return NextResponse.json(
+        { error: { code: "PLAYER_COUNT_EXCEEDED", message: `This game allows a maximum of ${maxAllowed} players per slot.` } },
+        { status: 400 }
       );
     }
 

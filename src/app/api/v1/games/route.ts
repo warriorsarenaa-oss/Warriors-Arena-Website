@@ -42,6 +42,7 @@ export async function GET(request: Request) {
       hero_image_url,
       display_order,
       is_active,
+      max_players,
       game_pricing(duration_minutes, price_per_player, pricing_type, ammo_count, duration_minutes_display)
     `);
 
@@ -75,6 +76,7 @@ export async function GET(request: Request) {
       description_ar: game.description_ar,
       hero_image_url: game.hero_image_url,
       display_order: game.display_order,
+      max_players: (game as any).max_players ?? 6,
       min_price_per_player,
       pricing: game.game_pricing
     };
