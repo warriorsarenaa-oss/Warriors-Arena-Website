@@ -227,11 +227,14 @@ export async function GET(request: Request) {
     const { covered: isBooked, bookings: bookingsForSlot } = isTimeCovered(slotTime);
     const { covered: nextBooked } = isTimeCovered(nextSlotTime);
 
-    // Is this slot in the past?
+    // Is this slot in the past? (Add 30 min buffer for public users)
     const hh = String(Math.floor(mins / 60)).padStart(2, "0");
     const mm = String(mins % 60).padStart(2, "0");
     const slotUtc = fromZonedTime(`${dateStr}T${hh}:${mm}:00`, CAIRO_TZ);
-    const isPast = isAdmin ? false : slotUtc <= nowUtc;
+    
+    // Buffer of 30 mins means if it is 18:45, the 19:00 slot is considered past.
+    const bufferedNowUtc = new Date(nowUtc.getTime() + 30 * 60000); 
+    const isPast = isAdmin ? false : slotUtc <= bufferedNowUtc;
 
     // Check if slot falls outside the game-specific operating hours
     const timeStrHHMM = `${hh}:${mm}`;

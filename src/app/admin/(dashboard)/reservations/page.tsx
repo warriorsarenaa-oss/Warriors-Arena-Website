@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { format, addDays, subDays } from "date-fns";
+import { fromZonedTime } from "date-fns-tz";
 import { ChevronLeft, ChevronRight, LayoutGrid, List, AlertTriangle } from "lucide-react";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
@@ -184,6 +185,10 @@ export default function ReservationsPage() {
                 return false;
               });
 
+              const dateStr = format(date, "yyyy-MM-dd");
+              const slotUtc = fromZonedTime(`${dateStr}T${slot.substring(0, 5)}:00`, "Africa/Cairo");
+              const isPast = slotUtc <= new Date();
+
               const isFirstSlotOfBooking = booking && (booking.start_time === slot || booking.start_time.substring(0, 5) === slot.substring(0, 5));
               
               if (booking) {
@@ -228,6 +233,18 @@ export default function ReservationsPage() {
                          </button>
                        )}
                     </div>
+                  </div>
+                );
+              }
+
+              if (isPast) {
+                return (
+                  <div 
+                    key={slot} 
+                    className="border border-wa-text/10 bg-wa-bg/30 p-4 rounded-lg flex flex-col items-center justify-center min-h-[120px] opacity-40 cursor-not-allowed"
+                  >
+                    <span className="font-bold text-lg font-heading text-wa-text/50">{slot.substring(0, 5)}</span>
+                    <span className="text-[10px] uppercase tracking-[0.2em] mt-2 text-wa-text/30 font-bold">PAST</span>
                   </div>
                 );
               }

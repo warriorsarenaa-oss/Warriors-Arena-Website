@@ -417,7 +417,7 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
                         className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green flex-1 font-mono text-wa-green text-lg"
                         required
                       />
-                      {formData.playerCount > 6 && (
+                      {formData.playerCount > (availableGames.find(g => g.id === formData.gameId)?.max_players ?? 6) && (
                         <div className="flex items-center gap-1 text-[10px] text-wa-orange animate-pulse">
                           <AlertCircle className="w-3 h-3" /> OVERRIDE ACTIVE
                         </div>

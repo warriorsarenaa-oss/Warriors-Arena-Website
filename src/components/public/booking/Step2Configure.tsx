@@ -17,6 +17,7 @@ interface Step2ConfigureProps {
   pricing: GamePricing[];
   duration?: number;
   playerCount: number;
+  maxPlayers?: number;
   onUpdate: (updates: { duration_minutes?: 30 | 60; player_count?: number }) => void;
   disabled?: boolean;
 }
@@ -25,6 +26,7 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
   pricing,
   duration,
   playerCount,
+  maxPlayers = 6,
   onUpdate,
   disabled = false,
 }) => {
@@ -32,7 +34,7 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
 
   const handleIncrement = () => {
     if (disabled) return;
-    if (playerCount < 6) {
+    if (playerCount < maxPlayers) {
       onUpdate({ player_count: playerCount + 1 });
     }
   };
@@ -126,7 +128,7 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
 
           <button
             onClick={handleIncrement}
-            disabled={disabled || playerCount >= 6}
+            disabled={disabled || playerCount >= maxPlayers}
             className="w-12 h-12 flex items-center justify-center border-2 border-wa-text/20 text-wa-text hover:border-wa-green hover:text-wa-green disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
           >
             <Plus className="w-6 h-6" />
@@ -134,7 +136,7 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
 
           <div className="ms-auto text-end">
             <p className="text-[10px] text-wa-text/40 font-mono uppercase tracking-widest">
-              {disabled ? "Fixed for this offer" : t("maxPlayersNote", { max: 6 })}
+              {disabled ? "Fixed for this offer" : t("maxPlayersNote", { max: maxPlayers })}
             </p>
           </div>
         </div>

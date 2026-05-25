@@ -297,6 +297,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
               pricing={selectedGame.pricing}
               duration={draft.duration_minutes}
               playerCount={draft.player_count}
+              maxPlayers={selectedGame.max_players ?? 6}
               onUpdate={updateDraft}
             />
           )}
