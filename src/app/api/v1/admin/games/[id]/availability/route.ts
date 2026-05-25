@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseService } from "@/lib/db/supabase-service";
 
+export const dynamic = "force-dynamic";
+
 // GET availability for a specific game
 export async function GET(
   request: Request,

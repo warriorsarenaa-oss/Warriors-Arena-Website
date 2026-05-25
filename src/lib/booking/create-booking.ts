@@ -1,6 +1,7 @@
 import { createSupabaseService } from "@/lib/db/supabase-service";
 import { logAuditAction } from "@/lib/admin/audit-log";
 import { logger } from "@/lib/log";
+import { validateSlotAvailability } from "./availability";
 
 /**
  * BOOKING SERVICE LAYER
@@ -54,6 +55,16 @@ export async function createBooking(params: CreateBookingParams): Promise<Bookin
   });
 
   const supabase = createSupabaseService();
+
+  // 0. Server-side Availability Validation (Single Source of Truth)
+  const availCheck = await validateSlotAvailability(params.game_id, params.date, params.start_time, params.duration_minutes);
+  if (!availCheck.valid) {
+    logger.warn("Booking rejected by availability constraints", { params, reason: availCheck.reason });
+    return {
+      success: false,
+      error: { code: "UNAVAILABLE_SLOT", message: availCheck.reason || "Slot unavailable" }
+    };
+  }
 
   // 1. Call Database RPC
   const { data, error } = await supabase.rpc("fn_create_booking", {

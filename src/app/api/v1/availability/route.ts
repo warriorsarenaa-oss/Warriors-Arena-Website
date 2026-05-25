@@ -130,12 +130,14 @@ export async function GET(request: Request) {
       .eq("override_date", dateStr)
       .single();
 
-    if (override && !override.is_available) {
-      return NextResponse.json([]); // Game not available today at all
-    }
-    
-    if (override && override.allowed_times && override.allowed_times.length > 0) {
-      gameAllowedTimes = override.allowed_times.map((t: string) => t.substring(0, 5));
+    if (override) {
+      if (!override.is_available) {
+        return NextResponse.json([]); // Game not available today at all (override)
+      }
+      if (override.allowed_times) {
+        if (override.allowed_times.length === 0) return NextResponse.json([]); // Explicitly blocked all slots
+        gameAllowedTimes = override.allowed_times.map((t: string) => t.substring(0, 5));
+      }
     } else {
       const { data: dayConfig } = await supabase
         .from("game_day_availability")
@@ -144,12 +146,14 @@ export async function GET(request: Request) {
         .eq("day_of_week", dayOfWeek)
         .single();
         
-      if (dayConfig && !dayConfig.is_available) {
-        return NextResponse.json([]); // Game not available today at all
-      }
-      
-      if (dayConfig && dayConfig.allowed_times && dayConfig.allowed_times.length > 0) {
-        gameAllowedTimes = dayConfig.allowed_times.map((t: string) => t.substring(0, 5));
+      if (dayConfig) {
+        if (!dayConfig.is_available) {
+          return NextResponse.json([]); // Game not available on this weekday
+        }
+        if (dayConfig.allowed_times) {
+          if (dayConfig.allowed_times.length === 0) return NextResponse.json([]);
+          gameAllowedTimes = dayConfig.allowed_times.map((t: string) => t.substring(0, 5));
+        }
       }
     }
   }

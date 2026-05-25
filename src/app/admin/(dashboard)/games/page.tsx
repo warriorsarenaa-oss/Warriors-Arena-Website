@@ -85,13 +85,15 @@ export default function GamesPage() {
     return `${h.toString().padStart(2, '0')}:${m}`;
   });
 
+  const [expandedDay, setExpandedDay] = useState<number | null>(null);
+
   const toggleTimeSlot = (currentAllowed: string[] | null, time: string) => {
     if (currentAllowed === null) {
        return ALL_SLOTS.filter(t => t !== time);
     }
     if (currentAllowed.includes(time)) {
        const next = currentAllowed.filter(t => t !== time);
-       return next.length === ALL_SLOTS.length ? null : next; // Reset to null if all selected somehow
+       return next.length === ALL_SLOTS.length ? null : next; 
     } else {
        const next = [...currentAllowed, time].sort();
        return next.length === ALL_SLOTS.length ? null : next;
@@ -308,14 +310,56 @@ export default function GamesPage() {
       return [...prev, updated];
     });
     
-    await fetch(`/api/v1/admin/games/${selectedGameId}/availability`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify([updated])
-    });
+    try {
+      const res = await fetch(`/api/v1/admin/games/${selectedGameId}/availability`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify([updated])
+      });
+      if (!res.ok) throw new Error("Failed to update availability");
+    } catch (err) {
+      console.error(err);
+      // In production we could add a toast here
+    }
   };
 
-  const handleToggleDay = async (dayOfWeek: number) => {
+  const handleCopyToOtherDays = async (sourceDayOfWeek: number) => {
+    const sourceConfig = dayConfigs.find(c => c.day_of_week === sourceDayOfWeek);
+    const isAvail = sourceConfig ? sourceConfig.is_available : true;
+    const allowed = sourceConfig ? sourceConfig.allowed_times : null;
+
+    const newConfigs = [...dayConfigs];
+    const payload = [];
+
+    for (let i = 0; i < 7; i++) {
+      if (i === sourceDayOfWeek) continue;
+      let target = newConfigs.find(c => c.day_of_week === i);
+      if (target) {
+        target.is_available = isAvail;
+        target.allowed_times = allowed;
+      } else {
+        target = { day_of_week: i, is_available: isAvail, allowed_times: allowed };
+        newConfigs.push(target);
+      }
+      payload.push(target);
+    }
+    
+    setDayConfigs(newConfigs);
+    
+    try {
+      const res = await fetch(`/api/v1/admin/games/${selectedGameId}/availability`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error("Failed to copy settings");
+    } catch (err) {
+      console.error("Failed to copy", err);
+    }
+  };
+
+  const handleToggleDay = async (dayOfWeek: number, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     const current = dayConfigs.find(c => c.day_of_week === dayOfWeek);
     const newAvailable = current ? !current.is_available : false;
     await handleUpdateDayConfig(dayOfWeek, 'is_available', newAvailable);
@@ -426,45 +470,71 @@ export default function GamesPage() {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-3">
                   {DAYS.map((day, idx) => {
                     const config = dayConfigs.find(c => c.day_of_week === idx);
                     const isAvailable = config ? config.is_available : true;
+                    const isExpanded = expandedDay === idx;
+                    
                     return (
-                      <div key={day} className={`flex flex-col gap-3 p-4 border rounded transition-colors ${isAvailable ? 'border-wa-green/20 bg-wa-green/5' : 'border-wa-error/20 bg-wa-error/5 opacity-60'}`}>
-                        <div className="flex items-center justify-between">
+                      <div key={day} className={`flex flex-col border rounded transition-all duration-300 ${isAvailable ? 'border-wa-green/20' : 'border-wa-error/20 bg-wa-error/5'}`}>
+                        {/* Accordion Header */}
+                        <div 
+                          onClick={() => setExpandedDay(isExpanded ? null : idx)}
+                          className={`flex items-center justify-between p-4 cursor-pointer hover:bg-wa-text/5 transition-colors ${isExpanded && isAvailable ? 'bg-wa-green/5' : ''}`}
+                        >
                           <div className="flex flex-col">
                             <span className="font-bold uppercase tracking-widest text-sm">{day}</span>
                             <span className={`text-[10px] font-mono ${isAvailable ? 'text-wa-green' : 'text-wa-error'}`}>
                               {isAvailable ? "ACTIVE DUTY" : "MAINTENANCE / CLOSED"}
                             </span>
                           </div>
-                          <label className="flex items-center cursor-pointer">
-                            <input type="checkbox" className="sr-only peer" checked={isAvailable} onChange={() => handleToggleDay(idx)} />
-                            <div className="relative w-11 h-6 bg-wa-text/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-wa-bg after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-wa-green"></div>
-                          </label>
+                          
+                          <div className="flex items-center gap-6">
+                            <label className="flex items-center cursor-pointer" onClick={e => e.stopPropagation()}>
+                              <input type="checkbox" className="sr-only peer" checked={isAvailable} onChange={(e) => handleToggleDay(idx)} />
+                              <div className="relative w-11 h-6 bg-wa-text/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-wa-bg after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-wa-green"></div>
+                            </label>
+                            
+                            <svg className={`w-5 h-5 text-wa-text/40 transform transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
                         </div>
-                        {isAvailable && (
-                          <div className="mt-2 pt-2 border-t border-wa-green/10">
-                            <span className="text-[9px] uppercase tracking-widest opacity-60 block mb-2">Available Time Slots</span>
-                            <div className="flex flex-wrap gap-1">
+
+                        {/* Accordion Body */}
+                        {isExpanded && isAvailable && (
+                          <div className="p-4 border-t border-wa-green/10 bg-wa-bg/50 animate-in slide-in-from-top-2 duration-300">
+                            <div className="flex justify-between items-center mb-3">
+                              <span className="text-[10px] uppercase tracking-widest opacity-60">Select Available Time Slots</span>
+                              <div className="flex items-center gap-3">
+                                <button onClick={() => handleUpdateDayConfig(idx, 'allowed_times', null)} className="text-[9px] text-wa-green uppercase opacity-70 hover:opacity-100 font-bold border border-wa-green/30 px-2 py-1 rounded">Select All</button>
+                                <button onClick={() => handleUpdateDayConfig(idx, 'allowed_times', [])} className="text-[9px] text-wa-error uppercase opacity-70 hover:opacity-100 font-bold border border-wa-error/30 px-2 py-1 rounded">Clear All</button>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-12 gap-1 mb-4">
                               {ALL_SLOTS.map(time => {
-                                // Default allowed is true if allowed_times is null
                                 const isAllowed = config?.allowed_times === null || config?.allowed_times?.includes(time) !== false;
                                 return (
                                   <button
                                     key={time}
                                     onClick={() => handleUpdateDayConfig(idx, 'allowed_times', toggleTimeSlot(config?.allowed_times || null, time))}
-                                    className={`px-1.5 py-1 text-[10px] font-mono border rounded transition-all ${isAllowed ? 'bg-wa-green/20 border-wa-green text-wa-green' : 'bg-transparent border-wa-text/10 text-wa-text/30 hover:border-wa-text/30'}`}
+                                    className={`py-1 text-[9px] font-mono border rounded transition-all ${isAllowed ? 'bg-wa-green/20 border-wa-green text-wa-green shadow-[0_0_10px_rgba(0,255,65,0.1)]' : 'bg-wa-bg border-wa-text/10 text-wa-text/30 hover:border-wa-text/30'}`}
                                   >
                                     {time}
                                   </button>
                                 );
                               })}
                             </div>
-                            <div className="flex justify-end gap-2 mt-2">
-                               <button onClick={() => handleUpdateDayConfig(idx, 'allowed_times', null)} className="text-[9px] text-wa-green uppercase opacity-70 hover:opacity-100">Select All</button>
-                               <button onClick={() => handleUpdateDayConfig(idx, 'allowed_times', [])} className="text-[9px] text-wa-error uppercase opacity-70 hover:opacity-100">Clear All</button>
+                            
+                            <div className="flex justify-end pt-2 border-t border-wa-green/10">
+                              <button 
+                                onClick={() => handleCopyToOtherDays(idx)} 
+                                className="text-[9px] text-wa-text uppercase opacity-70 hover:text-wa-green hover:opacity-100 flex items-center gap-1 font-bold"
+                              >
+                                <CheckCircle2 className="w-3 h-3" /> Copy config to all other days
+                              </button>
                             </div>
                           </div>
                         )}
@@ -544,8 +614,14 @@ export default function GamesPage() {
                 </div>
                 {overrideForm.is_available && (
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs uppercase tracking-widest opacity-70">Available Time Slots</label>
-                    <div className="flex flex-wrap gap-1 bg-wa-bg border border-wa-text/10 p-3 rounded">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs uppercase tracking-widest opacity-70">Available Time Slots</label>
+                      <div className="flex items-center gap-2">
+                         <button type="button" onClick={() => setOverrideForm({...overrideForm, allowed_times: null})} className="text-[9px] text-wa-green uppercase opacity-70 hover:opacity-100 font-bold border border-wa-green/30 px-2 py-1 rounded">Select All</button>
+                         <button type="button" onClick={() => setOverrideForm({...overrideForm, allowed_times: []})} className="text-[9px] text-wa-error uppercase opacity-70 hover:opacity-100 font-bold border border-wa-error/30 px-2 py-1 rounded">Clear All</button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-6 sm:grid-cols-8 gap-1 bg-wa-bg border border-wa-text/10 p-3 rounded">
                       {ALL_SLOTS.map(time => {
                         const isAllowed = overrideForm.allowed_times === null || overrideForm.allowed_times.includes(time);
                         return (
@@ -553,16 +629,12 @@ export default function GamesPage() {
                             key={time}
                             type="button"
                             onClick={() => setOverrideForm({...overrideForm, allowed_times: toggleTimeSlot(overrideForm.allowed_times, time)})}
-                            className={`px-1.5 py-1 text-[10px] font-mono border rounded transition-all ${isAllowed ? 'bg-wa-green/20 border-wa-green text-wa-green' : 'bg-transparent border-wa-text/10 text-wa-text/30 hover:border-wa-text/30'}`}
+                            className={`py-1 text-[9px] font-mono border rounded transition-all ${isAllowed ? 'bg-wa-green/20 border-wa-green text-wa-green shadow-[0_0_10px_rgba(0,255,65,0.1)]' : 'bg-transparent border-wa-text/10 text-wa-text/30 hover:border-wa-text/30'}`}
                           >
                             {time}
                           </button>
                         );
                       })}
-                    </div>
-                    <div className="flex justify-end gap-2 mt-1">
-                       <button type="button" onClick={() => setOverrideForm({...overrideForm, allowed_times: null})} className="text-[9px] text-wa-green uppercase opacity-70 hover:opacity-100">Select All</button>
-                       <button type="button" onClick={() => setOverrideForm({...overrideForm, allowed_times: []})} className="text-[9px] text-wa-error uppercase opacity-70 hover:opacity-100">Clear All</button>
                     </div>
                   </div>
                 )}
