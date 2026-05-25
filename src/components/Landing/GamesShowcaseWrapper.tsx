@@ -35,10 +35,13 @@ export const GamesShowcaseWrapper = async ({ locale }: { locale: string }) => {
       hero_image_url,
       display_order,
       stat1_name,
+      stat1_name_ar,
       stat1_value,
       stat2_name,
+      stat2_name_ar,
       stat2_value,
       stat3_name,
+      stat3_name_ar,
       stat3_value,
       max_players,
       game_pricing(price_per_player)
@@ -94,18 +97,18 @@ export const GamesShowcaseWrapper = async ({ locale }: { locale: string }) => {
       },
       features: [
         { 
-          label: (game.stat1_name as string) || (isRtl ? "الكثافة" : "Intensity"), 
-          value: (game.stat1_value as number) || (isLaser ? 92 : 84), 
+          label: (isRtl ? game.stat1_name_ar : game.stat1_name) as string || "", 
+          value: (game.stat1_value as number) || 0, 
           icon: "zap" 
         },
         { 
-          label: (game.stat2_name as string) || (isRtl ? "العمق التكتيكي" : "Tactical Depth"), 
-          value: (game.stat2_value as number) || (isLaser ? 78 : 95), 
+          label: (isRtl ? game.stat2_name_ar : game.stat2_name) as string || "", 
+          value: (game.stat2_value as number) || 0, 
           icon: "target" 
         },
         { 
-          label: (game.stat3_name as string) || (isRtl ? "الأدرينالين" : "Adrenaline"), 
-          value: (game.stat3_value as number) || (isLaser ? 88 : 94), 
+          label: (isRtl ? game.stat3_name_ar : game.stat3_name) as string || "", 
+          value: (game.stat3_value as number) || 0, 
           icon: "activity" 
         }
       ]

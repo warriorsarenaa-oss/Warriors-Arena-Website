@@ -201,7 +201,7 @@ export const GameShowcase: React.FC<GameShowcaseProps> = ({ games, locale = "en"
                 
                 <div className="space-y-6">
                   {current.features.map((f, i) => (
-                    <LinearGauge key={f.label} name={f.label} value={f.value} delay={0.2 + (i * 0.1)} />
+                    <LinearGauge key={f.label || `feature-${i}`} name={f.label} value={f.value} delay={0.2 + (i * 0.1)} />
                   ))}
                 </div>
 
