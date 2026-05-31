@@ -105,10 +105,22 @@ export const GET = requirePermission(async (request: Request) => {
         expenseBreakdown[catName] = (expenseBreakdown[catName] || 0) + amt;
     });
 
-    const profit = realized_revenue - (operation_expenses + payroll_expenses);
+    // NEW: sum of arena_events in the same date range
+    const { data: eventData, error: eventDataError } = await supabaseService
+      .from('arena_events')
+      .select('total_revenue')
+      .gte('event_date', startISO)
+      .lte('event_date', endISO)
+      .eq('is_deleted', false);
+    
+    if (eventDataError) throw eventDataError;
+    const event_revenue = eventData?.reduce((sum, e) => sum + Number(e.total_revenue), 0) ?? 0;
+
+    const profit = realized_revenue + event_revenue - (operation_expenses + payroll_expenses);
 
     return NextResponse.json({
       realized_revenue,
+      event_revenue,
       total_expenses: operation_expenses, // Renamed to operation_expenses in logic, but keeping key for compatibility
       payroll_expenses,
       profit,

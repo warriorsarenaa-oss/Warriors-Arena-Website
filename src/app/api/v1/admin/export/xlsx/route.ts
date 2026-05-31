@@ -72,6 +72,37 @@ export const GET = requirePermission(async (request: Request) => {
       });
     });
 
+    const eventsSheet = workbook.addWorksheet('Events');
+    eventsSheet.columns = [
+      { header: 'Date',           key: 'event_date',      width: 14 },
+      { header: 'Title',          key: 'title',           width: 30 },
+      { header: 'Client Name',    key: 'client_name',     width: 22 },
+      { header: 'Client Phone',   key: 'client_phone',    width: 16 },
+      { header: 'Revenue (EGP)',  key: 'total_revenue',   width: 14 },
+      { header: 'Notes',          key: 'notes',           width: 30 },
+      { header: 'Created By',     key: 'created_by',      width: 20 },
+    ];
+
+    const { data: eventsData } = await supabaseService
+      .from('arena_events')
+      .select('*, users!created_by_user_id(full_name)')
+      .gte('event_date', fromStr)
+      .lte('event_date', toStr)
+      .eq('is_deleted', false)
+      .order('event_date', { ascending: false });
+
+    eventsData?.forEach(e => {
+      eventsSheet.addRow({
+        event_date: e.event_date,
+        title: e.title,
+        client_name: e.client_name ?? '',
+        client_phone: e.client_phone ?? '',
+        total_revenue: e.total_revenue,
+        notes: e.notes ?? '',
+        created_by: (e.users as any)?.full_name ?? 'Unknown',
+      });
+    });
+
     const buffer = await workbook.xlsx.writeBuffer();
 
     return new NextResponse(buffer, {

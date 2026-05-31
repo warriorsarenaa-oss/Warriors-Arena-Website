@@ -368,11 +368,14 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
                       type="date"
                       value={formData.date}
                       onChange={(e) => handleDateChange(e.target.value)}
-                      min={format(new Date(), "yyyy-MM-dd")}
-                      max={format(addDays(new Date(), 90), "yyyy-MM-dd")}
-                      className="bg-wa-bg border border-wa-green/20 p-3 text-base rounded outline-none focus:border-wa-green"
+                      className="bg-wa-bg border border-wa-green/20 p-3 text-base rounded outline-none focus:border-wa-green text-wa-green font-mono [color-scheme:dark] cursor-pointer"
                       required
                     />
+                    {formData.date < format(new Date(), "yyyy-MM-dd") && (
+                      <span className="text-[10px] text-wa-orange/70 mt-[-4px]">
+                        ⚠ HISTORICAL DATE — bookings will be logged with past date
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex flex-col gap-2">

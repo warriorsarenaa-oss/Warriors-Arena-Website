@@ -115,7 +115,15 @@ export default function FinancialsPage() {
                     <TrendingUp className="w-4 h-4 text-wa-green" />
                     <h3 className="uppercase tracking-widest text-[10px] font-bold">Realized Revenue</h3>
                   </div>
-                  <div className="text-2xl font-bold font-mono text-wa-green">{overview.realized_revenue.toLocaleString()} EGP</div>
+                  <div className="text-2xl font-bold font-mono text-wa-green">{overview.realized_revenue?.toLocaleString() || 0} EGP</div>
+                </WAPanel>
+
+                <WAPanel className="p-6 border-wa-green/30 bg-wa-green/5">
+                  <div className="flex items-center gap-3 mb-2 opacity-70">
+                    <TrendingUp className="w-4 h-4 text-wa-green" />
+                    <h3 className="uppercase tracking-widest text-[10px] font-bold">Event Revenue</h3>
+                  </div>
+                  <div className="text-2xl font-bold font-mono text-wa-green">{overview.event_revenue?.toLocaleString() || 0} EGP</div>
                 </WAPanel>
                 
                 <WAPanel className="p-6 border-wa-error/30 bg-wa-error/5">
@@ -123,7 +131,7 @@ export default function FinancialsPage() {
                     <TrendingDown className="w-4 h-4 text-wa-error" />
                     <h3 className="uppercase tracking-widest text-[10px] font-bold">Total Expenses</h3>
                   </div>
-                  <div className="text-2xl font-bold font-mono text-wa-error">{overview.total_expenses.toLocaleString()} EGP</div>
+                  <div className="text-2xl font-bold font-mono text-wa-error">{overview.total_expenses?.toLocaleString() || 0} EGP</div>
                 </WAPanel>
 
                 <WAPanel className="p-6 border-wa-orange/30 bg-wa-orange/5">

@@ -17,6 +17,7 @@ import {
   Download,
   FileText,
   Target,
+  CalendarCheck,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -34,6 +35,7 @@ export function AdminSidebar({ permissions, onNavigate }: SidebarProps) {
     { name: "Schedules",    href: "/admin/schedules/weekly-planner", icon: Clock, required: "manage_users" },
     { name: "Revenue",      href: "/admin/revenue",      icon: LineChart,       required: "view_revenue" },
     { name: "Financials",   href: "/admin/financials",   icon: Wallet,          required: "view_financials" },
+    { name: "Events",       href: "/admin/events",       icon: CalendarCheck,   required: "view_financials" },
     { name: "Payroll",      href: "/admin/financials/payroll", icon: DollarSign, required: "manage_financials" },
     { name: "Content",      href: "/admin/content",      icon: FileText,        required: "manage_content" },
     { name: "Hours",        href: "/admin/hours",        icon: Clock,           required: "manage_hours" },
