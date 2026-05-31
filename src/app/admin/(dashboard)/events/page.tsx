@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { format, startOfMonth, endOfMonth } from "date-fns";
-import { CalendarCheck, Plus, Pencil, Trash2, Loader2, Ghost } from "lucide-react";
+import { CalendarCheck, Plus, Pencil, Trash2, Loader2, Ghost, X } from "lucide-react";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
 
