@@ -52,15 +52,15 @@ export const PUT = requirePermission(async (request: Request, context: any) => {
     const session = context.session;
     const userId = session?.user?.id;
 
-    await logAuditAction(
-      userId,
-      session?.user?.email || 'unknown',
-      'update_event',
-      'arena_event',
-      id,
-      existing,
-      updated
-    );
+    await logAuditAction({
+      actor_user_id: userId,
+      actor_email: session?.user?.email || 'unknown',
+      action: 'update_event',
+      entity_type: 'arena_event',
+      entity_id: id,
+      before_state: existing,
+      after_state: updated
+    });
 
     return NextResponse.json(updated);
   } catch (error) {
@@ -100,15 +100,15 @@ export const DELETE = requirePermission(async (request: Request, context: any) =
     const session = context.session;
     const userId = session?.user?.id;
 
-    await logAuditAction(
-      userId,
-      session?.user?.email || 'unknown',
-      'delete_event',
-      'arena_event',
-      id,
-      existing,
-      { is_deleted: true }
-    );
+    await logAuditAction({
+      actor_user_id: userId,
+      actor_email: session?.user?.email || 'unknown',
+      action: 'delete_event',
+      entity_type: 'arena_event',
+      entity_id: id,
+      before_state: existing,
+      after_state: { is_deleted: true }
+    });
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

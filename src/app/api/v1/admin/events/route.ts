@@ -68,15 +68,15 @@ export const POST = requirePermission(async (request: Request, context: any) => 
 
     if (error) throw error;
 
-    await logAuditAction(
-      userId,
-      session?.user?.email || 'unknown',
-      'create_event',
-      'arena_event',
-      insertedEvent.id,
-      null,
-      insertedEvent
-    );
+    await logAuditAction({
+      actor_user_id: userId,
+      actor_email: session?.user?.email || 'unknown',
+      action: 'create_event',
+      entity_type: 'arena_event',
+      entity_id: insertedEvent.id,
+      before_state: null,
+      after_state: insertedEvent
+    });
 
     return NextResponse.json(insertedEvent, { status: 201 });
   } catch (error) {
