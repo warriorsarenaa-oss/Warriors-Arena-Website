@@ -40,7 +40,7 @@ export const GET = requirePermission(async (request: Request) => {
   }
 }, "view_financials");
 
-export const POST = requirePermission(async (request: Request, context: any) => {
+export const POST = requirePermission(async (request: Request, { user }) => {
   try {
     const body = await request.json();
     const validatedData = eventSchema.safeParse(body);
@@ -49,11 +49,7 @@ export const POST = requirePermission(async (request: Request, context: any) => 
       return NextResponse.json({ error: "Validation failed", details: validatedData.error.format() }, { status: 400 });
     }
 
-    const session = context.session;
-    const userId = session?.user?.id;
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const userId = user.id;
 
     const newEvent = {
       ...validatedData.data,
@@ -70,7 +66,7 @@ export const POST = requirePermission(async (request: Request, context: any) => 
 
     await logAuditAction({
       actor_user_id: userId,
-      actor_email: session?.user?.email || 'unknown',
+      actor_email: user.email || 'unknown',
       action: 'create_event',
       entity_type: 'arena_event',
       entity_id: insertedEvent.id,

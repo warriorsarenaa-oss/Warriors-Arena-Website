@@ -13,9 +13,8 @@ const eventSchema = z.object({
   notes: z.string().nullable().optional()
 });
 
-export const PUT = requirePermission(async (request: Request, context: any) => {
+export const PUT = requirePermission(async (request: Request, { user, params }) => {
   try {
-    const { params } = context;
     const id = await params.id;
     const body = await request.json();
     const validatedData = eventSchema.safeParse(body);
@@ -49,12 +48,11 @@ export const PUT = requirePermission(async (request: Request, context: any) => {
 
     if (updateError) throw updateError;
 
-    const session = context.session;
-    const userId = session?.user?.id;
+    const userId = user.id;
 
     await logAuditAction({
       actor_user_id: userId,
-      actor_email: session?.user?.email || 'unknown',
+      actor_email: user.email || 'unknown',
       action: 'update_event',
       entity_type: 'arena_event',
       entity_id: id,
@@ -69,9 +67,8 @@ export const PUT = requirePermission(async (request: Request, context: any) => {
   }
 }, "manage_financials");
 
-export const DELETE = requirePermission(async (request: Request, context: any) => {
+export const DELETE = requirePermission(async (request: Request, { user, params }) => {
   try {
-    const { params } = context;
     const id = await params.id;
 
     const { data: existing, error: fetchError } = await supabaseService
@@ -97,12 +94,11 @@ export const DELETE = requirePermission(async (request: Request, context: any) =
 
     if (updateError) throw updateError;
 
-    const session = context.session;
-    const userId = session?.user?.id;
+    const userId = user.id;
 
     await logAuditAction({
       actor_user_id: userId,
-      actor_email: session?.user?.email || 'unknown',
+      actor_email: user.email || 'unknown',
       action: 'delete_event',
       entity_type: 'arena_event',
       entity_id: id,
