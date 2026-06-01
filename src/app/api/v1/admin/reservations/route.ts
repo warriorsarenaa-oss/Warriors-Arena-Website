@@ -10,7 +10,7 @@ const AdminBookingSchema = z.object({
   booking_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   start_time: z.string(), // "18:00:00"
   duration_minutes: z.union([z.literal(30), z.literal(60)]),
-  player_count: z.number().int().min(1).max(50), // Admin can override up to 50
+  player_count: z.number().int().min(1).max(200), // Admin can override up to 200
   customer_name: z.string().min(2).max(100).trim(),
   customer_phone: z.string().regex(EGYPT_PHONE_REGEX, "Invalid Egyptian phone number"),
   customer_email: z.string().email().optional().or(z.literal("")),

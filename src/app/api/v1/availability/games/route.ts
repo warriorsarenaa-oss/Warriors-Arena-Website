@@ -5,6 +5,7 @@ import { parseISO, isValid, getDay } from "date-fns";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const dateStr = searchParams.get("date");
+  const isAdmin = searchParams.get("admin") === "true";
 
   if (!dateStr) {
     return NextResponse.json({ error: "Date parameter is required" }, { status: 400 });
@@ -44,6 +45,16 @@ export async function GET(request: Request) {
 
     // 4. Combine logic
     const availability = games.map(game => {
+      if (isAdmin) {
+        return {
+          game_id: game.id,
+          game_name_en: game.name_en,
+          game_name_ar: game.name_ar,
+          slug: game.slug,
+          is_available: true
+        };
+      }
+
       const dayConfig = dayAvailability?.find(d => d.game_id === game.id);
       const override = overrides?.find(o => o.game_id === game.id);
 

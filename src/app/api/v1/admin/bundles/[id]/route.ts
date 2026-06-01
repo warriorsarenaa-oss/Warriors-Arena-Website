@@ -10,7 +10,7 @@ const UpdateBundleSchema = z.object({
   description_ar: z.string().optional(),
   game_id: z.string().uuid().optional(),
   duration_minutes: z.number().int().positive().optional(),
-  player_count: z.number().int().min(1).max(50).optional(),
+  player_count: z.number().int().min(1).max(200).optional(),
   pricing_mode: z.enum(["per_player", "fixed_total"]).optional(),
   price_value: z.number().min(0).optional(),
   image_url: z.string().optional().nullable(),

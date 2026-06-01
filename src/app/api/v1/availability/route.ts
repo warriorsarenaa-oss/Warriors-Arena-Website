@@ -115,14 +115,24 @@ export async function GET(request: Request) {
   }
 
   // Closed day or no config → return empty array (no slots)
-  if (!resolvedHours || resolvedHours.is_closed || !resolvedHours.open_time || !resolvedHours.close_time) {
+  if (!isAdmin && (!resolvedHours || resolvedHours.is_closed || !resolvedHours.open_time || !resolvedHours.close_time)) {
     return NextResponse.json([]);
+  }
+
+  if (isAdmin) {
+    if (resolvedHours) {
+      resolvedHours.is_closed = false;
+      resolvedHours.open_time = "12:00:00";
+      resolvedHours.close_time = "23:59:59";
+    } else {
+      resolvedHours = { open_time: "12:00:00", close_time: "23:59:59", is_closed: false };
+    }
   }
 
   // Fetch game-specific hour bounds if a game_id was provided
   let gameAllowedTimes: string[] | null = null;
   
-  if (gameId) {
+  if (gameId && !isAdmin) {
     const { data: override } = await supabase
       .from("game_date_overrides")
       .select("is_available, allowed_times")

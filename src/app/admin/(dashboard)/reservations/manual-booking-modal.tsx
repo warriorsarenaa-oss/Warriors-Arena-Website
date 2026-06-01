@@ -73,7 +73,7 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
     async function checkAvailability() {
       setLoadingGames(true);
       try {
-        const res = await fetch(`/api/v1/availability/games?date=${formData.date}`);
+        const res = await fetch(`/api/v1/availability/games?date=${formData.date}&admin=true`);
         if (res.ok) {
           const availabilityData = await res.json();
           // availabilityData is [{ game_id, is_available }]
