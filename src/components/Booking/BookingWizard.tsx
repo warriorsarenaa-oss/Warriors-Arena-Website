@@ -1259,7 +1259,6 @@ function WizardContent() {
           }))
         );
       }
-      }
       setDataLoading(false);
     });
 
