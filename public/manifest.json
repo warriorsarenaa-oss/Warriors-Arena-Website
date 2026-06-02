@@ -1,0 +1,12 @@
+{
+  "name": "Warriors Arena",
+  "short_name": "Warriors",
+  "description": "Book your tactical mission in Cairo",
+  "start_url": "/en",
+  "display": "standalone",
+  "background_color": "#080a08",
+  "theme_color": "#1aff6e",
+  "icons": [
+    { "src": "/logo.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "any maskable" }
+  ]
+}

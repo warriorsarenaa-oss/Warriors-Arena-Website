@@ -1,0 +1,180 @@
+{
+  "Landing": {
+    "Nav": {
+      "games": "OPERATIONS",
+      "bundles": "PACKAGES",
+      "howItWorks": "PROTOCOL",
+      "location": "RALLY POINT",
+      "bookNow": "BOOK NOW"
+    },
+    "Hero": {
+      "kicker": "OPERATIONAL 24/7",
+      "hoursTag": "OPEN DAILY 4PM-11PM",
+      "line1": "DOMINATE THE",
+      "line2": "TACTICAL",
+      "line3": "ARENA",
+      "subtitle": "Cairo's Premier Multi-Sensory Tactical Gaming Experience. Real Gear. Real Scenarios. Total Immersion.",
+      "primaryCTA": "Book Now",
+      "secondaryCTA": "View Missions",
+      "stat1Value": "30M",
+      "stat1Label": "TACTICAL WINDOW",
+      "stat2Value": "6",
+      "stat2Label": "MAX SQUAD SIZE",
+      "stat3Value": "12+",
+      "stat3Label": "OPERATIVE AGE"
+    },
+    "gamesTitle": "CHOOSE YOUR BATTLE",
+    "gamesLine": "Select your tactical mode and get ready for deployment.",
+    "bundlesTitle": "SPECIAL OPS PACKAGES",
+    "bundlesLine": "Strategic bundles and elite squad packages.",
+    "howItWorksTitle": "OPERATIONAL PROTOCOL",
+    "howItWorksLine": "Four simple phases to secure mission success.",
+    "galleryTitle": "THE FIELD JOURNAL",
+    "galleryLine": "Captured moments from the heat of the arena.",
+    "faqTitle": "INTEL BRIEFING",
+    "faqLine": "Everything you need to know before you hit the field.",
+    "locationTitle": "COORDINATES",
+    "locationLine": "Rally point at Heliopolis, Cairo. Join the fray.",
+    "HowItWorks": {
+      "step1Title": "SELECT MISSION",
+      "step1Desc": "Choose your battle mode. Each game offers unique tactical challenges.",
+      "step2Title": "SECURE DATE",
+      "step2Desc": "Pick your combat deployment window. All times are Cairo local.",
+      "step3Title": "DEPLOYMENT",
+      "step3Desc": "Identify yourself and confirm the protocol to finalize deployment.",
+      "step4Title": "CLAIM VICTORY",
+      "step4Desc": "Secure your victory and climb the tactical leaderboard."
+    },
+    "FAQ": {
+      "q1": "Wait, what's a Gel Blaster exactly?",
+      "a1": "Think of it as paint-less paintball. They fire tiny, eco-friendly water beads (Orbeez) that burst on impact. All the tactical rush, zero of the mess or intense sting.",
+      "q2": "Do I need to bring anything special?",
+      "a2": "Just closed-toe shoes and a warrior spirit. We provide the tactical vests, masks, and fully-charged gear. Wear comfortable clothes you can move in.",
+      "q3": "Is there an age limit for operatives?",
+      "a3": "We welcome warriors aged 12 and up for public sessions. Our gear is high-performance, and the arena relies on mobility and tactical awareness.",
+      "q4": "How many players in a squad?",
+      "a4": "The Arena is designed for 2v2 up to 3v3. Our online system limits bookings to 6 players to ensure maximum tactical density and movement space.",
+      "q5": "What happens if I'm running late?",
+      "a5": "Missions start strictly on schedule. Arrival >15m past your window may result in slot forfeiture without refund. Check-in 10 minutes prior."
+    },
+    "Location": {
+      "addressLabel": "Rally Point",
+      "addressValue": "No. 7, El Merghany St., Heliopolis",
+      "hoursLabel": "Deployment Hours",
+      "hoursValue": "Daily 16:00 — 23:00",
+      "whatsappLabel": "Signal Link",
+      "whatsappValue": "+20 122 655 7592",
+      "instagramLabel": "Field Journal",
+      "instagramValue": "@warriorsarena.eg",
+      "whatsappCTA": "Connect on WhatsApp",
+      "directionsCTA": "Get Coordinates",
+      "mapLabel": "TACTICAL INTERFACE V2.0"
+    },
+    "Notice": {
+      "heading": "IMPORTANT PROTOCOL",
+      "body": "All operatives must attend a safety briefing 10 minutes before deployment. Late arrival will compromise mission success."
+    }
+  },
+  "Booking": {
+    "stepProgress": "STEP {current} OF {total}",
+    "tacticalStatus": "SYSTEM_STATUS // OP_PHASE_{step}",
+    "back": "Back",
+    "next": "Next Step",
+    "confirm": "Confirm Reservation",
+    "autoSaveActive": "TACTICAL DRAFT SAVED // AUTO-SYNC ENABLED",
+    "paymentRequired": "Payment Required",
+    "downloadReceipt": "Download Receipt",
+    "Step1": {
+      "title": "Choose Your Game",
+      "description": "Pick your battle: Laser Tag or Gel Blasters",
+      "startingAt": "ENTRY COST",
+      "perPlayer": "PER PLAYER",
+      "selected": "TARGET LOCKED",
+      "loadingGames": "SCANNING FIELD DATA...",
+      "error": "INTEL ERROR",
+      "viewPricing": "PRICING DETAILS",
+      "restricted": "MISSION RESTRICTED",
+      "restrictedDesc": "This game is not available on the selected date due to maintenance or schedule protocol. Please select another date or go back."
+    },
+    "Step2": {
+      "title": "Configure Mission",
+      "description": "Duration and squad size",
+      "chooseDuration": "MISSION DURATION",
+      "min": "MIN",
+      "player": "PLAYER",
+      "playerCount": "SQUAD SIZE",
+      "players": "PLAYERS",
+      "maxPlayersNote": "MAX {max} PLAYERS PER SLOT ONLINE",
+      "deploymentConfiguration": "READY: DEPLOYMENT CONFIGURATION"
+    },
+    "Step3": {
+      "title": "Pick Date & Time",
+      "description": "Select your tactical date and available time slot",
+      "chooseDate": "DEPLOYMENT DATE",
+      "slotsAvailable": "OPERATIONAL WINDOWS AVAILABLE",
+      "bookingWindowNote": "FIELD CALENDAR OPEN FOR {days} DAYS"
+    },
+    "Step4": {
+      "title": "Pick Your Slot",
+      "description": "Choose your time to engage",
+      "error": "FEEDS INTERRUPTED",
+      "available": "AVAILABLE",
+      "booked": "ENGAGED",
+      "shortOnly": "PARTIAL ACCESS",
+      "slotBooked": "SLOT SECURED",
+      "closingSoon": "30M ONLY",
+      "past": "WINDOW CLOSED"
+    },
+    "Step5": {
+      "title": "Confirm Reservation",
+      "description": "Enter your details and lock it in",
+      "fullName": "OPERATIVE FULL NAME",
+      "phone": "SECURE MOBILE NUMBER",
+      "email": "INTEL EMAIL",
+      "optional": "OPTIONAL",
+      "specialRequests": "MISSION NOTES",
+      "notesPlaceholder": "Any special equipment needs or accessibility Intel...",
+      "termsNote": "I confirm that I have read and agree to follow the",
+      "rules": "WA SAFETY RULES",
+      "and": "and",
+      "cancelPolicy": "CANCELLATION PROTOCOLS",
+      "submitting": "UPLOADING INTEL..."
+    },
+    "Summary": {
+      "title": "TACTICAL SUMMARY",
+      "game": "Game",
+      "duration": "Duration",
+      "players": "Squad Size",
+      "date": "Date",
+      "time": "Time",
+      "total": "Total Price",
+      "deposit": "Deposit Required (25%)",
+      "balance": "Balance Due"
+    },
+    "Success": {
+      "confirmed": "MISSION SECURED",
+      "successNote": "Your slot is reserved. High-command has been notified. Follow the protocol below to finalize.",
+      "bookingId": "MISSION AUTH CODE",
+      "codeCopied": "Code copied to datapad",
+      "copyCode": "Copy Auth Code",
+      "date": "DEPLOYMENT",
+      "time": "WINDOW",
+      "players": "UNITS",
+      "units": "UNITS",
+      "mission": "OP TYPE",
+      "paymentRequired": "DEPOSIT REQUIRED",
+      "paymentNote": "To confirm your slot, transfer {deposit} EGP to {ident}. Send the screenshot via WhatsApp.",
+      "depositToSecure": "DEPOSIT AMOUNT",
+      "sendWhatsApp": "SEND INTEL VIA WHATSAPP",
+      "downloadReceipt": "DOWNLOAD PDF RECEIPT",
+      "backToBase": "RETURN TO HOME BASE",
+      "cancellationPolicy": "LATE ARRIVALS (>15M) MAY LOSE SLOT WITHOUT DEPOSIT REFUND."
+    },
+    "Errors": {
+      "conflictTitle": "WINDOW COMPROMISED",
+      "conflictMessage": "This slot was secured by another squad just now. Tactical redirection required.",
+      "pickAnother": "PICK ANOTHER WINDOW",
+      "network": "COMMS OFFLINE. CHECK CONNECTION."
+    }
+  }
+}

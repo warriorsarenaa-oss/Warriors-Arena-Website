@@ -37,10 +37,7 @@ export const Hero: React.FC<HeroProps> = ({ locale, hours = "6 PM - 9 PM", cms }
     offset: ["start start", "end start"]
   });
 
-  React.useEffect(() => {
-    // Force scroll to top on fresh page load (Issue 1)
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, []);
+  // Removing duplicate scroll to top, handled in root layout
 
   // Parallax layers
   const yBg = useTransform(scrollYProgress, [0, 1], prefersReducedMotion ? [0, 0] : [0, 200]);

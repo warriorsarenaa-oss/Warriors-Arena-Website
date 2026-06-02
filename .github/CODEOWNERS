@@ -1,0 +1,24 @@
+# CODEOWNERS — requires approval from designated owners before merging.
+# Format: <pattern> <GitHub username(s)>
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# ── Default owner for everything ─────────────────────────────────────────────
+*                               @quickbuck2024
+
+# ── Security-sensitive files — require extra review ──────────────────────────
+src/lib/auth/                   @quickbuck2024
+src/lib/rate-limit.ts           @quickbuck2024
+src/app/api/v1/admin/auth/      @quickbuck2024
+src/middleware.ts               @quickbuck2024
+
+# ── Database layer ────────────────────────────────────────────────────────────
+supabase/                       @quickbuck2024
+src/lib/db/                     @quickbuck2024
+
+# ── CI / GitHub config ────────────────────────────────────────────────────────
+.github/                        @quickbuck2024
+
+# ── Environment and infrastructure config ────────────────────────────────────
+vercel.json                     @quickbuck2024
+next.config.*                   @quickbuck2024
+.env.example                    @quickbuck2024
