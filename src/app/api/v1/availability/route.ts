@@ -198,6 +198,10 @@ export async function GET(request: Request) {
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
   };
 
+  if (!resolvedHours) {
+    return NextResponse.json([]);
+  }
+
   const openMins  = toMinutes(resolvedHours.open_time);
   const closeMins = toMinutes(resolvedHours.close_time);
 
