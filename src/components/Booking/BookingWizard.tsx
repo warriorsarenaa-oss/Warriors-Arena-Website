@@ -991,6 +991,7 @@ function StepIndicator({
 
 function SuccessScreen({
   data,
+  contactData,
   onClose,
   t,
   isRtl,
