@@ -343,7 +343,24 @@ export default function CMSContentPage() {
           <div className="flex flex-col gap-6">
             <div className="flex justify-between">
               <h2 className="text-xl font-bold font-heading text-wa-green">Protocol Steps</h2>
-              <WAButton onClick={addProtocol} className="bg-wa-green text-wa-bg text-sm py-1 px-4">+ ADD STEP</WAButton>
+              <div className="flex gap-4">
+                <WAButton onClick={addProtocol} className="bg-transparent border border-wa-green text-wa-green text-sm py-1 px-4">+ ADD STEP</WAButton>
+                <WAButton onClick={() => handleSaveCMS('protocol')} disabled={saving} className="bg-wa-green text-wa-bg text-sm py-1 px-4">
+                  <Save className="w-4 h-4 mr-2 inline" /> SAVE PROTOCOL CMS
+                </WAButton>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 p-4 border border-wa-green/10 rounded">
+              <label className="text-xs uppercase text-wa-green/80">Heading</label>
+              <input type="text" value={cmsData.protocol?.heading?.value_en || ''} onChange={e => handleCmsChange('protocol', 'heading', 'value_en', e.target.value)} className="bg-transparent border border-wa-text/20 p-2" placeholder="English (e.g. MISSION PROTOCOL)" />
+              <input type="text" value={cmsData.protocol?.heading?.value_ar || ''} onChange={e => handleCmsChange('protocol', 'heading', 'value_ar', e.target.value)} className="bg-transparent border border-wa-text/20 p-2 text-right" placeholder="Arabic (e.g. خطوات التشغيل)" dir="rtl" />
+            </div>
+
+            <div className="flex flex-col gap-2 p-4 border border-wa-green/10 rounded">
+              <label className="text-xs uppercase text-wa-green/80">Subheading</label>
+              <textarea value={cmsData.protocol?.subheading?.value_en || ''} onChange={e => handleCmsChange('protocol', 'subheading', 'value_en', e.target.value)} className="bg-transparent border border-wa-text/20 p-2 h-20" placeholder="English" />
+              <textarea value={cmsData.protocol?.subheading?.value_ar || ''} onChange={e => handleCmsChange('protocol', 'subheading', 'value_ar', e.target.value)} className="bg-transparent border border-wa-text/20 p-2 h-20 text-right" placeholder="Arabic" dir="rtl" />
             </div>
             
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => {
@@ -445,7 +462,24 @@ export default function CMSContentPage() {
           <div className="flex flex-col gap-6">
             <div className="flex justify-between">
               <h2 className="text-xl font-bold font-heading text-wa-green">Frequently Asked Questions</h2>
-              <WAButton onClick={addFaq} className="bg-wa-green text-wa-bg text-sm py-1 px-4">+ ADD FAQ</WAButton>
+              <div className="flex gap-4">
+                <WAButton onClick={addFaq} className="bg-transparent border border-wa-green text-wa-green text-sm py-1 px-4">+ ADD FAQ</WAButton>
+                <WAButton onClick={() => handleSaveCMS('faq')} disabled={saving} className="bg-wa-green text-wa-bg text-sm py-1 px-4">
+                  <Save className="w-4 h-4 mr-2 inline" /> SAVE FAQ CMS
+                </WAButton>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 p-4 border border-wa-green/10 rounded">
+              <label className="text-xs uppercase text-wa-green/80">Heading</label>
+              <input type="text" value={cmsData.faq?.heading?.value_en || ''} onChange={e => handleCmsChange('faq', 'heading', 'value_en', e.target.value)} className="bg-transparent border border-wa-text/20 p-2" placeholder="English (e.g. MISSION INTEL)" />
+              <input type="text" value={cmsData.faq?.heading?.value_ar || ''} onChange={e => handleCmsChange('faq', 'heading', 'value_ar', e.target.value)} className="bg-transparent border border-wa-text/20 p-2 text-right" placeholder="Arabic (e.g. أسألة شأعة)" dir="rtl" />
+            </div>
+
+            <div className="flex flex-col gap-2 p-4 border border-wa-green/10 rounded">
+              <label className="text-xs uppercase text-wa-green/80">Subheading</label>
+              <textarea value={cmsData.faq?.subheading?.value_en || ''} onChange={e => handleCmsChange('faq', 'subheading', 'value_en', e.target.value)} className="bg-transparent border border-wa-text/20 p-2 h-20" placeholder="English" />
+              <textarea value={cmsData.faq?.subheading?.value_ar || ''} onChange={e => handleCmsChange('faq', 'subheading', 'value_ar', e.target.value)} className="bg-transparent border border-wa-text/20 p-2 h-20 text-right" placeholder="Arabic" dir="rtl" />
             </div>
 
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => {
@@ -508,8 +542,14 @@ export default function CMSContentPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[
-                { key: 'contact_address', label: 'Address' },
+                { key: 'contact_heading', label: 'Section Title (e.g. RALLY POINT)' },
+                { key: 'contact_address', label: 'Address Text' },
                 { key: 'contact_tagline', label: 'Location Tagline (Top-right)' },
+                { key: 'address_label', label: 'Address Label (e.g. Address)' },
+                { key: 'hours_label', label: 'Hours Label (e.g. Hours)' },
+                { key: 'contact_label', label: 'Contact Label (e.g. Contact)' },
+                { key: 'directions_cta', label: 'Directions Button text' },
+                { key: 'whatsapp_cta', label: 'WhatsApp Button text' },
               ].map(f => (
                 <div key={f.key} className="flex flex-col gap-2 p-4 border border-wa-green/10 rounded">
                   <label className="text-xs uppercase text-wa-green/80">{f.label}</label>
@@ -531,6 +571,28 @@ export default function CMSContentPage() {
               <div className="flex flex-col gap-2 p-4 border border-wa-green/10 rounded">
                 <label className="text-xs uppercase text-wa-green/80">Google Maps URL</label>
                 <input type="text" value={cmsData.contact?.contact_maps_url?.value_en || ''} onChange={e => handleCmsChange('contact', 'contact_maps_url', 'value_en', e.target.value)} className="bg-transparent border border-wa-text/20 p-2 rounded focus:border-wa-green" placeholder="https://goo.gl/maps/..." />
+              </div>
+            </div>
+
+            <div className="border border-wa-green/10 rounded p-4 flex flex-col gap-4">
+              <h3 className="text-sm font-bold text-wa-green uppercase tracking-widest">Instagram Button</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs uppercase text-wa-green/80">Display Name (EN)</label>
+                  <input type="text" value={cmsData.contact?.contact_instagram_label?.value_en || ''} onChange={e => handleCmsChange('contact', 'contact_instagram_label', 'value_en', e.target.value)} className="bg-transparent border border-wa-text/20 p-2 rounded focus:border-wa-green" placeholder="e.g. Warriors Arena" />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs uppercase text-wa-green/80">Display Name (AR)</label>
+                  <input type="text" value={cmsData.contact?.contact_instagram_label?.value_ar || ''} onChange={e => handleCmsChange('contact', 'contact_instagram_label', 'value_ar', e.target.value)} className="bg-transparent border border-wa-text/20 p-2 rounded focus:border-wa-green text-right" placeholder="e.g. وورييرز أرينا" dir="rtl" />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs uppercase text-wa-green/80">Instagram Full URL (optional — overrides the handle)</label>
+                <input type="text" value={cmsData.contact?.contact_instagram_url?.value_en || ''} onChange={e => handleCmsChange('contact', 'contact_instagram_url', 'value_en', e.target.value)} className="bg-transparent border border-wa-text/20 p-2 rounded focus:border-wa-green" placeholder="https://www.instagram.com/warriors_arenaa/" />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs uppercase text-wa-green/80">Instagram Handle (used if no URL above)</label>
+                <input type="text" value={cmsData.contact?.contact_instagram?.value_en || ''} onChange={e => handleCmsChange('contact', 'contact_instagram', 'value_en', e.target.value)} className="bg-transparent border border-wa-text/20 p-2 rounded focus:border-wa-green" placeholder="warriors_arenaa" />
               </div>
             </div>
 

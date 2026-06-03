@@ -47,9 +47,9 @@ export const MissionsSection = ({ cms }: { cms?: any }) => {
 
         return (
           <WAPanel key={mission.id} className="h-full overflow-hidden p-0 border-wa-line/30 hover:border-wa-green/50 transition-colors group">
-            <div className="relative flex flex-col h-full min-h-[350px]">
-              {/* Image Section - Stacks on mobile, covers on desktop */}
-              <div className="relative w-full h-48 md:absolute md:inset-0 md:h-full overflow-hidden bg-wa-black shrink-0">
+            <div className="relative flex flex-col h-full bg-wa-surface">
+              {/* Image Section - Stacks on all devices */}
+              <div className="relative w-full h-48 overflow-hidden bg-wa-black shrink-0">
                 {mission.image_url ? (
                   <img src={mission.image_url} alt={name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 ) : (
@@ -57,17 +57,15 @@ export const MissionsSection = ({ cms }: { cms?: any }) => {
                     <span className="text-4xl opacity-50">🎯</span>
                   </div>
                 )}
-                {/* Gradient overlay for desktop (where text is over image) */}
-                <div className="hidden md:block absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
               </div>
               
               {/* Content Section */}
-              <div className="relative p-6 md:p-8 flex flex-col h-full justify-end z-10 bg-wa-bg md:bg-transparent flex-grow">
+              <div className="relative p-6 flex flex-col justify-between flex-grow">
                 <div>
-                  <h3 className="text-2xl font-archivo text-wa-green uppercase mb-3 md:drop-shadow-lg">
+                  <h3 className="text-2xl font-archivo text-wa-green uppercase mb-3">
                     {name}
                   </h3>
-                  <p className="text-wa-text/80 font-barlow leading-relaxed md:drop-shadow-md">
+                  <p className="text-wa-text/80 font-barlow leading-relaxed">
                     {description}
                   </p>
                 </div>

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { SectionHeader } from "../UI/SectionHeader";
 
-export const HowItWorks: React.FC<{ locale?: string }> = ({ locale = "en" }) => {
+export const HowItWorks: React.FC<{ locale?: string, cms?: any }> = ({ locale = "en", cms }) => {
   const t = useTranslations("Landing.HowItWorks");
   const isRtl = locale === "ar";
   const [steps, setSteps] = useState<any[]>([]);
@@ -38,7 +38,7 @@ export const HowItWorks: React.FC<{ locale?: string }> = ({ locale = "en" }) => 
 
   return (
     <div>
-      <SectionHeader title={t("howItWorksTitle")} line={t("howItWorksLine")} />
+      <SectionHeader title={cms?.heading || t("howItWorksTitle")} line={cms?.subheading || t("howItWorksLine")} />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {displaySteps.map((step, i) => (
           <div

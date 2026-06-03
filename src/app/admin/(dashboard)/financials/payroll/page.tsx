@@ -13,7 +13,7 @@ export default function PayrollPage() {
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
   // Modals state
-  const [paymentModal, setPaymentModal] = useState<{ isOpen: boolean; staffPayroll: any; amount: number; notes: string } | null>(null);
+  const [paymentModal, setPaymentModal] = useState<{ isOpen: boolean; staffPayroll: any; amount: string; notes: string } | null>(null);
   const [historyModal, setHistoryModal] = useState<{ isOpen: boolean; staffPayroll: any } | null>(null);
   const [pushModal, setPushModal] = useState<{ isOpen: boolean; isProcessing: boolean } | null>(null);
 
@@ -48,9 +48,10 @@ export default function PayrollPage() {
     e.preventDefault();
     if (!paymentModal) return;
 
-    const { staffPayroll, amount, notes } = paymentModal;
+    const { staffPayroll, notes } = paymentModal;
+    const amount = parseFloat(paymentModal.amount);
 
-    if (amount <= 0) {
+    if (!amount || amount <= 0) {
       alert(`Payment amount must be greater than 0 EGP.`);
       return;
     }
@@ -237,7 +238,7 @@ export default function PayrollPage() {
                   ) : (
                     <WAButton
                       type="button"
-                      onClick={() => setPaymentModal({ isOpen: true, staffPayroll: p, amount: remainingBalance > 0 ? remainingBalance : 0, notes: '' })}
+                      onClick={() => setPaymentModal({ isOpen: true, staffPayroll: p, amount: remainingBalance > 0 ? String(remainingBalance) : '', notes: '' })}
                       disabled={isProcessing === p.staff.id}
                       className="bg-wa-green text-wa-bg font-bold flex items-center gap-2 group-hover:scale-105 transition-all"
                     >
@@ -308,8 +309,8 @@ export default function PayrollPage() {
                   step="0.01"
                   max={paymentModal.staffPayroll.remaining_balance}
                   required 
-                  value={paymentModal.amount || ""} 
-                  onChange={(e) => setPaymentModal({ ...paymentModal, amount: Number(e.target.value) })}
+                  value={paymentModal.amount} 
+                  onChange={(e) => setPaymentModal({ ...paymentModal, amount: e.target.value })}
                   className="bg-transparent border border-wa-green/30 rounded-xl p-4 text-xl font-mono text-wa-green outline-none focus:border-wa-green"
                 />
               </div>

@@ -29,6 +29,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // Fetch Hero CMS and Hours directly from Supabase
   let heroCms: any = null;
   let missionsCms: any = null;
+  let protocolCms: any = null;
+  let faqCms: any = null;
   let operatingHours = "6 PM - 9 PM";
   let missionsHeader = { heading: t("bundlesTitle"), subheading: t("bundlesLine") };
 
@@ -59,7 +61,23 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         if (item.key === 'heading') missionsHeader.heading = (locale === 'ar' ? item.value_ar : item.value_en) || item.value_en;
         if (item.key === 'subheading') missionsHeader.subheading = (locale === 'ar' ? item.value_ar : item.value_en) || item.value_en;
       });
-      missionsCms = processedMissions[locale] || processedMissions.en || null;
+      // Process Protocol Header & CMS
+      const protocolItems = cmsData.data.filter((item: any) => item.section === 'protocol');
+      const processedProtocol: any = { en: {}, ar: {} };
+      protocolItems.forEach((item: any) => {
+        processedProtocol.en[item.key] = item.value_en;
+        processedProtocol.ar[item.key] = item.value_ar;
+      });
+      protocolCms = processedProtocol[locale] || processedProtocol.en || null;
+
+      // Process FAQ Header & CMS
+      const faqItems = cmsData.data.filter((item: any) => item.section === 'faq');
+      const processedFaq: any = { en: {}, ar: {} };
+      faqItems.forEach((item: any) => {
+        processedFaq.en[item.key] = item.value_en;
+        processedFaq.ar[item.key] = item.value_ar;
+      });
+      faqCms = processedFaq[locale] || processedFaq.en || null;
     }
   } catch (err) {
     console.error("Failed to fetch CMS data directly:", err);
@@ -89,7 +107,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
         {/* ── HOW IT WORKS ──────────────────────────── */}
         <section id="how">
-          <HowItWorks locale={locale} />
+          <HowItWorks locale={locale} cms={protocolCms} />
         </section>
 
         {/* ── GALLERY ───────────────────────────────── */}
@@ -99,7 +117,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
         {/* ── FAQ ───────────────────────────────────── */}
         <section id="faq">
-          <FAQ locale={locale} />
+          <FAQ locale={locale} cms={faqCms} />
         </section>
 
         {/* ── PARK NOTICE ───────────────────────────── */}

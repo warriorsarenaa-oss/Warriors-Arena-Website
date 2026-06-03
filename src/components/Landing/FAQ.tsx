@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { SectionHeader } from "../UI/SectionHeader";
 
-export const FAQ: React.FC<{ locale?: string }> = ({ locale = "en" }) => {
+export const FAQ: React.FC<{ locale?: string, cms?: any }> = ({ locale = "en", cms }) => {
   const t = useTranslations("Landing.FAQ");
   const isRtl = locale === "ar";
   const [openIndex, setOpenIndex] = useState<number>(0);
@@ -39,7 +39,7 @@ export const FAQ: React.FC<{ locale?: string }> = ({ locale = "en" }) => {
 
   return (
     <div>
-      <SectionHeader title={t("faqTitle", { fallback: "INTEL" })} line={t("faqLine", { fallback: "Answers to common questions." })} />
+      <SectionHeader title={cms?.heading || t("faqTitle", { fallback: "INTEL" })} line={cms?.subheading || t("faqLine", { fallback: "Answers to common questions." })} />
       <div className="max-w-[1020px] mx-auto flex flex-col gap-1.5">
         {displayFaqs.map((item, i) => (
           <div

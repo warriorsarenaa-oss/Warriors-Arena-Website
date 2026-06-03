@@ -32,6 +32,11 @@ export const POST = requirePermission(async (request: Request, { user, params })
       .update({
         status: 'no_show',
         updated_at: new Date().toISOString(),
+        deposit_amount: 0,
+        total_price: 0,
+        total_price_after_discount: 0,
+        final_amount_paid: 0,
+        deposit_status: 'pending'
       })
       .eq('id', booking.id)
       .select()
