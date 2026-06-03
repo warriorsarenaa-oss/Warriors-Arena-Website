@@ -165,12 +165,8 @@ export const GameShowcase: React.FC<GameShowcaseProps> = ({ games, locale = "en"
                   className="w-full h-full object-contain p-12 drop-shadow-[0_0_50px_rgba(143,224,74,0.3)]"
                 />
 
-                {/* Tactical Status Badge */}
-                <div className="absolute bottom-8 left-8 right-8 flex justify-between items-end">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-mono text-wa-green/60 uppercase tracking-widest block">Operational Capacity</span>
-                    <span className="text-sm font-mono text-wa-text font-bold uppercase">{current.stats.capacity}</span>
-                  </div>
+                {/* Live Status Badge only — no capacity overlay on image */}
+                <div className="absolute bottom-8 right-8">
                   <div className="bg-wa-green text-wa-bg px-3 py-1 rounded text-[10px] font-mono font-bold uppercase tracking-widest flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-wa-bg animate-pulse" />
                     Live Status

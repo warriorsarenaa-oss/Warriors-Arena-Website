@@ -416,7 +416,7 @@ export function ManualBookingModal({ initialTime, initialDate, onClose, onSucces
                         value={formData.playerCount || ""}
                         onChange={(e) => setFormData({ ...formData, playerCount: parseInt(e.target.value) || 0 })}
                         min={1}
-                        max={100}
+                        max={200}
                         className="bg-wa-bg border border-wa-green/20 p-3 rounded outline-none focus:border-wa-green flex-1 font-mono text-wa-green text-lg"
                         required
                       />

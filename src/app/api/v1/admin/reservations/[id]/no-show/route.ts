@@ -26,17 +26,16 @@ export const POST = requirePermission(async (request: Request, { user, params })
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    // 2. Perform update by UUID
+    // 2. Perform update by UUID — only touch columns that exist in the schema
     const { data, error } = await supabaseService
       .from('bookings')
       .update({
         status: 'no_show',
-        updated_at: new Date().toISOString(),
+        cancellation_reason: 'customer_no_show',
+        cancelled_at: new Date().toISOString(),
         deposit_amount: 0,
-        total_price: 0,
-        total_price_after_discount: 0,
-        final_amount_paid: 0,
-        deposit_status: 'pending'
+        deposit_status: 'not_tracked',
+        updated_at: new Date().toISOString(),
       })
       .eq('id', booking.id)
       .select()

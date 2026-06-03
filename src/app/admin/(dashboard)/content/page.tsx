@@ -545,9 +545,9 @@ export default function CMSContentPage() {
                 { key: 'contact_heading', label: 'Section Title (e.g. RALLY POINT)' },
                 { key: 'contact_address', label: 'Address Text' },
                 { key: 'contact_tagline', label: 'Location Tagline (Top-right)' },
+                { key: 'contact_hours_display', label: '⏱ Operating Hours Display (overrides settings page)' },
                 { key: 'address_label', label: 'Address Label (e.g. Address)' },
-                { key: 'hours_label', label: 'Hours Label (e.g. Hours)' },
-                { key: 'contact_label', label: 'Contact Label (e.g. Contact)' },
+                { key: 'contact_label', label: 'Contact Label (e.g. Contact / تواصل معنا)' },
                 { key: 'directions_cta', label: 'Directions Button text' },
                 { key: 'whatsapp_cta', label: 'WhatsApp Button text' },
               ].map(f => (

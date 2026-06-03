@@ -215,20 +215,6 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
                   <div className="grid grid-cols-2 gap-4">
                     <DetailRow label="Mission Code" value={localBooking.booking_code} mono highlight />
                     <DetailRow label="Operational Status" value={localBooking.status} status />
-                    <div className="col-span-2 mt-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] uppercase tracking-widest text-wa-text/40">WhatsApp Confirmation</span>
-                        <span className={`
-                          text-[10px] px-2 py-0.5 font-mono font-bold
-                          ${localBooking.whatsapp_confirmed
-                            ? 'bg-wa-green/10 text-wa-green border border-wa-green/30'
-                            : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
-                          }
-                        `}>
-                          {localBooking.whatsapp_confirmed ? '✓ CONFIRMED' : '⏳ PENDING'}
-                        </span>
-                      </div>
-                    </div>
                   </div>
                 </section>
 

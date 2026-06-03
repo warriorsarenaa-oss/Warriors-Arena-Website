@@ -50,28 +50,26 @@ export const POST = requirePermission(async (
     const bookingDateTime = new Date(`${booking.booking_date}T${booking.start_time}`);
     const hoursUntilBooking = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
     
-    let cancellationType = 'other';
-    if (reason === 'Customer Request') {
-      cancellationType = hoursUntilBooking >= 24 
-        ? 'customer_request_early' 
-        : 'customer_request_late';
-    } else if (reason === 'No Show') {
-      cancellationType = 'no_show';
-    }
+    // Map display reason strings to DB enum values
+    const reasonMap: Record<string, string> = {
+      customer_request: 'customer_request',
+      no_deposit_received: 'no_deposit_received',
+      customer_no_show: 'customer_no_show',
+      venue_issue: 'venue_issue',
+      staff_error: 'staff_error',
+      other: 'other',
+    };
+    const dbReason = reasonMap[reason] ?? 'other';
 
     const updateData: any = {
       status: 'cancelled',
-      cancellation_reason: reason,
-      cancellation_notes: finalNotes,
+      cancellation_reason: dbReason,
+      cancellation_note: finalNotes || null,
       cancelled_at: new Date().toISOString(),
-      cancelled_by: user.id,
-      cancellation_type: cancellationType,
-      updated_at: new Date().toISOString(),
+      cancelled_by_user_id: user.id,
       deposit_amount: 0,
-      total_price: 0,
-      total_price_after_discount: 0,
-      final_amount_paid: 0,
-      deposit_status: 'pending'
+      deposit_status: 'not_tracked',
+      updated_at: new Date().toISOString(),
     };
 
     const { data: result, error: cancelError } = await supabase

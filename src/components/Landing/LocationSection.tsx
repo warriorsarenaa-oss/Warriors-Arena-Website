@@ -53,19 +53,18 @@ export const LocationSection: React.FC<{ locale?: string }> = ({ locale = "en" }
   const tagline = getVal('contact_tagline', t("locationLine", { fallback: "Get directions and comms channels." }));
   const whatsapp = getVal('contact_whatsapp', t("whatsappValue"));
 
-  // Instagram: support separate display label and full URL, or fall back to handle
-  const igHandle = getVal('contact_instagram', "warriors_arenaa");
+  // Instagram: CMS-controlled label and URL
   const igLabel = getVal('contact_instagram_label', "Warriors Arena");
   const igUrlFromCms = getVal('contact_instagram_url', '');
-  const igUrl = igUrlFromCms
-    ? igUrlFromCms
-    : `https://www.instagram.com/${igHandle.replace('@', '')}/`;
+  const igHandle = getVal('contact_instagram', "warriors_arenaa");
+  const igUrl = igUrlFromCms || `https://www.instagram.com/${igHandle.replace('@', '')}/`;
 
   const mapsUrl = getVal('contact_maps_url', "https://maps.app.goo.gl/o5XEWd5AD3zWEDqr5");
 
   const heading = getVal('contact_heading', t("locationTitle", { fallback: "RALLY POINT" }));
+  // Hours: CMS override wins over the settings-API value
+  const hoursDisplay = getVal('contact_hours_display', operatingHours);
   const lblAddress = getVal('address_label', t("addressLabel"));
-  const lblHours = getVal('hours_label', t("hoursLabel"));
   // Fallback: Arabic = "تواصل معنا", English = "CONTACT"
   const lblContact = getVal(
     'contact_label',
@@ -93,10 +92,10 @@ export const LocationSection: React.FC<{ locale?: string }> = ({ locale = "en" }
           {/* Hours */}
           <div className="border-l-2 border-wa-green pl-5 rtl:pr-5 rtl:pl-0 rtl:border-r-2 rtl:border-l-0">
             <h3 className="font-mono text-[11px] text-wa-green tracking-[0.2em] uppercase mb-1">
-              {lblHours}
+              {t("hoursLabel")}
             </h3>
             <p className="text-xl text-wa-text font-archivo uppercase">
-              {operatingHours}
+              {hoursDisplay}
             </p>
           </div>
 
