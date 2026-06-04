@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { formatNumber } from "@/lib/i18n/formatters";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
 import { StrategicNotice } from "@/components/UI/StrategicNotice";
@@ -110,8 +111,9 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({
     const hourNum = parseInt(hours);
     const isPM = hourNum >= 12;
     const displayHour = hourNum === 0 ? 12 : hourNum > 12 ? hourNum - 12 : hourNum;
-    return `${displayHour}:${minutes} ${isPM ? 'PM' : 'AM'}`;
-  }, [selection.startTime]);
+    const amPm = isPM ? (locale === 'ar' ? 'م' : 'PM') : (locale === 'ar' ? 'ص' : 'AM');
+    return `${formatNumber(displayHour, locale)}:${formatNumber(minutes, locale)} ${amPm}`;
+  }, [selection.startTime, locale]);
 
   const formattedDate = useMemo(() => {
     if (!selection.date) return "N/A";
@@ -183,7 +185,7 @@ export const SuccessScreen: React.FC<SuccessScreenProps> = ({
           <div className="flex items-center gap-2 text-[10px] text-wa-text/40 uppercase font-mono">
             <Users className="w-3 h-3" /> {t("players")}
           </div>
-          <span className="font-archivo text-wa-text uppercase">{selection.playerCount} {t("units")}</span>
+          <span className="font-archivo text-wa-text uppercase">{formatNumber(selection.playerCount, locale)} {t("units")}</span>
         </div>
         {selection.missionName && (
           <div className="bg-wa-text/5 p-4 border border-wa-text/10 rounded-sm flex flex-col gap-1">

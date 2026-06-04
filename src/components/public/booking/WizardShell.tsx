@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -40,6 +40,7 @@ export const WizardShell: React.FC<WizardShellProps> = ({
   formId,
 }) => {
   const t = useTranslations("Booking");
+  const locale = useLocale();
 
   // Don't show progress/nav if it's the success screen
   if (isSuccess) {
@@ -106,7 +107,7 @@ export const WizardShell: React.FC<WizardShellProps> = ({
             disabled={currentStep === 1 || isSubmitting}
             className="flex items-center gap-2 group min-h-[48px]"
           >
-            <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+            <ChevronLeft className={`w-4 h-4 transition-transform ${locale === 'ar' ? 'rotate-180 group-hover:translate-x-1' : 'group-hover:-translate-x-1'}`} />
             {t("back")}
           </WAButton>
 
@@ -124,7 +125,7 @@ export const WizardShell: React.FC<WizardShellProps> = ({
               ) : (
                 <>
                   {nextLabel || t("next")}
-                  <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  <ChevronRight className={`w-4 h-4 transition-transform ${locale === 'ar' ? 'rotate-180 group-hover:-translate-x-1' : 'group-hover:translate-x-1'}`} />
                 </>
               )}
             </WAButton>

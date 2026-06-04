@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { formatNumber } from "@/lib/i18n/formatters";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { Users, Clock, Plus, Minus } from "lucide-react";
 
@@ -31,6 +32,7 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
   disabled = false,
 }) => {
   const t = useTranslations("Booking.Step2");
+  const locale = useLocale();
 
   const handleIncrement = () => {
     if (disabled) return;
@@ -74,13 +76,13 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
                   <div className="flex flex-col items-center gap-1">
                     <span className={`text-2xl font-archivo ${isSelected ? "text-wa-green" : "text-wa-text"}`}>
                       {p.pricing_type === 'ammo' ? (
-                        `${p.ammo_count} ${t("bullets")}`
+                        `${formatNumber(p.ammo_count || 0, locale)} ${t("bullets")}`
                       ) : (
-                        `${p.duration_minutes} ${t("min")}`
+                        `${formatNumber(p.duration_minutes, locale)} ${t("min")}`
                       )}
                     </span>
                     <span className="text-[10px] text-wa-text/40 font-mono uppercase tracking-widest text-center">
-                      {p.price_per_player} EGP / {t("player")}
+                      {formatNumber(p.price_per_player, locale)} EGP / {t("player")}
                       {p.pricing_type === 'ammo' && p.duration_minutes_display && (
                         <> · {p.duration_minutes_display}</>
                       )}
@@ -119,7 +121,7 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
           
           <div className="flex flex-col items-center min-w-[60px]">
             <span className="text-5xl font-archivo text-wa-text leading-none">
-              {playerCount}
+              {formatNumber(playerCount, locale)}
             </span>
             <span className="text-[10px] text-wa-text/40 font-mono uppercase mt-2">
               {t("players")}
@@ -136,7 +138,7 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
 
           <div className="ms-auto text-end">
             <p className="text-[10px] text-wa-text/40 font-mono uppercase tracking-widest">
-              {disabled ? "Fixed for this offer" : t("maxPlayersNote", { max: maxPlayers })}
+              {disabled ? "Fixed for this offer" : null}
             </p>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { formatNumber } from "@/lib/i18n/formatters";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { useVenueSettings } from "@/hooks/useVenueSettings";
 
@@ -31,6 +32,7 @@ export const PriceSummary: React.FC<PriceSummaryProps> = ({
   ammoCount,
 }) => {
   const t = useTranslations("Booking.Summary");
+  const locale = useLocale();
   const { settings } = useVenueSettings();
 
   const total = playerCount * (pricePerPlayer + missionPricePerPlayer);
@@ -40,16 +42,16 @@ export const PriceSummary: React.FC<PriceSummaryProps> = ({
       <div className="bg-wa-bg/95 backdrop-blur-md border-t border-wa-green/30 p-3 sm:p-4 flex justify-between items-center w-full">
         <div className="flex flex-col">
           <span className="text-[9px] text-wa-text/40 font-mono uppercase tracking-tighter">
-            {gameName || "—"} · {pricingType === 'ammo' ? `${ammoCount} BULLETS` : `${duration || "—"} MIN`}
+            {gameName || "—"} · {pricingType === 'ammo' ? `${formatNumber(ammoCount || 0, locale)} ${locale === 'ar' ? 'طلقة' : 'BULLETS'}` : `${duration ? formatNumber(duration, locale) : "—"} ${locale === 'ar' ? 'دقيقة' : 'MIN'}`}
           </span>
           <span className="text-xs sm:text-sm font-archivo text-wa-text uppercase truncate max-w-[200px]">
-            {playerCount} {t("players")} {missionName && `+ ${missionName}`}
+            {formatNumber(playerCount, locale)} {t("players")} {missionName && `+ ${missionName}`}
           </span>
         </div>
         <div className="text-end">
           <div className="text-[10px] text-wa-text/40 font-mono uppercase">{t("total")}</div>
           <div className="text-base sm:text-lg font-archivo text-wa-green leading-none">
-            {total} <small className="text-[10px]">EGP</small>
+            {formatNumber(total, locale)} <small className="text-[10px]">EGP</small>
           </div>
         </div>
       </div>
@@ -70,18 +72,18 @@ export const PriceSummary: React.FC<PriceSummaryProps> = ({
             <span className="text-wa-text font-archivo text-end">{gameName || "—"}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-wa-text/60 text-sm font-barlow">{pricingType === 'ammo' ? "AMMO" : t("duration")}</span>
+            <span className="text-wa-text/60 text-sm font-barlow">{pricingType === 'ammo' ? (locale === 'ar' ? 'الذخيرة' : 'AMMO') : t("duration")}</span>
             <span className="text-wa-text font-archivo">
-              {pricingType === 'ammo' ? (ammoCount ? `${ammoCount} BULLETS` : "—") : (duration ? `${duration} MIN` : "—")}
+              {pricingType === 'ammo' ? (ammoCount ? `${formatNumber(ammoCount, locale)} ${locale === 'ar' ? 'طلقة' : 'BULLETS'}` : "—") : (duration ? `${formatNumber(duration, locale)} ${locale === 'ar' ? 'دقيقة' : 'MIN'}` : "—")}
             </span>
           </div>
           <div className="flex justify-between">
             <span className="text-wa-text/60 text-sm font-barlow">{t("players")}</span>
-            <span className="text-wa-text font-archivo">× {playerCount}</span>
+            <span className="text-wa-text font-archivo">× {formatNumber(playerCount, locale)}</span>
           </div>
           {missionName && (
             <div className="flex justify-between items-start pt-2 border-t border-wa-gray/10">
-              <span className="text-wa-text/60 text-sm font-barlow">MISSION</span>
+              <span className="text-wa-text/60 text-sm font-barlow">{locale === 'ar' ? 'المهمة' : 'MISSION'}</span>
               <span className="text-wa-green font-archivo text-end uppercase text-xs">{missionName}</span>
             </div>
           )}
@@ -92,16 +94,16 @@ export const PriceSummary: React.FC<PriceSummaryProps> = ({
           <div className="flex justify-between items-center">
             <span className="text-wa-text/60 text-sm font-barlow">{t("total")}</span>
             <span className="text-2xl font-archivo text-wa-green">
-              {total} <small className="text-xs">EGP</small>
+              {formatNumber(total, locale)} <small className="text-xs">EGP</small>
             </span>
           </div>
 
           <div className="flex justify-between items-center">
             <span className="text-wa-text/40 text-[10px] font-mono uppercase">
-              TOTAL DUE ON ARRIVAL
+              {t("depositRequired")}
             </span>
             <span className="font-archivo text-xl text-wa-text">
-              {total} EGP
+              {formatNumber(total, locale)} EGP
             </span>
           </div>
         </div>

@@ -8,6 +8,7 @@ import { ar } from "date-fns/locale";
 import { formatInTimeZone } from "date-fns-tz";
 import { Calendar as CalendarIcon, Clock, Info, AlertTriangle } from "lucide-react";
 import "react-day-picker/dist/style.css";
+import { formatNumber } from "@/lib/i18n/formatters";
 
 interface Slot {
   slot_time: string; // HH:mm:ss
@@ -103,9 +104,9 @@ export const Step3Date: React.FC<Step3DateProps> = ({
   const formatTimeDisplay = (timeStr: string) => {
     const [h, m] = timeStr.split(":");
     let hour = parseInt(h);
-    const ampm = hour >= 12 ? "PM" : "AM";
+    const ampm = hour >= 12 ? (locale === 'ar' ? 'م' : 'PM') : (locale === 'ar' ? 'ص' : 'AM');
     hour = hour % 12 || 12;
-    return `${hour}:${m} ${ampm}`;
+    return `${formatNumber(hour, locale)}:${formatNumber(m, locale)} ${ampm}`;
   };
 
   return (
@@ -120,7 +121,7 @@ export const Step3Date: React.FC<Step3DateProps> = ({
           {selectedDate && (
             <div className="bg-wa-green/10 px-3 py-1 border border-wa-green/30">
               <span className="text-wa-green font-archivo text-sm uppercase">
-                {format(new Date(selectedDate), "dd MMM yyyy", { locale: locale === "ar" ? ar : undefined })}
+                {formatNumber(format(new Date(selectedDate), "dd MMM yyyy", { locale: locale === "ar" ? ar : undefined }), locale)}
               </span>
             </div>
           )}

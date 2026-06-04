@@ -13,6 +13,19 @@ interface Step6SummaryProps {
   locale: "en" | "ar";
 }
 
+import { formatNumber } from "@/lib/i18n/formatters";
+
+// Helper to convert 24h "HH:mm" or "HH:mm:ss" to 12h AM/PM
+function formatTime12h(timeStr: string, locale: string): string {
+  if (!timeStr) return "";
+  const [hStr, mStr] = timeStr.split(":");
+  const h = parseInt(hStr, 10);
+  const isPM = h >= 12;
+  const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  const amPm = isPM ? (locale === 'ar' ? 'م' : 'PM') : (locale === 'ar' ? 'ص' : 'AM');
+  return `${formatNumber(displayH, locale)}:${formatNumber(mStr, locale)} ${amPm}`;
+}
+
 export const Step6Summary: React.FC<Step6SummaryProps> = ({
   bookingData,
   gameName,
@@ -38,15 +51,15 @@ export const Step6Summary: React.FC<Step6SummaryProps> = ({
         />
         <SummaryRow
           label={locale === "ar" ? "التاريخ" : "Date"}
-          value={bookingData.date}
+          value={formatNumber(bookingData.date, locale)}
         />
         <SummaryRow
           label={locale === "ar" ? "الوقت" : "Time"}
-          value={`${bookingData.start_time} — ${calculateEndTime(bookingData.start_time, bookingData.duration_minutes)}`}
+          value={`${formatTime12h(bookingData.start_time, locale)} — ${formatTime12h(calculateEndTime(bookingData.start_time, bookingData.duration_minutes), locale)}`}
         />
         <SummaryRow
           label={locale === "ar" ? "عدد اللاعبين" : "Players"}
-          value={String(bookingData.player_count)}
+          value={formatNumber(bookingData.player_count, locale)}
         />
         {missionName && (
           <SummaryRow
@@ -60,7 +73,7 @@ export const Step6Summary: React.FC<Step6SummaryProps> = ({
 
         <SummaryRow
           label={locale === "ar" ? "الإجمالي" : "Total"}
-          value={`${totalAmount} EGP`}
+          value={`${formatNumber(totalAmount, locale)} EGP`}
           highlight
         />
 

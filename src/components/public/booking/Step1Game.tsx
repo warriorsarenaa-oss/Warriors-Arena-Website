@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { formatNumber } from "@/lib/i18n/formatters";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { Loader2, Shield, Sword, Target } from "lucide-react";
 import { StrategicNotice } from "@/components/UI/StrategicNotice";
@@ -181,14 +182,11 @@ export const Step1Game: React.FC<Step1GameProps> = ({ selectedGameId, onSelect, 
                     <div className="flex flex-col">
                       <span className="text-[9px] text-wa-text/40 uppercase font-mono tracking-widest">{t("startingAt")}</span>
                       <span className={`text-xl font-archivo ${isSelected ? "text-wa-green" : "text-wa-text"}`}>
-                        {game.min_price_per_player} <small className="text-xs">EGP</small>
+                        {formatNumber(game.min_price_per_player, locale)} <small className="text-xs">EGP</small>
                       </span>
                     </div>
                     <div className="flex flex-col items-end group-hover:translate-x-1 transition-transform">
                       <span className="text-[9px] text-wa-text/40 uppercase font-mono tracking-widest">{t("perPlayer")}</span>
-                      <span className="text-[10px] text-wa-green underline cursor-help uppercase font-bold tracking-tighter">
-                        {t("viewPricing")}
-                      </span>
                     </div>
                   </div>
                 </div>

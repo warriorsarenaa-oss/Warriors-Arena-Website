@@ -162,7 +162,7 @@
     },
     "StepMission": {
       "title": "SPECIAL MISSION",
-      "description": "Add a themed mission layer to your game. Optional but recommended.",
+      "description": "Stack your game with a mission objective. Optional — but highly recommended.",
       "loadingMissions": "LOADING MISSIONS...",
       "noMission": "STANDARD GAME",
       "noMissionDesc": "Standard tactical session with no special mission objectives.",

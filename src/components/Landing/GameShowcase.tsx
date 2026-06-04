@@ -178,10 +178,7 @@ export const GameShowcase: React.FC<GameShowcaseProps> = ({ games, locale = "en"
             {/* Right Column: Mission Briefing */}
             <div className="space-y-8 order-1 lg:order-2">
               <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-[2px] w-12 bg-wa-green" />
-                  <span className="text-xs font-mono font-bold text-wa-green uppercase tracking-[0.4em]">Mission Loadout</span>
-                </div>
+
                 <h2 className="text-4xl md:text-7xl font-archivo text-wa-text uppercase leading-none tracking-tighter">
                   {current.name}
                 </h2>

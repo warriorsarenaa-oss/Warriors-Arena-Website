@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { formatNumber } from "@/lib/i18n/formatters";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { Loader2, Target, CheckCircle2 } from "lucide-react";
 
@@ -148,7 +149,7 @@ export const StepMission: React.FC<StepMissionProps> = ({
 
                   <div className="mt-auto pt-4 border-t border-wa-gray/20 flex justify-between items-center">
                     <span className="text-sm font-archivo text-wa-text">
-                      +{mission.additional_price_per_player} <small className="text-[10px]">EGP</small> / {t("player")}
+                      +{formatNumber(mission.additional_price_per_player, locale)} <small className="text-[10px]">EGP</small> / {t("player")}
                     </span>
                     <span className="text-[10px] font-mono text-wa-green uppercase">
                       {t("missionAddon")}
