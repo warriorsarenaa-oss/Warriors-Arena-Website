@@ -121,8 +121,8 @@ export async function POST(request: Request) {
       depositAmount: result.deposit_amount!
     });
 
-    // 7. Send Email Confirmation via Resend (Fire and forget)
-    void sendAdminBookingNotification({
+    // 7. Send Email Confirmation via Resend
+    await sendAdminBookingNotification({
       bookingCode: result.booking_code!,
       gameName: gameData?.name_en || "Game",
       bookingDate: data.date,
@@ -134,25 +134,27 @@ export async function POST(request: Request) {
       specialMission: missionData?.name_en
     });
 
-    // 7. Fire Meta Conversions API (Fire and forget)
+    // 8. Fire Meta Conversions API
     if (data.event_id) {
-      sendToMeta({
-        event_name: "Purchase",
-        event_id: data.event_id,
-        value: result.total_price || 0,
-        currency: "EGP",
-        user_data: {
-          em: data.customer_email || undefined,
-          ph: data.customer_phone
-        },
-        custom_data: {
-          content_name: gameData?.name_en || "Game",
-          content_type: "game"
-        }
-      }).catch(err => {
+      try {
+        await sendToMeta({
+          event_name: "Purchase",
+          event_id: data.event_id,
+          value: result.total_price || 0,
+          currency: "EGP",
+          user_data: {
+            em: data.customer_email || undefined,
+            ph: data.customer_phone
+          },
+          custom_data: {
+            content_name: gameData?.name_en || "Game",
+            content_type: "game"
+          }
+        });
+      } catch (err) {
          console.error("[CAPI_BACKGROUND_ERROR]", err);
          // Do not throw, booking already successful
-      });
+      }
     }
 
     // 8. Success Response

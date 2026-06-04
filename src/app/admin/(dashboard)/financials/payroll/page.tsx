@@ -203,28 +203,28 @@ export default function PayrollPage() {
                   <div className="flex flex-col">
                     <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Hours Worked</span>
                     <span className="font-mono font-bold text-wa-green">
-                      {p.total_hours}h <span className="text-wa-text/30 text-[10px]">@ {p.staff.hourly_rate}/h</span>
+                      {Number(Number(p.total_hours).toFixed(2))}h <span className="text-wa-text/30 text-[10px]">@ {p.staff.hourly_rate}/h</span>
                     </span>
-                    <span className="font-bold text-sm">{Number(p.hours_pay).toLocaleString()} EGP</span>
+                    <span className="font-bold text-sm">{Number(p.hours_pay).toLocaleString(undefined, { maximumFractionDigits: 2 })} EGP</span>
                   </div>
                   <div className="flex flex-col border-l border-wa-text/5 pl-4">
                     <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Commission</span>
                     <span className="font-mono font-bold text-wa-green">
                       {p.games_count} games
                     </span>
-                    <span className="font-bold text-sm">{Number(p.commission_pay).toLocaleString()} EGP</span>
+                    <span className="font-bold text-sm">{Number(p.commission_pay).toLocaleString(undefined, { maximumFractionDigits: 2 })} EGP</span>
                   </div>
                   <div className="flex flex-col border-l border-wa-text/5 pl-4">
                     <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Total Earned</span>
-                    <span className="text-xl font-mono font-bold text-wa-text">{totalEarned.toLocaleString()} EGP</span>
+                    <span className="text-xl font-mono font-bold text-wa-text">{totalEarned.toLocaleString(undefined, { maximumFractionDigits: 2 })} EGP</span>
                     {alreadyPaid > 0 && (
-                      <span className="text-[10px] text-wa-text/40 font-mono">— {alreadyPaid} paid</span>
+                      <span className="text-[10px] text-wa-text/40 font-mono">— {alreadyPaid.toLocaleString(undefined, { maximumFractionDigits: 2 })} paid</span>
                     )}
                   </div>
                   <div className="flex flex-col border-l border-wa-text/5 pl-4">
                     <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Due Now</span>
                     <span className={`text-xl font-mono font-bold ${isFullyPaid ? 'text-wa-green/40' : (isOverpaid ? 'text-red-400' : 'text-wa-green')}`}>
-                      {remainingBalance > 0 ? remainingBalance.toLocaleString() : '0'} EGP
+                      {remainingBalance > 0 ? remainingBalance.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '0'} EGP
                     </span>
                   </div>
                 </div>

@@ -100,7 +100,7 @@ export const WizardShell: React.FC<WizardShellProps> = ({
         </div>
 
         {/* 3. Navigation Buttons */}
-        <div className="flex justify-between items-center mt-auto md:mt-12 pt-4 md:pt-8 border-t border-wa-gray/20 sticky bottom-0 bg-gradient-to-t from-wa-bg via-wa-bg/95 to-wa-bg/0 z-20 pb-2 md:pb-0 pt-8 -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="flex justify-between items-center mt-auto md:mt-12 pt-4 md:pt-8 border-t border-wa-gray/20 bg-wa-bg pb-2 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
           <WAButton
             variant="ghost"
             onClick={onBack}
