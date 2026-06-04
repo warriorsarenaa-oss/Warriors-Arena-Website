@@ -2,7 +2,7 @@ import { supabaseService } from "@/lib/db/supabase-service";
 import { logger } from "@/lib/log";
 
 export interface AuditLogOptions {
-  actor_user_id: string;
+  actor_user_id: string | null;
   actor_email?: string;
   action: string;
   entity_type: string;

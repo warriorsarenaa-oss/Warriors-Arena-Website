@@ -110,8 +110,9 @@ export async function createBooking(params: CreateBookingParams): Promise<Bookin
   // 3. Write Audit Log — non-fatal: booking is already committed in DB
   try {
     await logAuditAction({
-      actor_user_id: params.created_by_user_id || "anonymous",
-      actor_email: params.source === "online" ? "anonymous" : "staff",
+      // actor_user_id is a UUID column — must be null for unauthenticated public bookings
+      actor_user_id: params.created_by_user_id || null,
+      actor_email: params.source === "online" ? "public" : "staff",
       action: "CREATE_BOOKING",
       entity_type: "bookings",
       entity_id: result.booking_id,
