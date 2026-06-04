@@ -5,7 +5,7 @@ import { generateWhatsAppLink } from "@/lib/booking/whatsapp-deep-link";
 import { supabaseAnon } from "@/lib/db/supabase-anon";
 import { z } from "zod";
 import { sendToMeta } from "@/lib/analytics/capi";
-import { Resend } from "resend";
+import { sendAdminBookingNotification } from "@/utils/email";
 /**
  * PUBLIC BOOKING CREATION API
  * 
@@ -122,33 +122,17 @@ export async function POST(request: Request) {
     });
 
     // 7. Send Email Confirmation via Resend (Fire and forget)
-    if (process.env.RESEND_API_KEY) {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      resend.emails.send({
-        from: 'Warriors Arena <onboarding@resend.dev>',
-        to: process.env.CONTACT_EMAIL || 'hello@warriorsarena.example',
-        subject: `New Booking Confirmed: ${result.booking_code}`,
-        html: `
-          <div style="font-family: sans-serif; padding: 20px;">
-            <h2 style="color: #2E4036;">New Booking Confirmation</h2>
-            <table style="width: 100%; max-width: 600px; border-collapse: collapse;">
-              <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Booking Code:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${result.booking_code}</td></tr>
-              <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Customer Name:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${data.customer_name}</td></tr>
-              <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Customer Phone:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${data.customer_phone}</td></tr>
-              <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Game:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${gameData?.name_en || "Game"}</td></tr>
-              <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Mission:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${missionData?.name_en || "None"}</td></tr>
-              <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Date:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${data.date}</td></tr>
-              <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Time:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${data.start_time}</td></tr>
-              <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Players:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${data.player_count}</td></tr>
-              <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Total Price:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${result.total_price} EGP</td></tr>
-              <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Deposit:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${result.deposit_amount} EGP</td></tr>
-            </table>
-          </div>
-        `
-      }).catch(err => {
-        console.error("[RESEND_ERROR]", err);
-      });
-    }
+    void sendAdminBookingNotification({
+      bookingCode: result.booking_code!,
+      gameName: gameData?.name_en || "Game",
+      bookingDate: data.date,
+      startTime: data.start_time,
+      playerCount: data.player_count,
+      totalAmount: result.total_price!,
+      customerName: data.customer_name,
+      customerPhone: data.customer_phone,
+      specialMission: missionData?.name_en
+    });
 
     // 7. Fire Meta Conversions API (Fire and forget)
     if (data.event_id) {
