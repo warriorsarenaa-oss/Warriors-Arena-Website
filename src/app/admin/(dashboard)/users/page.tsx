@@ -31,7 +31,8 @@ export default function UsersPage() {
     password: "", 
     commission_rate: 0, 
     hourly_rate: 0,
-    permissions: [] as string[]
+    permissions: [] as string[],
+    notification_email: ""
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -67,7 +68,8 @@ export default function UsersPage() {
         password: user.plain_password || "", // Prefill with stored plain password
         commission_rate: user.commission_rate || 0,
         hourly_rate: user.hourly_rate || 0,
-        permissions: user.permissions || []
+        permissions: user.permissions || [],
+        notification_email: user.notification_email || ""
       });
     } else {
       setEditingUser(null);
@@ -76,7 +78,8 @@ export default function UsersPage() {
         password: "",
         commission_rate: 0,
         hourly_rate: 0,
-        permissions: []
+        permissions: [],
+        notification_email: ""
       });
     }
     setIsModalOpen(true);
@@ -132,6 +135,7 @@ export default function UsersPage() {
             commission_rate: formData.commission_rate,
             hourly_rate: formData.hourly_rate,
             permissions: formData.permissions,
+            notification_email: formData.notification_email,
             // Include password only if it was changed
             ...(formData.password ? { password: formData.password } : {})
           })
@@ -307,6 +311,20 @@ export default function UsersPage() {
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-50">Notification Email (Optional)</label>
+                  <input 
+                    type="email" 
+                    value={formData.notification_email} 
+                    onChange={e => setFormData({...formData, notification_email: e.target.value})} 
+                    placeholder="staff@gmail.com"
+                    className="bg-wa-bg border border-wa-green/20 p-4 rounded-xl focus:border-wa-green outline-none font-mono tracking-wider" 
+                  />
+                  <p className="text-[10px] opacity-40 italic">Receives booking notifications when on shift.</p>
                 </div>
               </div>
 

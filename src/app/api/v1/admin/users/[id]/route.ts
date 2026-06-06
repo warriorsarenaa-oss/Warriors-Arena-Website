@@ -15,6 +15,7 @@ const UpdateUserSchema = z.object({
   hourly_rate: z.number().min(0).optional(),
   is_active: z.boolean().optional(),
   permissions: z.array(z.string()).optional(),
+  notification_email: z.string().email().optional().or(z.literal("")).nullable(),
 });
 
 export const PATCH = requirePermission(async (request: Request, context: any) => {
@@ -27,7 +28,14 @@ export const PATCH = requirePermission(async (request: Request, context: any) =>
       return NextResponse.json({ error: "Validation failed", details: parsed.error.format() }, { status: 400 });
     }
 
-    const { email, password, permissions, ...userUpdates } = parsed.data;
+    const { email, password, permissions, notification_email, ...userUpdatesRest } = parsed.data;
+    
+    // Convert empty string to null for DB
+    const userUpdates: any = { ...userUpdatesRest };
+    if (notification_email !== undefined) {
+      userUpdates.notification_email = notification_email || null;
+    }
+    
     const { user } = context;
 
     const { data: existingUser, error: fetchError } = await supabaseService

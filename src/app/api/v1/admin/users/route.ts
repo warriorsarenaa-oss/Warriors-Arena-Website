@@ -14,6 +14,7 @@ export const GET = requirePermission(async (_request: Request) => {
       id, 
       username, 
       email, 
+      notification_email,
       full_name,
       is_active, 
       commission_rate,
@@ -71,6 +72,7 @@ export const GET = requirePermission(async (_request: Request) => {
 const CreateUserSchema = z.object({
   username: z.string().min(3).regex(/^[a-z0-9_]+$/),
   password: z.string().min(6),
+  notification_email: z.string().email().optional().or(z.literal("")),
   commission_rate: z.number().min(0).default(0),
   hourly_rate: z.number().min(0).default(0),
   permissions: z.array(z.string()).default([]),
@@ -85,7 +87,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
       return NextResponse.json({ error: "Validation failed", details: parsed.error.format() }, { status: 400 });
     }
 
-    const { username, password, commission_rate, hourly_rate, permissions } = parsed.data;
+    const { username, password, notification_email, commission_rate, hourly_rate, permissions } = parsed.data;
 
     // Internal email for Supabase Auth
     const email = `${username}@warriors-arena.internal`;
@@ -146,6 +148,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
           username,
           full_name: username, // Default to username for now
           email,
+          notification_email: notification_email || null,
           role_id: roleData.id,
           commission_rate,
           hourly_rate,

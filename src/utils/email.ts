@@ -11,26 +11,30 @@ export interface BookingEmailData {
   customerName: string;
   customerPhone: string;
   specialMission?: string | null;
+  staffEmail?: string | null;
 }
 
 export const sendAdminBookingNotification = async (data: BookingEmailData): Promise<void> => {
   try {
     const apiKey = process.env.RESEND_API_KEY;
     const fromEmail = process.env.RESEND_FROM_EMAIL;
-    const toEmail = process.env.ADMIN_EMAIL;
+    const adminEmail = process.env.ADMIN_EMAIL;
 
-    if (!apiKey || !fromEmail || !toEmail) {
+    if (!apiKey || !fromEmail || !adminEmail) {
       console.warn("[EMAIL_WARN] Missing Resend environment variables. Email not sent.");
       return;
     }
 
+    // Build recipient list: always super admin + staff if available
+    const recipients: string[] = [adminEmail];
+    
+    if (data.staffEmail && data.staffEmail !== adminEmail) {
+      recipients.push(data.staffEmail);
+    }
+
     const resend = new Resend(apiKey);
 
-    await resend.emails.send({
-      from: fromEmail,
-      to: toEmail,
-      subject: `New Booking Confirmed: ${data.bookingCode}`,
-      html: `
+    const emailHtml = `
         <div style="font-family: sans-serif; padding: 20px;">
           <h2 style="color: #2E4036;">New Booking Confirmation</h2>
           <table style="width: 100%; max-width: 600px; border-collapse: collapse;">
@@ -46,8 +50,17 @@ export const sendAdminBookingNotification = async (data: BookingEmailData): Prom
             <tr><td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Total Amount:</strong></td><td style="padding: 8px; border-bottom: 1px solid #eee;">${data.totalAmount} EGP</td></tr>
           </table>
         </div>
-      `,
+      `;
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: recipients,
+      subject: `New Booking Confirmed: ${data.bookingCode}`,
+      html: emailHtml,
     });
+    
+    console.log(`[EMAIL] Notification sent to: ${recipients.join(', ')}`);
+
   } catch (error) {
     console.error("[RESEND_ERROR] Failed to send admin notification email:", error);
   }

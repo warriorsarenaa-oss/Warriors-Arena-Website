@@ -3,6 +3,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { createBooking } from "@/lib/booking/create-booking";
 import { generateWhatsAppLink } from "@/lib/booking/whatsapp-deep-link";
 import { supabaseAnon } from "@/lib/db/supabase-anon";
+import { supabaseService } from "@/lib/db/supabase-service";
 import { z } from "zod";
 import { sendToMeta } from "@/lib/analytics/capi";
 import { sendAdminBookingNotification } from "@/utils/email";
@@ -121,7 +122,38 @@ export async function POST(request: Request) {
       depositAmount: result.deposit_amount!
     });
 
-    // 7. Send Email Confirmation via Resend
+    // 7. Find staff member on shift during this booking time
+    let staffEmail: string | null = null;
+
+    try {
+      const bookingDate = data.date; // YYYY-MM-DD
+      const bookingTime = data.start_time; // HH:MM
+
+      const { data: activeShift } = await supabaseService
+        .from('staff_shifts')
+        .select(`
+          id,
+          staff_id,
+          users!staff_shifts_staff_id_fkey (
+            notification_email
+          )
+        `)
+        .eq('shift_date', bookingDate)
+        .lte('start_time', bookingTime)
+        .gte('end_time', bookingTime)
+        .eq('status', 'confirmed')
+        .single();
+
+      if (activeShift?.users?.notification_email) {
+        staffEmail = activeShift.users.notification_email;
+        console.log(`[EMAIL] Found on-shift staff email: ${staffEmail}`);
+      }
+    } catch (err) {
+      // Non-critical — if shift lookup fails, still send to admin
+      console.warn('[EMAIL] Could not find on-shift staff email:', err);
+    }
+
+    // 8. Send Email Confirmation via Resend
     await sendAdminBookingNotification({
       bookingCode: result.booking_code!,
       gameName: gameData?.name_en || "Game",
@@ -131,7 +163,8 @@ export async function POST(request: Request) {
       totalAmount: result.total_price!,
       customerName: data.customer_name,
       customerPhone: data.customer_phone,
-      specialMission: missionData?.name_en
+      specialMission: missionData?.name_en,
+      staffEmail: staffEmail
     });
 
     // 8. Fire Meta Conversions API
