@@ -106,17 +106,15 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
       case 1:
         track("ViewContent", { content_name: "Booking Wizard" });
         break;
-      case 2:
+      case 4: // Date and Time
+        const price = (selectedGame?.pricing?.find((p: any) => p.duration_minutes === draft.duration_minutes)?.price_per_player || 0) * (draft.player_count || 1);
+        track("AddToCart", { value: price, currency: "EGP" });
+        break;
+      case 5: // Customer Details
         track("InitiateCheckout");
         break;
-      case 3:
-        if (draft.start_time) {
-          const price = (selectedGame?.pricing?.find((p: any) => p.duration_minutes === draft.duration_minutes)?.price_per_player || 0) * draft.player_count;
-          track("AddToCart", { value: price, currency: "EGP" });
-        }
-        break;
     }
-  }, [draft.currentStep, draft.start_time, isLoaded, selectedGame, draft.duration_minutes, draft.player_count, track]);
+  }, [draft.currentStep, isLoaded, selectedGame, draft.duration_minutes, draft.player_count, track]);
 
   // 3. Validation Guards
   const isStepValid = useMemo(() => {
