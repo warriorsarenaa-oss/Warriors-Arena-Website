@@ -144,8 +144,11 @@ export async function POST(request: Request) {
         .eq('status', 'confirmed')
         .single();
 
-      if (activeShift?.users?.notification_email) {
-        staffEmail = activeShift.users.notification_email;
+      const userData = activeShift?.users as any;
+      const email = Array.isArray(userData) ? userData[0]?.notification_email : userData?.notification_email;
+      
+      if (email) {
+        staffEmail = email;
         console.log(`[EMAIL] Found on-shift staff email: ${staffEmail}`);
       }
     } catch (err) {
