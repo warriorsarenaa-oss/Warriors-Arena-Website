@@ -211,7 +211,16 @@ export const GameShowcase: React.FC<GameShowcaseProps> = ({ games, locale = "en"
                   <WAButton 
                     variant="primary" 
                     size="lg" 
-                    onClick={() => openWizard({ kind: "game", id: current.id })}
+                    onClick={() => {
+                      if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
+                        (window as any).fbq("track", "InitiateCheckout", {
+                          content_category: "Game Booking",
+                          content_name: "Warriors Arena Booking",
+                          currency: "EGP",
+                        });
+                      }
+                      openWizard({ kind: "game", id: current.id });
+                    }}
                     className="w-full sm:w-auto px-10 group"
                   >
                     {isRtl ? "احجز المهمة" : "BOOK NOW"}

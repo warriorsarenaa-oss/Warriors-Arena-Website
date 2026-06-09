@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useBookingDraft } from "@/hooks/useBookingDraft";
-import { useMetaPixel } from "@/hooks/useMetaPixel";
 import { WizardShell } from "./WizardShell";
 import { PriceSummary } from "./PriceSummary";
 import { Step1Game } from "./Step1Game";
@@ -25,7 +24,6 @@ interface BookingWizardProps {
 export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
   const t = useTranslations("Booking");
   const locale = useLocale();
-  const { track } = useMetaPixel();
   const { draft, updateDraft, clearDraft, isLoaded } = useBookingDraft();
   const { seed } = useBooking();
 
@@ -98,25 +96,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
     fetchDetails();
   }, [isLoaded, draft.game_id, draft.currentStep, selectedGame, seed, updateDraft]);
 
-  // 2. Track Funnel Events
-  useEffect(() => {
-    if (!isLoaded) return;
-
-    switch (draft.currentStep) {
-      case 1:
-        track("ViewContent", { content_name: "Booking Wizard" });
-        break;
-      case 4: // Date and Time
-        const price = (selectedGame?.pricing?.find((p: any) => p.duration_minutes === draft.duration_minutes)?.price_per_player || 0) * (draft.player_count || 1);
-        track("AddToCart", { value: price, currency: "EGP" });
-        break;
-      case 5: // Customer Details
-        track("InitiateCheckout");
-        break;
-    }
-  }, [draft.currentStep, isLoaded, selectedGame, draft.duration_minutes, draft.player_count, track]);
-
-  // 3. Validation Guards
+  // 2. Validation Guards
   const isStepValid = useMemo(() => {
     switch (draft.currentStep) {
       case 1: return !!draft.game_id;
@@ -215,7 +195,18 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
 
       // Success!
       const totalPrice = data.total_price;
-      track("Purchase", { value: totalPrice, currency: "EGP", content_ids: [data.booking_code] });
+      const gameName = selectedGame?.name_en || "Game";
+      if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
+        (window as any).fbq("track", "Purchase", {
+          value: totalPrice,
+          currency: "EGP",
+          content_type: "product",
+          content_name: gameName,
+          content_category: "Game Booking",
+          num_items: 1,
+          eventID: `purchase_${data.booking_code}`,
+        });
+      }
       
       
       setSuccessData({
@@ -327,6 +318,13 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
             <Step5Customer 
               defaultValues={draft}
               onSubmit={(data) => {
+                if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
+                  (window as any).fbq("track", "Lead", {
+                    content_category: "Game Booking",
+                    content_name: "Warriors Arena Booking",
+                    currency: "EGP",
+                  });
+                }
                 // Atomic update of both customer data AND the step to prevent race conditions
                 updateDraft({ ...data, currentStep: 6 });
                 // Manually sync history since we are bypassing goToStep

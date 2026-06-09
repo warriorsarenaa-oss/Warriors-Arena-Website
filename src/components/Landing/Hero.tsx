@@ -141,7 +141,16 @@ export const Hero: React.FC<HeroProps> = ({ locale, hours = "6 PM - 9 PM", cms }
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.75, ease: [0.16, 1, 0.3, 1] }}
           >
-            <WAButton variant="primary" size="lg" type="button" onClick={() => openWizard()}>
+            <WAButton variant="primary" size="lg" type="button" onClick={() => {
+              if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
+                (window as any).fbq("track", "InitiateCheckout", {
+                  content_category: "Game Booking",
+                  content_name: "Warriors Arena Booking",
+                  currency: "EGP",
+                });
+              }
+              openWizard();
+            }}>
               {t("primaryCTA")}
             </WAButton>
           </motion.div>

@@ -83,7 +83,16 @@ export const Navbar: React.FC = () => {
           </button>
 
           {/* Book CTA */}
-          <WAButton variant="primary" size="sm" type="button" onClick={() => openWizard()}>
+          <WAButton variant="primary" size="sm" type="button" onClick={() => {
+            if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
+              (window as any).fbq("track", "InitiateCheckout", {
+                content_category: "Game Booking",
+                content_name: "Warriors Arena Booking",
+                currency: "EGP",
+              });
+            }
+            openWizard();
+          }}>
             {t("bookNow")}
           </WAButton>
 
@@ -115,7 +124,17 @@ export const Navbar: React.FC = () => {
             </a>
           ))}
           <div className="h-px bg-wa-line" />
-          <WAButton type="button" className="w-full py-4 text-base" onClick={() => { openWizard(); setMenuOpen(false); }}>
+          <WAButton type="button" className="w-full py-4 text-base" onClick={() => {
+            if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
+              (window as any).fbq("track", "InitiateCheckout", {
+                content_category: "Game Booking",
+                content_name: "Warriors Arena Booking",
+                currency: "EGP",
+              });
+            }
+            openWizard();
+            setMenuOpen(false);
+          }}>
             {t("bookNow")}
           </WAButton>
         </div>

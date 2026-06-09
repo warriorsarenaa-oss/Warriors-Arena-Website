@@ -65,7 +65,16 @@ export const GameCard: React.FC<GameCardProps> = ({
           variant="primary"
           className="w-full justify-between"
           type="button"
-          onClick={() => openWizard({ kind: "game", id })}
+          onClick={() => {
+            if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
+              (window as any).fbq("track", "InitiateCheckout", {
+                content_category: "Game Booking",
+                content_name: "Warriors Arena Booking",
+                currency: "EGP",
+              });
+            }
+            openWizard({ kind: "game", id });
+          }}
         >
           <span>SELECT MISSION</span>
           <Target className="w-4 h-4 ml-2 opacity-50" />
