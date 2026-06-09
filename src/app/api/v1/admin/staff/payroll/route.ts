@@ -191,7 +191,7 @@ export const GET = requirePermission(async (request: Request) => {
 export const POST = requirePermission(async (request: Request, { user }) => {
   try {
     const body = await request.json();
-    const { payroll_record_id, amount_paid, payment_method, notes } = body;
+    const { payroll_record_id, amount_paid, payment_method, notes, force_settle } = body;
 
     if (!payroll_record_id || !amount_paid || amount_paid <= 0) {
       return NextResponse.json({ error: "Invalid payment details" }, { status: 400 });
@@ -235,8 +235,8 @@ export const POST = requirePermission(async (request: Request, { user }) => {
     const totalPaidSoFar = Number(record.total_paid_so_far || 0);
     const liveRemainingBalance = liveTotalCalculated - totalPaidSoFar;
 
-    // 3. Validate against live remaining balance (not stale DB value)
-    if (amount_paid > liveRemainingBalance + 0.01) { // +0.01 for float tolerance
+    // 3. Validate against live remaining balance — skip if force_settle is set
+    if (!force_settle && amount_paid > liveRemainingBalance + 0.01) { // +0.01 for float tolerance
       return NextResponse.json({ 
         error: `Cannot pay more than remaining balance (${liveRemainingBalance.toFixed(2)} EGP). Total is now ${liveTotalCalculated.toFixed(2)} EGP.` 
       }, { status: 400 });
@@ -257,11 +257,16 @@ export const POST = requirePermission(async (request: Request, { user }) => {
 
     if (paymentError) throw paymentError;
 
-    // 5. Update total_paid_so_far atomically
+    // 5. Update total_paid_so_far atomically; if force_settle, also set is_settled = true
     const newTotalPaid = totalPaidSoFar + Number(amount_paid);
+    const updatePayload: Record<string, any> = { total_paid_so_far: newTotalPaid };
+    if (force_settle) {
+      updatePayload.is_settled = true;
+      console.log(`[PAYROLL] Force-settle applied for record ${payroll_record_id}. Paid: ${amount_paid}, Due: ${liveRemainingBalance.toFixed(2)}`);
+    }
     const { error: updateError } = await supabaseService
       .from('payroll_records')
-      .update({ total_paid_so_far: newTotalPaid })
+      .update(updatePayload)
       .eq('id', payroll_record_id);
 
     if (updateError) throw updateError;

@@ -59,12 +59,12 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
 
     // ✅ Fix: If status is cancelled or no_show, release the slots in booking_slots table and remove revenue
     if (status === 'cancelled' || status === 'no_show') {
-      const { error: slotError } = await supabaseService
+      await supabaseService
         .from('booking_slots')
         .update({ released: true })
         .eq('booking_id', id);
 
-      // Remove revenue
+      // Remove revenue from booking record
       await supabaseService
         .from('bookings')
         .update({
@@ -75,11 +75,17 @@ export const PATCH = requirePermission(async (request: Request, { user, params }
           deposit_status: 'pending'
         })
         .eq('id', id);
-      
-      if (slotError) {
-        console.error("[SLOT_RELEASE_ERROR]", slotError);
-        // We don't fail the request since the status was updated, 
-        // but this is why future bookings might fail.
+
+      // ✅ Fix B: Reverse commission — delete shift_game_log entries so payroll is not overcounted
+      const { error: sglError } = await supabaseService
+        .from('shift_game_log')
+        .delete()
+        .eq('booking_id', id);
+
+      if (sglError) {
+        console.error('[SHIFT_LOG_REVERSAL_ERROR] Non-critical:', sglError);
+      } else {
+        console.log(`[SHIFT_LOG] Commission reversed for booking ${id} on status → ${status}`);
       }
     }
 

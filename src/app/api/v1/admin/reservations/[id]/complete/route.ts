@@ -111,15 +111,26 @@ export const POST = requirePermission(async (request: Request, { user, params })
             .maybeSingle();
 
           if (activeShift) {
-            await supabaseService.from('shift_game_log').insert({
-              shift_id: activeShift.id,
-              booking_id: booking.id,
-              booking_code: booking.booking_code,
-              game_name: updated.game_name || 'Game',
-              game_completed_at: new Date().toISOString(),
-              game_revenue: splitRevenue,
-              commission_amount: commissionAmount, // Required by DB
-            });
+            // Guard: skip insert if a log already exists for this booking (prevents duplicates on re-complete)
+            const { data: existingLog } = await supabaseService
+              .from('shift_game_log')
+              .select('id')
+              .eq('booking_id', booking.id)
+              .maybeSingle();
+
+            if (!existingLog) {
+              await supabaseService.from('shift_game_log').insert({
+                shift_id: activeShift.id,
+                booking_id: booking.id,
+                booking_code: booking.booking_code,
+                game_name: updated.game_name || 'Game',
+                game_completed_at: new Date().toISOString(),
+                game_revenue: splitRevenue,
+                commission_amount: commissionAmount,
+              });
+            } else {
+              console.log(`[SHIFT_LOG] Entry already exists for booking ${booking.booking_code} — skipping duplicate.`);
+            }
           }
         }
       }

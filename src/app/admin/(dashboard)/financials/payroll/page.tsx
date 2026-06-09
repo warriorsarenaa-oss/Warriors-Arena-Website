@@ -16,6 +16,7 @@ export default function PayrollPage() {
   const [paymentModal, setPaymentModal] = useState<{ isOpen: boolean; staffPayroll: any; amount: string; notes: string } | null>(null);
   const [historyModal, setHistoryModal] = useState<{ isOpen: boolean; staffPayroll: any } | null>(null);
   const [pushModal, setPushModal] = useState<{ isOpen: boolean; isProcessing: boolean } | null>(null);
+  const [writeOffModal, setWriteOffModal] = useState<{ isOpen: boolean; amount: number; due: number; staffPayroll: any; notes: string } | null>(null);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -44,40 +45,26 @@ export default function PayrollPage() {
 
   useEffect(() => { loadData(); }, [currentWeek]);
 
-  const submitPayment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!paymentModal) return;
+  const WRITEOFF_THRESHOLD = 50; // EGP — configurable
 
-    const { staffPayroll, notes } = paymentModal;
-    const amount = parseFloat(paymentModal.amount);
-
-    if (!amount || amount <= 0) {
-      alert(`Payment amount must be greater than 0 EGP.`);
-      return;
-    }
-
-    // Allow the server to be the source of truth for remaining balance validation
-    // (handles the case where total_calculated_payroll changed since page load)
+  const processPayment = async (staffPayroll: any, amount: number, notes: string, forceSettle: boolean) => {
     setIsProcessing(staffPayroll.staff.id);
-    setPaymentModal(null);
-
     try {
-      const res = await fetch("/api/v1/admin/staff/payroll", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/v1/admin/staff/payroll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           payroll_record_id: staffPayroll.id,
           amount_paid: amount,
-          payment_method: "cash",
-          notes: notes || `Weekly payroll partial payment`
+          payment_method: 'cash',
+          notes: notes || (forceSettle ? 'Weekly payroll — write-off settlement' : 'Weekly payroll payment'),
+          force_settle: forceSettle,
         })
       });
-
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "Payment failed");
+        throw new Error(errData.error || 'Payment failed');
       }
-
       await loadData();
     } catch (err: any) {
       console.error(err);
@@ -85,6 +72,32 @@ export default function PayrollPage() {
     } finally {
       setIsProcessing(null);
     }
+  };
+
+  const submitPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!paymentModal) return;
+
+    const { staffPayroll, notes } = paymentModal;
+    const amount = parseFloat(paymentModal.amount);
+    const due = Number(staffPayroll.remaining_balance);
+
+    if (!amount || amount <= 0) {
+      alert('Payment amount must be greater than 0 EGP.');
+      return;
+    }
+
+    const diff = Math.abs(due - amount);
+
+    // If there is a discrepancy within the write-off threshold, intercept and show confirmation
+    if (diff > 0.01 && diff <= WRITEOFF_THRESHOLD) {
+      setPaymentModal(null);
+      setWriteOffModal({ isOpen: true, amount, due, staffPayroll, notes });
+      return;
+    }
+
+    setPaymentModal(null);
+    await processPayment(staffPayroll, amount, notes, false);
   };
 
   const confirmPush = async () => {
@@ -167,8 +180,8 @@ export default function PayrollPage() {
             const remainingBalance = Number(p.remaining_balance || 0);
             const alreadyPaid = Number(p.total_paid_so_far || 0);
             const totalEarned = Number(p.total_calculated_payroll || 0);
-            // Fully paid = paid amount matches or exceeds calculated total (with float tolerance)
-            const isFullyPaid = totalEarned > 0 && alreadyPaid >= totalEarned - 0.01;
+            // Fully paid = paid amount matches or exceeds calculated total (with float tolerance) OR is_settled flag set
+            const isFullyPaid = (totalEarned > 0 && alreadyPaid >= totalEarned - 0.01) || p.is_settled;
             const isOverpaid = alreadyPaid > totalEarned + 0.01;
 
             return (
@@ -268,6 +281,75 @@ export default function PayrollPage() {
               </WAButton>
             </div>
           )}
+
+      {/* Write-Off Confirmation Modal */}
+      {writeOffModal && writeOffModal.isOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <WAPanel className="max-w-md w-full p-8 border-wa-orange/30 relative shadow-2xl shadow-wa-orange/10">
+            <button onClick={() => setWriteOffModal(null)} className="absolute top-6 right-6 opacity-50 hover:opacity-100 transition-opacity">
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-wa-orange/10 rounded border border-wa-orange/30">
+                <AlertCircle className="w-6 h-6 text-wa-orange" />
+              </div>
+              <div>
+                <h3 className="font-bold uppercase tracking-widest text-wa-orange">Settlement Write-Off</h3>
+                <p className="text-[10px] opacity-50 uppercase tracking-widest font-mono">For {writeOffModal.staffPayroll.staff.full_name}</p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-white/5 rounded-xl border border-white/10 mb-6 font-mono text-sm flex flex-col gap-3">
+              <div className="flex justify-between">
+                <span className="opacity-50">Amount Due</span>
+                <span className="font-bold">{writeOffModal.due.toLocaleString(undefined, { maximumFractionDigits: 2 })} EGP</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="opacity-50">You Are Paying</span>
+                <span className="font-bold text-wa-green">{writeOffModal.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })} EGP</span>
+              </div>
+              <div className="border-t border-white/10 pt-3 flex justify-between">
+                <span className="opacity-50">
+                  {writeOffModal.amount < writeOffModal.due ? 'Written Off (Shortfall)' : 'Excess Noted'}
+                </span>
+                <span className={writeOffModal.amount < writeOffModal.due ? 'text-wa-orange font-bold' : 'text-wa-green font-bold'}>
+                  {Math.abs(writeOffModal.due - writeOffModal.amount).toLocaleString(undefined, { maximumFractionDigits: 2 })} EGP
+                </span>
+              </div>
+            </div>
+
+            <p className="text-sm opacity-60 mb-6 leading-relaxed">
+              {writeOffModal.amount < writeOffModal.due
+                ? `You are paying ${writeOffModal.amount.toLocaleString()} of ${writeOffModal.due.toLocaleString()} EGP. The remaining ${Math.abs(writeOffModal.due - writeOffModal.amount).toLocaleString(undefined, { maximumFractionDigits: 2 })} EGP will be written off and this week marked settled.`
+                : `You are paying ${writeOffModal.amount.toLocaleString()} of ${writeOffModal.due.toLocaleString()} EGP. The ${Math.abs(writeOffModal.due - writeOffModal.amount).toLocaleString(undefined, { maximumFractionDigits: 2 })} EGP excess will be noted. Week marked as settled.`
+              }
+            </p>
+
+            <div className="flex gap-4">
+              <WAButton
+                type="button"
+                variant="ghost"
+                onClick={() => setWriteOffModal(null)}
+                className="flex-1 border-wa-text/20"
+              >
+                CANCEL
+              </WAButton>
+              <WAButton
+                type="button"
+                onClick={async () => {
+                  const { amount, notes, staffPayroll } = writeOffModal;
+                  setWriteOffModal(null);
+                  await processPayment(staffPayroll, amount, notes, true);
+                }}
+                className="flex-1 bg-wa-orange text-black font-bold"
+              >
+                CONFIRM WRITE-OFF
+              </WAButton>
+            </div>
+          </WAPanel>
+        </div>
+      )}
         </div>
       )}
 
@@ -307,8 +389,8 @@ export default function PayrollPage() {
                   type="number" 
                   min="0.01" 
                   step="0.01"
-                  max={paymentModal.staffPayroll.remaining_balance}
-                  required 
+                   max={undefined}
+                   required 
                   value={paymentModal.amount} 
                   onChange={(e) => setPaymentModal({ ...paymentModal, amount: e.target.value })}
                   className="bg-transparent border border-wa-green/30 rounded-xl p-4 text-xl font-mono text-wa-green outline-none focus:border-wa-green"
