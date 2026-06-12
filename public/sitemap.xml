@@ -2,17 +2,17 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://warriorsarena.com/en</loc>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://warriorsarena.com/ar" />
+    <loc>https://warriorsarenabookings.online/en</loc>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://warriorsarenabookings.online/ar" />
   </url>
   <url>
-    <loc>https://warriorsarena.com/ar</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://warriorsarena.com/en" />
+    <loc>https://warriorsarenabookings.online/ar</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://warriorsarenabookings.online/en" />
   </url>
   <url>
-    <loc>https://warriorsarena.com/en/book</loc>
+    <loc>https://warriorsarenabookings.online/en/book</loc>
   </url>
   <url>
-    <loc>https://warriorsarena.com/ar/book</loc>
+    <loc>https://warriorsarenabookings.online/ar/book</loc>
   </url>
 </urlset>

@@ -142,7 +142,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
         entity_type: "operating_hours",
         entity_id: result.id,
         actor_user_id: user.id,
-        actor_email: user.email || 'admin@warriors-arena.com',
+        actor_email: user.email || 'Warriors.arena.eg@gmail.com',
         before_state: existingRow || null,
         after_state: result,
         ip_address: request.headers.get("x-forwarded-for") || "unknown",

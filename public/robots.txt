@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/
 
-Sitemap: https://warriorsarena.com/sitemap.xml
+Sitemap: https://warriorsarenabookings.online/sitemap.xml

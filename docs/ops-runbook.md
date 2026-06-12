@@ -42,7 +42,7 @@
 
 ## Monitoring & Alerts
 
-- **UptimeRobot**: Ping `https://warriorsarena.com/en` every 5 min
+- **UptimeRobot**: Ping `https://warriorsarenabookings.online/en` every 5 min
 - **Sentry**: All CRITICAL errors → email notification
 - **Meta Pixel**: Monitor event counts daily
 - **Admin**: Check `audit_log` weekly for unusual patterns

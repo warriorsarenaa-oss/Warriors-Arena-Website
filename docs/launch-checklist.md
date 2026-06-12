@@ -92,8 +92,8 @@
 ### Go Live
 - [ ] Super admin password changed from default
 - [ ] Domain switched to production
-- [ ] Verify https://warriorsarena.com/en loads
-- [ ] Verify https://warriorsarena.com/ar loads
+- [ ] Verify https://warriorsarenabookings.online/en loads
+- [ ] Verify https://warriorsarenabookings.online/ar loads
 - [ ] Check Sentry: no errors
 - [ ] Check UptimeRobot: status = green
 

@@ -97,7 +97,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
         entity_type: "bundles",
         entity_id: newBundle.id,
         actor_user_id: user.id,
-        actor_email: user.email || 'admin@warriors-arena.com',
+        actor_email: user.email || 'Warriors.arena.eg@gmail.com',
         after_state: newBundle,
         ip_address: request.headers.get("x-forwarded-for") || "unknown",
         user_agent: request.headers.get("user-agent") || "unknown",

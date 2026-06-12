@@ -87,7 +87,7 @@ RECAPTCHA_SECRET_KEY=6Lc...secret
 
 **Setup:**
 1. Create Cloudflare account (free)
-2. Turnstile → Add Site → warriors-arena.com
+2. Turnstile → Add Site → warriorsarenabookings.online
 3. Copy keys
 
 **Cost:** Free unlimited for Turnstile. Free 1M assessments/month for reCAPTCHA.
@@ -190,7 +190,7 @@ Setup: https://paymob.com → create account → integrations. Takes 1-2 days fo
 **Where:** https://uptimerobot.com
 
 No API keys in code. You configure monitors in their dashboard:
-- HTTP(s) ping: `https://warriors-arena.com/api/health`
+- HTTP(s) ping: `https://warriorsarenabookings.online/api/health`
 - Interval: 5 minutes
 - Alert: Email when down
 
@@ -235,7 +235,7 @@ INSERT INTO system_settings (key, value) VALUES
   ('whatsapp_number', '{"number": "+201234567890"}'),
   ('instapay_identifier', '{"identifier": "warriors@instapay"}'),
   ('contact_phone', '{"number": "+201234567890"}'),
-  ('contact_email', '{"email": "hello@warriorsarena.com"}'),
+  ('contact_email', '{"email": "Warriors.arena.eg@gmail.com"}'),
   ('park_entry_fee_regular', '{"amount": 30.00, "currency": "EGP"}'),
   ('park_entry_fee_holiday', '{"amount": 50.00, "currency": "EGP"}'),
   ('deposit_percentage', '{"percentage": 25.00}');

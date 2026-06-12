@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Warriors Arena — Book Your Mission',
     description: "Laser Tag & Gel Blasters in Heliopolis, Cairo. Nightly sessions. 6 players max.",
-    url: 'https://warriorsarena.gg',
+    url: 'https://warriorsarenabookings.online',
     siteName: 'Warriors Arena',
     images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'Warriors Arena tactical arena' }],
     locale: 'en_US',

@@ -39,7 +39,7 @@ export const DELETE = requirePermission(async (request: Request, { user, params 
         entity_type: "operating_hours",
         entity_id: id,
         actor_user_id: user.id,
-        actor_email: user.email || 'admin@warriors-arena.com',
+        actor_email: user.email || 'Warriors.arena.eg@gmail.com',
         before_state: existingRow,
         after_state: null,
         ip_address: request.headers.get("x-forwarded-for") || "unknown",
