@@ -11,6 +11,8 @@ export default function PayrollPage() {
   const [payroll, setPayroll] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  // Tracks which staff member's commission tooltip is "tapped open" (mobile). Desktop uses hover.
+  const [openCommissionTip, setOpenCommissionTip] = useState<string | null>(null);
 
   // Modals state
   const [paymentModal, setPaymentModal] = useState<{ isOpen: boolean; staffPayroll: any; amount: string; notes: string } | null>(null);
@@ -220,12 +222,43 @@ export default function PayrollPage() {
                     </span>
                     <span className="font-bold text-sm">{Number(p.hours_pay).toLocaleString(undefined, { maximumFractionDigits: 2 })} EGP</span>
                   </div>
-                  <div className="flex flex-col border-l border-wa-text/5 pl-4" title={p.games?.map((g: any) => g.booking_code).join(', ')}>
+                  <div className="flex flex-col border-l border-wa-text/5 pl-4 relative group">
                     <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Commission</span>
-                    <span className="font-mono font-bold text-wa-green cursor-help">
+                    <button
+                      type="button"
+                      onClick={() => setOpenCommissionTip(openCommissionTip === p.staff.id ? null : p.staff.id)}
+                      className="font-mono font-bold text-wa-green cursor-help text-left w-fit underline decoration-dotted decoration-wa-green/40 underline-offset-4"
+                    >
                       {p.games_count} games
-                    </span>
+                    </button>
                     <span className="font-bold text-sm">{Number(p.commission_pay).toLocaleString(undefined, { maximumFractionDigits: 2 })} EGP</span>
+
+                    {/* Commission breakdown tooltip — hover on desktop, tap on mobile */}
+                    <div
+                      className={`absolute z-40 left-0 top-full mt-2 w-60 max-w-[80vw] p-4 rounded-xl bg-wa-bg/95 border border-wa-green/30 shadow-2xl shadow-wa-green/10 backdrop-blur-md font-mono text-wa-green ${openCommissionTip === p.staff.id ? 'block' : 'hidden'} group-hover:block`}
+                    >
+                      <div className="flex justify-between items-baseline text-xs font-bold uppercase tracking-widest mb-2">
+                        <span>Commission</span>
+                        <span>{Number(p.commission_pay).toLocaleString(undefined, { maximumFractionDigits: 2 })} EGP</span>
+                      </div>
+                      <div className="border-t border-wa-green/20 my-2" />
+                      {p.games && p.games.length > 0 ? (
+                        <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1">
+                          {p.games.map((g: any, gi: number) => (
+                            <div key={g.id || g.booking_code || gi} className="flex justify-between items-baseline gap-3 text-[11px]">
+                              <span className="text-wa-green/90 whitespace-nowrap">{g.booking_code || '—'}</span>
+                              <span className="text-wa-text/70 whitespace-nowrap">
+                                {Number(g.commission_amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} EGP
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-[11px] text-wa-text/40 italic">No commissioned games this week</div>
+                      )}
+                      <div className="border-t border-wa-green/20 my-2" />
+                      <div className="text-[10px] uppercase tracking-widest text-wa-text/50">{p.games_count} games</div>
+                    </div>
                   </div>
                   <div className="flex flex-col border-l border-wa-text/5 pl-4">
                     <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Total Earned</span>

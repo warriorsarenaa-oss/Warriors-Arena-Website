@@ -177,7 +177,8 @@ export const GET = requirePermission(async (request: Request) => {
           is_settled: record.is_settled || false,
           previously_pushed_to_expenses: Number(record.previously_pushed_to_expenses || 0),
           remaining_balance: remainingBalance,
-          payment_history: record.payroll_payments || []
+          payment_history: record.payroll_payments || [],
+          games: agg.games // Pass games to frontend for the tooltip
         });
       });
     }
@@ -243,20 +244,24 @@ export const POST = requirePermission(async (request: Request, { user }) => {
       }, { status: 400 });
     }
 
-    // 4. Insert payment ledger entry
-    const { data: payment, error: paymentError } = await supabaseService
-      .from('payroll_payments')
-      .insert({
-        payroll_record_id,
-        amount_paid,
-        paid_by: user.id,
-        payment_method: payment_method || 'cash',
-        notes: notes || ''
-      })
-      .select()
-      .single();
+    // 4. Insert payment ledger entry (ONLY if amount > 0)
+    let payment = null;
+    if (amount_paid > 0) {
+      const { data: p, error: paymentError } = await supabaseService
+        .from('payroll_payments')
+        .insert({
+          payroll_record_id,
+          amount_paid,
+          paid_by: user.id,
+          payment_method: payment_method || 'cash',
+          notes: notes || ''
+        })
+        .select()
+        .single();
 
-    if (paymentError) throw paymentError;
+      if (paymentError) throw paymentError;
+      payment = p;
+    }
 
     // 5. Update total_paid_so_far atomically; if force_settle, also set is_settled = true
     const newTotalPaid = totalPaidSoFar + Number(amount_paid);
