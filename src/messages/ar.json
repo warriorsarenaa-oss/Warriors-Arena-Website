@@ -245,5 +245,18 @@
       "depositNote": "يُدفع عند الوصول للساحة",
       "balanceDue": "المبلغ للدفع"
     }
+  },
+  "TrackBooking": {
+    "trackBooking": "تتبع حجزك",
+    "trackBookingTitle": "تابع حجزك",
+    "trackBookingSubtitle": "أدخل رقم التليفون اللي اتحجز بيه",
+    "trackBookingPhone": "رقم التليفون",
+    "trackBookingSearch": "ابحث",
+    "trackBookingNotFound": "مفيش حجوزات لهذا الرقم",
+    "trackBookingResult": "حجوزاتك",
+    "trackBookingCode": "كود الحجز",
+    "trackBookingStatus_completed": "مكتمل",
+    "trackBookingStatus_confirmed": "مؤكد",
+    "trackBookingStatus_cancelled": "ملغي"
   }
 }

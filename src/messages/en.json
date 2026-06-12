@@ -243,5 +243,18 @@
       "depositNote": "Payable on arrival at venue",
       "balanceDue": "TOTAL TO PAY"
     }
+  },
+  "TrackBooking": {
+    "trackBooking": "Track Booking",
+    "trackBookingTitle": "Track Your Booking",
+    "trackBookingSubtitle": "Enter the phone number used when booking",
+    "trackBookingPhone": "Phone Number",
+    "trackBookingSearch": "Search",
+    "trackBookingNotFound": "No bookings found for this number",
+    "trackBookingResult": "Your Bookings",
+    "trackBookingCode": "Booking Code",
+    "trackBookingStatus_completed": "Completed",
+    "trackBookingStatus_confirmed": "Confirmed",
+    "trackBookingStatus_cancelled": "Cancelled"
   }
 }

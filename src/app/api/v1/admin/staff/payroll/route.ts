@@ -174,6 +174,7 @@ export const GET = requirePermission(async (request: Request) => {
           commission_pay: agg.commission_pay,
           total_calculated_payroll: totalCalculated,
           total_paid_so_far: totalPaid,
+          is_settled: record.is_settled || false,
           previously_pushed_to_expenses: Number(record.previously_pushed_to_expenses || 0),
           remaining_balance: remainingBalance,
           payment_history: record.payroll_payments || []

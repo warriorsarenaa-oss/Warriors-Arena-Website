@@ -15,6 +15,7 @@ export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const locale = params.locale as string;
   const t = useTranslations("Landing.Nav");
+  const tTrack = useTranslations("TrackBooking");
   const { openWizard } = useBooking();
 
   useEffect(() => {
@@ -82,6 +83,10 @@ export const Navbar: React.FC = () => {
             {locale === "en" ? "AR" : "EN"}
           </button>
 
+          <Link href={`/${locale}/track`} className="hidden md:flex items-center gap-1.5 border border-transparent text-wa-text-dim px-3 py-2 text-[12px] font-mono uppercase tracking-wider hover:text-wa-green transition-colors bg-transparent cursor-pointer no-underline">
+            {tTrack("trackBooking")}
+          </Link>
+
           {/* Book CTA */}
           <WAButton variant="primary" size="sm" type="button" onClick={() => {
             if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
@@ -124,6 +129,13 @@ export const Navbar: React.FC = () => {
             </a>
           ))}
           <div className="h-px bg-wa-line" />
+          <Link
+            href={`/${locale}/track`}
+            onClick={() => setMenuOpen(false)}
+            className="w-full py-4 text-center border border-wa-line text-wa-text-dim hover:text-wa-green transition-colors uppercase tracking-widest no-underline font-mono text-sm"
+          >
+            {tTrack("trackBooking")}
+          </Link>
           <WAButton type="button" className="w-full py-4 text-base" onClick={() => {
             if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
               (window as any).fbq("track", "InitiateCheckout", {

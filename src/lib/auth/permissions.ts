@@ -60,7 +60,8 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
     return { role: null, permissionKeys: [], isActive: false };
   }
 
-  const role = userData.roles as any;
+  const rawRoleData = userData.roles as any;
+  const role = Array.isArray(rawRoleData) ? rawRoleData[0] : rawRoleData;
   const roleName = role?.name || null;
   const isActive = userData.is_active === true;
 
