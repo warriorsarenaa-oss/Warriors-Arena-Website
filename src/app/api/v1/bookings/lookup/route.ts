@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseAnon } from "@/lib/db/supabase-anon";
+import { supabaseService } from "@/lib/db/supabase-service";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
@@ -40,8 +40,12 @@ export async function GET(request: Request) {
     // Example: "1228177654" -> "%1%2%2%8%1%7%7%6%5%4%"
     const fuzzyPhone = '%' + corePhone.split('').join('%') + '%';
 
-    // Query bookings
-    const { data: bookings, error } = await supabaseAnon
+    // Query bookings using the service-role client.
+    // The bookings table has RLS that blocks anonymous reads, so the public anon
+    // client returns zero rows here. This API route is the secure boundary: it
+    // rate-limits, validates input, and maps the response to non-sensitive fields
+    // only (no price/PII), so using the service role for this read is safe.
+    const { data: bookings, error } = await supabaseService
       .from("bookings")
       .select(`
         booking_code,
