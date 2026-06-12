@@ -109,8 +109,19 @@ export default function TrackBookingPage() {
   };
 
   return (
-    <div className={`min-h-screen bg-wa-bg pt-32 pb-20 px-6 ${isRtl ? "text-right" : "text-left"}`} dir={isRtl ? "rtl" : "ltr"}>
+    <div className={`min-h-screen bg-wa-bg pt-20 pb-20 px-6 ${isRtl ? "text-right" : "text-left"}`} dir={isRtl ? "rtl" : "ltr"}>
       <div className="max-w-2xl mx-auto flex flex-col gap-8">
+        {/* Back Button */}
+        <div className="mb-2">
+          <WAButton
+            variant="ghost"
+            className="px-0 text-wa-text-dim hover:text-wa-green border-none flex items-center gap-2"
+            onClick={() => window.location.href = `/${locale}`}
+          >
+            {isRtl ? "رجوع للرئيسية" : "BACK TO HOME"}
+          </WAButton>
+        </div>
+
         {/* Header */}
         <div className="flex flex-col gap-2">
           <h1 className="font-archivo text-3xl md:text-5xl uppercase tracking-tight text-wa-text">

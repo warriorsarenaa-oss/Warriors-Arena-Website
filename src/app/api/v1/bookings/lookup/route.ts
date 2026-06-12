@@ -33,18 +33,12 @@ export async function GET(request: Request) {
       );
     }
 
-    // Normalize Egyptian numbers
-    let normalizedPhone = numericPhone;
-    if (numericPhone.startsWith("01") && numericPhone.length === 11) {
-      normalizedPhone = "+20" + numericPhone.substring(1);
-    } else if (numericPhone.startsWith("00201")) {
-      normalizedPhone = "+" + numericPhone.substring(2);
-    } else if (numericPhone.startsWith("201")) {
-      normalizedPhone = "+" + numericPhone;
-    } else {
-      // Just keep original or add + if it looks like country code
-      normalizedPhone = rawPhone.startsWith("+") ? rawPhone : "+" + numericPhone;
-    }
+    // Extract core 10 digits (Egyptian mobile without leading 0 or +20)
+    const corePhone = numericPhone.length > 10 ? numericPhone.slice(-10) : numericPhone;
+    
+    // Create a fuzzy pattern to match numbers with any spaces/dashes between digits
+    // Example: "1228177654" -> "%1%2%2%8%1%7%7%6%5%4%"
+    const fuzzyPhone = '%' + corePhone.split('').join('%') + '%';
 
     // Query bookings
     const { data: bookings, error } = await supabaseAnon
@@ -62,7 +56,7 @@ export async function GET(request: Request) {
           name_ar
         )
       `)
-      .or(`customer_phone.ilike.%${numericPhone}%,customer_phone.ilike.%${normalizedPhone.replace('+', '%2B')}%`)
+      .ilike('customer_phone', fuzzyPhone)
       .order("booking_date", { ascending: false })
       .order("start_time", { ascending: false })
       .limit(20);

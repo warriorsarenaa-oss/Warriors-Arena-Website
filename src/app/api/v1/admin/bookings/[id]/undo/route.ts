@@ -44,6 +44,9 @@ export const POST = requirePermission(async (request: Request, { user, params })
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
+  // ✅ Remove commission logs since the booking is no longer completed
+  await supabaseService.from('shift_game_log').delete().eq('booking_id', id);
+
   // 3. Log the Undo action explicitly
   await logAuditAction({
     actor_user_id: user.id,

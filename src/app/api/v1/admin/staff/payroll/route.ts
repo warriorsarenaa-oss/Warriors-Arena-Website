@@ -194,7 +194,7 @@ export const POST = requirePermission(async (request: Request, { user }) => {
     const body = await request.json();
     const { payroll_record_id, amount_paid, payment_method, notes, force_settle } = body;
 
-    if (!payroll_record_id || !amount_paid || amount_paid <= 0) {
+    if (!payroll_record_id || amount_paid === undefined || amount_paid < 0 || (amount_paid === 0 && !force_settle)) {
       return NextResponse.json({ error: "Invalid payment details" }, { status: 400 });
     }
 

@@ -46,6 +46,9 @@ export const POST = requirePermission(async (request: Request, { user, params })
       return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
     }
 
+    // ✅ Remove commission logs so staff are not paid for no-shows
+    await supabaseService.from('shift_game_log').delete().eq('booking_id', booking.id);
+
     // Release slots
     await supabaseService
       .from('booking_slots')

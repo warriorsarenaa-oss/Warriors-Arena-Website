@@ -83,6 +83,9 @@ export const POST = requirePermission(async (
       console.error('❌ Cancellation failed:', cancelError);
       return NextResponse.json({ error: 'Failed to cancel booking', details: cancelError.message }, { status: 500 });
     }
+
+    // ✅ Remove commission logs so staff are not paid for cancelled games
+    await supabase.from('shift_game_log').delete().eq('booking_id', booking.id);
     
     // Release slots in booking_slots table
     await supabase

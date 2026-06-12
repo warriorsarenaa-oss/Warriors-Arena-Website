@@ -220,9 +220,9 @@ export default function PayrollPage() {
                     </span>
                     <span className="font-bold text-sm">{Number(p.hours_pay).toLocaleString(undefined, { maximumFractionDigits: 2 })} EGP</span>
                   </div>
-                  <div className="flex flex-col border-l border-wa-text/5 pl-4">
+                  <div className="flex flex-col border-l border-wa-text/5 pl-4" title={p.games?.map((g: any) => g.booking_code).join(', ')}>
                     <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Commission</span>
-                    <span className="font-mono font-bold text-wa-green">
+                    <span className="font-mono font-bold text-wa-green cursor-help">
                       {p.games_count} games
                     </span>
                     <span className="font-bold text-sm">{Number(p.commission_pay).toLocaleString(undefined, { maximumFractionDigits: 2 })} EGP</span>
