@@ -62,7 +62,7 @@ export async function GET(request: Request) {
           name_ar
         )
       `)
-      .or(`customer_phone.ilike.%${numericPhone}%,customer_phone.ilike.%${normalizedPhone}%`)
+      .or(`customer_phone.ilike.%${numericPhone}%,customer_phone.ilike.%${normalizedPhone.replace('+', '%2B')}%`)
       .order("booking_date", { ascending: false })
       .order("start_time", { ascending: false })
       .limit(20);

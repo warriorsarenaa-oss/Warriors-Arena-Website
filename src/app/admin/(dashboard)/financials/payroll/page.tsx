@@ -409,8 +409,28 @@ export default function PayrollPage() {
               </div>
 
               <WAButton type="submit" className="w-full bg-wa-green text-black font-bold mt-4 py-4">
-                CONFIRM PAYMENT OF {paymentModal.amount} EGP
+                CONFIRM PAYMENT OF {paymentModal.amount || 0} EGP
               </WAButton>
+
+              {Number(paymentModal.staffPayroll.remaining_balance) > 0 && Number(paymentModal.staffPayroll.remaining_balance) <= WRITEOFF_THRESHOLD && (
+                <WAButton 
+                  type="button" 
+                  variant="ghost" 
+                  className="w-full border border-wa-orange/50 text-wa-orange hover:bg-wa-orange/10 font-bold py-4 mt-2"
+                  onClick={() => {
+                    setPaymentModal(null);
+                    setWriteOffModal({ 
+                      isOpen: true, 
+                      amount: 0, 
+                      due: Number(paymentModal.staffPayroll.remaining_balance), 
+                      staffPayroll: paymentModal.staffPayroll, 
+                      notes: 'Balance written off by admin directly' 
+                    });
+                  }}
+                >
+                  DROP {Number(paymentModal.staffPayroll.remaining_balance).toLocaleString()} EGP BALANCE
+                </WAButton>
+              )}
             </form>
           </WAPanel>
         </div>
