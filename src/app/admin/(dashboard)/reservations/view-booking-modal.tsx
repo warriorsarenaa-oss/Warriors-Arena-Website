@@ -38,7 +38,7 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showRefillModal, setShowRefillModal] = useState(false);
   const [staffOnShift, setStaffOnShift] = useState<any[]>([]);
-  const [leadStaffId, setLeadStaffId] = useState<string>('');
+  const [selectedStaffIds, setSelectedStaffIds] = useState<string[]>([]);
   const [discountType, setDiscountType] = useState<'flat' | 'percentage'>('flat');
   const [discountValue, setDiscountValue] = useState<number>(0);
   const [localBooking, setLocalBooking] = useState(booking);
@@ -79,9 +79,9 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
       if (res.ok) {
         const data = await res.json();
         setStaffOnShift(data);
-        // If only one person is on shift, auto-select them
+        // Auto-select all staff when there is only one on shift
         if (data.length === 1) {
-          setLeadStaffId(data[0].staff_id);
+          setSelectedStaffIds([data[0].staff_id]);
         }
       }
     } catch (err) {
@@ -147,7 +147,7 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
         discount_amount: discountAmount,
         final_amount_paid: totalToCollect,
         payment_method: 'cash',
-        lead_staff_id: leadStaffId || null
+        lead_staff_ids: selectedStaffIds,
       });
     }
   };
@@ -198,7 +198,7 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
               </h2>
               <p className="text-[10px] text-wa-text/40 uppercase tracking-tighter mt-1">Operational Data Retrieval</p>
             </div>
-            <button onClick={onClose} className="text-wa-text/60 hover:text-wa-green transition-colors p-2 hover:bg-white/5 rounded-full">
+            <button type="button" onClick={onClose} className="text-wa-text/60 hover:text-wa-green transition-colors p-2 hover:bg-white/5 rounded-full">
               <X className="w-6 h-6" />
             </button>
           </div>
@@ -371,33 +371,61 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
                   </section>
                 )}
 
-                {/* Lead Staff Selector for Commission */}
+                {/* Multi-Staff Commission Assignment */}
                 {localBooking.status === 'confirmed' && (
                   <section className="bg-wa-orange/5 border border-wa-orange/20 p-4 rounded-lg">
                     <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-wa-orange mb-4 flex items-center gap-2">
-                      <UserCheck className="w-4 h-4" /> Personnel Deployment Assignment
+                      <UserCheck className="w-4 h-4" /> Personnel Commission Assignment
                     </h4>
-                    
+
                     {staffOnShift.length > 0 ? (
                       <div className="space-y-3">
-                        <p className="text-[9px] text-wa-text/40 font-mono uppercase leading-relaxed">Select operative responsible for mission execution and commission credit:</p>
-                        <select
-                          value={leadStaffId}
-                          onChange={(e) => setLeadStaffId(e.target.value)}
-                          className="w-full bg-wa-bg border border-wa-orange/30 p-3 text-wa-text text-xs rounded outline-none focus:border-wa-orange appearance-none cursor-pointer"
-                        >
-                          <option value="">-- NO PERSONNEL ASSIGNED --</option>
-                          {staffOnShift.map((s) => (
-                            <option key={s.staff_id} value={s.staff_id}>
-                              {s.full_name.toUpperCase()} (STATION: {s.time})
-                            </option>
-                          ))}
-                        </select>
+                        <p className="text-[9px] text-wa-text/40 font-mono uppercase leading-relaxed">
+                          Select all operatives who ran this mission. Each selected operative receives the FULL commission independently.
+                        </p>
+                        <div className="space-y-2">
+                          {staffOnShift.map((s) => {
+                            const checked = selectedStaffIds.includes(s.staff_id);
+                            return (
+                              <label
+                                key={s.staff_id}
+                                className={`flex items-center gap-3 p-3 rounded border cursor-pointer transition-colors ${
+                                  checked
+                                    ? 'bg-wa-orange/10 border-wa-orange/50'
+                                    : 'bg-wa-bg border-wa-orange/20 hover:border-wa-orange/40'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedStaffIds(prev => [...prev, s.staff_id]);
+                                    } else {
+                                      setSelectedStaffIds(prev => prev.filter(id => id !== s.staff_id));
+                                    }
+                                  }}
+                                  className="w-4 h-4 accent-wa-orange cursor-pointer"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs text-wa-text font-archivo uppercase">{s.full_name}</div>
+                                  <div className="text-[9px] text-wa-text/40 font-mono">STATION: {s.time}</div>
+                                </div>
+                                {checked && (
+                                  <span className="text-[8px] text-wa-orange font-mono uppercase tracking-wider">FULL COMMISSION</span>
+                                )}
+                              </label>
+                            );
+                          })}
+                        </div>
+                        {selectedStaffIds.length === 0 && (
+                          <p className="text-[9px] text-wa-text/30 font-mono italic">No assignment → commission auto-split between all on-shift staff.</p>
+                        )}
                       </div>
                     ) : (
                       <div className="text-wa-orange text-[9px] uppercase font-mono bg-wa-orange/10 p-3 border border-wa-orange/30 rounded flex items-start gap-3">
                         <AlertTriangle className="w-4 h-4 shrink-0" />
-                        <span>No personnel schedules detected for current deployment date. Financial commission recording is disabled.</span>
+                        <span>No personnel schedules detected for current deployment date. Commission auto-recording is disabled.</span>
                       </div>
                     )}
                   </section>
@@ -410,6 +438,7 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
           <div className="p-4 sm:p-6 border-t border-wa-green/20 bg-wa-bg/80 backdrop-blur-md z-10 flex flex-col sm:flex-row items-center gap-4">
             {localBooking.status === 'pending' && (
               <button
+                type="button"
                 onClick={handleConfirmDeposit}
                 disabled={isProcessing}
                 className="w-full sm:flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded uppercase tracking-[0.2em] text-[10px] transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(22,163,74,0.3)]"
@@ -421,6 +450,7 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
             {localBooking.status === 'confirmed' && (
               <div className="flex flex-col sm:flex-row w-full gap-4">
                 <button
+                  type="button"
                   onClick={handleComplete}
                   disabled={isProcessing}
                   className="w-full sm:flex-[2] bg-wa-green hover:bg-wa-green/90 text-wa-bg font-bold py-3 px-6 rounded uppercase tracking-[0.2em] text-[10px] transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,255,65,0.3)]"
@@ -430,6 +460,7 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
                 
                 {localBooking.games?.slug?.includes('gel') && (
                   <button
+                    type="button"
                     onClick={() => setShowRefillModal(true)}
                     disabled={isProcessing}
                     className="w-full sm:flex-1 bg-wa-surface border border-wa-green/30 text-wa-green hover:bg-wa-green/10 font-bold py-3 px-6 rounded uppercase tracking-[0.2em] text-[10px] transition-all flex items-center justify-center gap-2"
@@ -439,6 +470,7 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
                 )}
 
                 <button
+                  type="button"
                   onClick={handleNoShow}
                   disabled={isProcessing}
                   className="w-full sm:flex-1 border border-wa-orange text-wa-orange hover:bg-wa-orange/10 font-bold py-3 px-6 rounded uppercase tracking-[0.2em] text-[10px] transition-all"
@@ -450,6 +482,7 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
 
             {localBooking.status === 'completed' && (
               <button
+                type="button"
                 onClick={handleUndo}
                 disabled={isProcessing}
                 className="w-full sm:w-auto px-6 py-3 border border-wa-orange text-wa-orange hover:bg-wa-orange/10 font-bold rounded uppercase tracking-[0.2em] text-[10px] transition-all"
@@ -460,6 +493,7 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
 
             {['pending', 'confirmed'].includes(localBooking.status) && (
               <button
+                type="button"
                 onClick={() => setShowCancelModal(true)}
                 disabled={isProcessing}
                 className="w-full sm:w-auto px-6 py-3 border border-wa-error text-wa-error hover:bg-wa-error/10 font-bold rounded uppercase tracking-[0.2em] text-[10px] transition-all"
@@ -469,6 +503,7 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
             )}
 
             <button
+              type="button"
               onClick={onClose}
               className="w-full sm:w-auto sm:ml-auto px-8 py-3 border border-wa-text/20 text-wa-text/40 hover:text-wa-text hover:bg-wa-text/5 font-bold rounded uppercase tracking-[0.2em] text-[10px] transition-all"
             >
@@ -564,6 +599,7 @@ function CancelWithRefundModal({ booking, onClose, onSuccess }: any) {
 
         <div className="flex gap-4">
           <button
+            type="button"
             onClick={onClose}
             disabled={isSubmitting}
             className="flex-1 px-6 py-3 border border-wa-text/20 text-wa-text/60 hover:text-wa-text hover:bg-wa-text/5 font-bold rounded uppercase tracking-widest text-sm transition-all"
@@ -571,6 +607,7 @@ function CancelWithRefundModal({ booking, onClose, onSuccess }: any) {
             Abort
           </button>
           <button
+            type="button"
             onClick={handleCancel}
             disabled={isSubmitting}
             className="flex-1 px-6 py-3 bg-wa-error text-white font-bold rounded uppercase tracking-widest text-sm hover:bg-wa-error/90 transition-all"

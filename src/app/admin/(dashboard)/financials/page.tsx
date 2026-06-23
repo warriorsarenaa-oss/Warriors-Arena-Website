@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { format, startOfMonth, endOfMonth } from "date-fns";
-import { DollarSign, TrendingUp, TrendingDown, Plus, X, Trash2, Loader2, AlertCircle, User as UserIcon } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, Plus, X, Trash2, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
+import { SalaryCard } from "@/features/salaries/components/SalaryCard";
+import { SalariesFilterBar } from "@/features/salaries/components/SalariesFilterBar";
+import type { SalaryCardData } from "@/features/salaries/types";
 
 export default function FinancialsPage() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -13,7 +16,7 @@ export default function FinancialsPage() {
   const [toDate, setToDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
   const [overview, setOverview] = useState<any>({ realized_revenue: 0, total_expenses: 0, profit: 0, daily_revenue_data: [] });
   const [expenses, setExpenses] = useState<any[]>([]);
-  const [salaries, setSalaries] = useState<any[]>([]);
+  const [salaries, setSalaries] = useState<SalaryCardData[]>([]);
   const [showDetailedLogs, setShowDetailedLogs] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
@@ -53,7 +56,7 @@ export default function FinancialsPage() {
     alert("Delete functionality coming in next phase.");
   };
 
-  const totalPayroll = salaries.reduce((sum, s) => sum + s.amount, 0);
+  const totalPayroll = salaries.reduce((sum, s) => sum + s.totalPaid, 0);
 
   return (
     <div className="max-w-6xl mx-auto flex flex-col gap-8 pb-12">
@@ -89,6 +92,7 @@ export default function FinancialsPage() {
         {['overview', 'expenses', 'salaries'].map(tab => (
           <button 
             key={tab}
+            type="button"
             onClick={() => setActiveTab(tab)}
             className={`pb-4 uppercase tracking-widest text-xs font-bold border-b-2 transition-all relative ${
               activeTab === tab ? 'border-wa-green text-wa-green' : 'border-transparent text-wa-text/40 hover:text-wa-text'
@@ -197,7 +201,7 @@ export default function FinancialsPage() {
                           <td className="p-4 font-bold">{exp.title || exp.description}</td>
                           <td className="p-4 text-right font-bold text-wa-error">{Number(exp.amount).toLocaleString()} EGP</td>
                           <td className="p-4 text-center">
-                            <button onClick={() => handleDeleteExpense(exp.id)} className="text-wa-error/50 hover:text-wa-error transition-colors">
+                            <button type="button" onClick={() => handleDeleteExpense(exp.id)} className="text-wa-error/50 hover:text-wa-error transition-colors">
                               <Trash2 className="w-4 h-4 mx-auto" />
                             </button>
                           </td>
@@ -210,64 +214,32 @@ export default function FinancialsPage() {
           )}
 
           {activeTab === 'salaries' && (
-            <div className="flex flex-col gap-8 animate-in fade-in duration-300">
-               <div className="flex justify-between items-center">
-                 <h2 className="font-bold uppercase tracking-widest text-wa-green text-sm">Settled Payroll & Commissions</h2>
-                 <div className="flex gap-4 items-center">
-                    <div className="text-right">
-                      <div className="text-[10px] uppercase opacity-40 font-bold">Total Settled Payroll</div>
-                      <div className="text-lg font-bold font-mono text-wa-green">{totalPayroll.toLocaleString()} EGP</div>
-                    </div>
+            <div className="flex flex-col gap-6 animate-in fade-in duration-300">
+               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                 <div>
+                   <h2 className="font-bold uppercase tracking-widest text-wa-green text-sm">Payroll & Commissions</h2>
+                   <p className="text-[10px] opacity-40 uppercase mt-1">{salaries.length} staff member{salaries.length !== 1 ? 's' : ''} in period</p>
+                 </div>
+                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                   <SalariesFilterBar
+                     fromDate={fromDate}
+                     toDate={toDate}
+                     onSelect={(from, to) => { setFromDate(from); setToDate(to); }}
+                   />
+                   <div className="text-right shrink-0">
+                     <div className="text-[10px] uppercase opacity-40 font-bold">Total Paid</div>
+                     <div className="text-lg font-bold font-mono text-wa-green">{totalPayroll.toLocaleString()} EGP</div>
+                   </div>
                  </div>
                </div>
 
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {salaries.map(sal => (
-                    <WAPanel key={sal.id} className="p-6 border-wa-green/10 bg-wa-bg/40 flex flex-col gap-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-wa-green/10 rounded-full flex items-center justify-center border border-wa-green/20">
-                            <UserIcon className="w-5 h-5 text-wa-green" />
-                          </div>
-                          <div>
-                            <h3 className="font-bold uppercase tracking-widest text-sm">{sal.full_name}</h3>
-                            <p className="text-[10px] opacity-40 uppercase">@{sal.username}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                           <span className="text-[8px] px-1.5 py-0.5 bg-wa-green/20 text-wa-green rounded font-bold uppercase">Settled</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3 mt-2">
-                         <div className="flex justify-between text-xs border-b border-wa-green/5 pb-2">
-                           <span className="opacity-50 uppercase tracking-widest text-[10px]">Settlement Date</span>
-                           <span className="font-mono">{sal.date}</span>
-                         </div>
-                         <div className="flex justify-between text-xs border-b border-wa-green/5 pb-2">
-                           <span className="opacity-50 uppercase tracking-widest text-[10px]">Hours Pay ({sal.total_hours}h)</span>
-                           <span className="font-mono">{sal.hours_pay.toLocaleString()} EGP</span>
-                         </div>
-                         <div className="flex justify-between text-xs border-b border-wa-green/5 pb-2">
-                           <span className="opacity-50 uppercase tracking-widest text-[10px]">Commissions ({sal.games_count} missions)</span>
-                           <span className="font-mono text-wa-green">+{sal.commission_pay.toLocaleString()} EGP</span>
-                         </div>
-                         <div className="flex justify-between items-end pt-2">
-                           <span className="font-bold uppercase tracking-widest text-[10px] text-wa-green">Total Payout</span>
-                           <span className="text-2xl font-bold font-mono text-wa-green">{sal.amount.toLocaleString()} EGP</span>
-                         </div>
-                      </div>
-                      
-                      {sal.notes && (
-                        <div className="mt-2 p-3 bg-wa-bg rounded border border-wa-line text-[10px] text-wa-text/50 italic leading-relaxed">
-                          {sal.notes}
-                        </div>
-                      )}
-                    </WAPanel>
+                    <SalaryCard key={sal.staffId} data={sal} />
                   ))}
                   {salaries.length === 0 && (
                     <div className="col-span-full p-20 text-center border-2 border-dashed border-wa-line rounded-lg">
-                      <p className="opacity-30 italic font-mono uppercase tracking-widest">No settled payroll records found for this period.</p>
+                      <p className="opacity-30 italic font-mono uppercase tracking-widest">No payroll records found for this period.</p>
                       <Link href="/admin/financials/payroll">
                         <WAButton variant="ghost" className="mt-4">Go to Payroll Management</WAButton>
                       </Link>
@@ -321,7 +293,7 @@ function AddExpenseModal({ onClose, onSuccess }: { onClose: () => void, onSucces
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
       <WAPanel className="max-w-md w-full p-8 border-wa-green/50 bg-wa-bg relative shadow-2xl shadow-wa-green/10">
-        <button onClick={onClose} className="absolute top-4 right-4 text-wa-text/30 hover:text-wa-text transition-colors">
+        <button type="button" onClick={onClose} className="absolute top-4 right-4 text-wa-text/30 hover:text-wa-text transition-colors">
           <X className="w-5 h-5" />
         </button>
         
@@ -382,7 +354,7 @@ function SalaryModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
       <WAPanel className="max-w-lg w-full p-8 border-wa-green/50 bg-wa-bg relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-wa-text/30 hover:text-wa-text">
+        <button type="button" onClick={onClose} className="absolute top-4 right-4 text-wa-text/30 hover:text-wa-text">
           <X className="w-5 h-5" />
         </button>
         
@@ -420,7 +392,4 @@ function SalaryModal({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
-
-// Add these icons if missing from imports
-import { Activity } from "lucide-react";
 

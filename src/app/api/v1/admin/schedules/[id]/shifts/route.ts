@@ -33,20 +33,17 @@ export const POST = requirePermission(async (request: Request, { user, params })
   const { data: schedule } = await supabaseService.from('staff_schedules').select('is_published').eq('id', id).single();
   const isPublished = schedule?.is_published;
 
-  const { data, error } = await supabaseService
-    .from('staff_shifts')
-    .insert({
-      schedule_id: id,
-      staff_id,
-      shift_date,
-      start_time,
-      end_time,
-      notes,
-    })
-    .select()
-    .single();
+  // Use the transactional RPC so shift creation + retroactive commission inserts are atomic
+  const { data, error } = await supabaseService.rpc('insert_shift_with_retroactive_commission', {
+    p_schedule_id: id,
+    p_staff_id: staff_id,
+    p_shift_date: shift_date,
+    p_start_time: start_time,
+    p_end_time: end_time,
+    p_notes: notes ?? null,
+  });
 
-  if (error) return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+  if (error || !data) return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
 
   await logAuditAction({
     actor_user_id: user.id,

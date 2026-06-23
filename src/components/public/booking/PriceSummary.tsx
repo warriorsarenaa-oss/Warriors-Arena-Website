@@ -3,6 +3,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { formatNumber } from "@/lib/i18n/formatters";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { useVenueSettings } from "@/hooks/useVenueSettings";
+import { Info } from "lucide-react";
 
 interface PriceSummaryProps {
   gameName?: string;
@@ -39,20 +40,32 @@ export const PriceSummary: React.FC<PriceSummaryProps> = ({
   
   if (compact) {
     return (
-      <div className="bg-wa-bg/95 backdrop-blur-md border-t border-wa-green/30 p-3 sm:p-4 flex justify-between items-center w-full">
-        <div className="flex flex-col">
-          <span className="text-[9px] text-wa-text/40 font-mono uppercase tracking-tighter">
-            {gameName || "—"} · {pricingType === 'ammo' ? `${formatNumber(ammoCount || 0, locale)} ${locale === 'ar' ? 'طلقة' : 'BULLETS'}` : `${duration ? formatNumber(duration, locale) : "—"} ${locale === 'ar' ? 'دقيقة' : 'MIN'}`}
-          </span>
-          <span className="text-xs sm:text-sm font-archivo text-wa-text uppercase truncate max-w-[200px]">
-            {formatNumber(playerCount, locale)} {t("players")} {missionName && `+ ${missionName}`}
-          </span>
-        </div>
-        <div className="text-end">
-          <div className="text-[10px] text-wa-text/40 font-mono uppercase">{t("total")}</div>
-          <div className="text-base sm:text-lg font-archivo text-wa-green leading-none">
-            {formatNumber(total, locale)} <small className="text-[10px]">EGP</small>
+      <div className="bg-wa-bg/95 backdrop-blur-md border-t border-wa-green/30 flex flex-col w-full">
+        {/* Main summary row */}
+        <div className="flex justify-between items-center px-3 sm:px-4 pt-2.5 pb-2">
+          <div className="flex flex-col">
+            <span className="text-[9px] text-wa-text/40 font-mono uppercase tracking-tighter">
+              {gameName || "—"} · {pricingType === 'ammo' ? `${formatNumber(ammoCount || 0, locale)} ${locale === 'ar' ? 'طلقة' : 'BULLETS'}` : `${duration ? formatNumber(duration, locale) : "—"} ${locale === 'ar' ? 'دقيقة' : 'MIN'}`}
+            </span>
+            <span className="text-xs sm:text-sm font-archivo text-wa-text uppercase truncate max-w-[200px]">
+              {formatNumber(playerCount, locale)} {t("players")} {missionName && `+ ${missionName}`}
+            </span>
           </div>
+          <div className="text-end">
+            <div className="text-[10px] text-wa-text/40 font-mono uppercase">{t("total")}</div>
+            <div className="text-base sm:text-lg font-archivo text-wa-green leading-none">
+              {formatNumber(total, locale)} <small className="text-[10px]">EGP</small>
+            </div>
+          </div>
+        </div>
+        {/* Entrance fee notice — replaces the large StrategicNotice banner */}
+        <div className="flex items-center gap-1.5 px-3 sm:px-4 pb-2 border-t border-wa-orange/10 pt-1.5">
+          <Info className="w-3 h-3 text-wa-orange/70 flex-shrink-0" />
+          <span className="text-[9px] text-wa-text/40 font-mono leading-tight">
+            {locale === 'ar'
+              ? '+30–50 جنيه/فرد رسوم دخول الحديقة (غير مشمولة)'
+              : '+30–50 EGP/person park entrance fee — not included'}
+          </span>
         </div>
       </div>
     );
