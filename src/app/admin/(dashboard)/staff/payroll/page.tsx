@@ -5,10 +5,13 @@ import { ChevronLeft, ChevronRight, Calendar, User as UserIcon, CheckCircle2, Al
 import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
 import { format, startOfWeek, addDays } from "date-fns";
-import { formatEGP } from "@/lib/utils/format";
+import { formatEGP, roundEGP } from "@/lib/utils/format";
+import { CommissionBreakdownPopover } from "@/features/payroll/components/CommissionBreakdownPopover";
 
 export default function PayrollPage() {
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
+  const weekStartStr = format(currentWeek, "yyyy-MM-dd");
+  const weekEndStr   = format(addDays(currentWeek, 6), "yyyy-MM-dd");
   const [payroll, setPayroll] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
@@ -24,8 +27,6 @@ export default function PayrollPage() {
     setLoading(true);
     setError(null);
     try {
-      const weekStartStr = format(currentWeek, "yyyy-MM-dd");
-      const weekEndStr = format(addDays(currentWeek, 6), "yyyy-MM-dd");
       const res = await fetch('/api/v1/admin/staff/payroll/recalculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -54,7 +55,7 @@ export default function PayrollPage() {
     if (!paymentModal) return;
 
     const { staffPayroll, notes } = paymentModal;
-    const amount = parseFloat(paymentModal.amount);
+    const amount = roundEGP(parseFloat(paymentModal.amount));
 
     if (!amount || amount <= 0) {
       alert(`Payment amount must be greater than 0 EGP.`);
@@ -212,13 +213,14 @@ export default function PayrollPage() {
                     </span>
                     <span className="font-bold text-sm">{formatEGP(Number(p.hours_pay))} EGP</span>
                   </div>
-                  <div className="flex flex-col border-l border-wa-text/5 pl-4">
-                    <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Commission</span>
-                    <span className="font-mono font-bold text-wa-green">
-                      {p.games_count} games
-                    </span>
-                    <span className="font-bold text-sm">{formatEGP(Number(p.commission_pay))} EGP</span>
-                  </div>
+                  <CommissionBreakdownPopover
+                    staffId={p.staff.id}
+                    weekStart={weekStartStr}
+                    weekEnd={weekEndStr}
+                    gamesCount={p.games_count}
+                    commissionPay={Number(p.commission_pay)}
+                    className="border-l border-wa-text/5 pl-4"
+                  />
                   <div className="flex flex-col border-l border-wa-text/5 pl-4">
                     <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Total Earned</span>
                     <span className="text-xl font-mono font-bold text-wa-text">{formatEGP(totalEarned)} EGP</span>
@@ -298,11 +300,11 @@ export default function PayrollPage() {
               <div className="grid grid-cols-2 gap-4 p-4 bg-white/5 rounded-xl border border-white/10 mb-2">
                 <div>
                   <div className="text-[10px] uppercase opacity-50 mb-1 tracking-widest">Total Earned</div>
-                  <div className="font-mono">{Number(paymentModal.staffPayroll.total_calculated_payroll).toLocaleString()} EGP</div>
+                  <div className="font-mono">{formatEGP(Number(paymentModal.staffPayroll.total_calculated_payroll))} EGP</div>
                 </div>
                 <div>
                   <div className="text-[10px] uppercase opacity-50 mb-1 tracking-widest">Remaining Balance</div>
-                  <div className="font-mono text-wa-green font-bold">{Number(paymentModal.staffPayroll.remaining_balance).toLocaleString()} EGP</div>
+                  <div className="font-mono text-wa-green font-bold">{formatEGP(Number(paymentModal.staffPayroll.remaining_balance))} EGP</div>
                 </div>
               </div>
 

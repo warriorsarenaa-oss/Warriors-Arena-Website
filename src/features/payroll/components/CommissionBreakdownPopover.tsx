@@ -11,6 +11,7 @@ interface CommissionItem {
   booking_code: string;
   game_name: string;
   commission_amount: number;
+  commission_source: string;
   booking_date: string;
   start_time: string;
 }
@@ -161,6 +162,7 @@ export function CommissionBreakdownPopover({
                       <th className="pb-2 pr-2">Time</th>
                       <th className="pb-2 pr-2">Game</th>
                       <th className="pb-2 pr-2">Ref</th>
+                      <th className="pb-2 pr-2">Source</th>
                       <th className="pb-2 text-right">Amount</th>
                     </tr>
                   </thead>
@@ -185,6 +187,15 @@ export function CommissionBreakdownPopover({
                         </td>
                         <td className="py-2 pr-2 text-wa-green/80 font-bold text-[10px] whitespace-nowrap">
                           {item.booking_code || "—"}
+                        </td>
+                        <td className="py-2 pr-2 whitespace-nowrap">
+                          {item.commission_source === "retroactive" ? (
+                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-wa-orange/20 text-wa-orange border border-wa-orange/30">Retro</span>
+                          ) : item.commission_source === "manual" ? (
+                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-400/30">Manual</span>
+                          ) : (
+                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-wa-green/15 text-wa-green border border-wa-green/30">Live</span>
+                          )}
                         </td>
                         <td className="py-2 text-right text-wa-green font-bold whitespace-nowrap">
                           {formatEGP(item.commission_amount)} EGP

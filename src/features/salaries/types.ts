@@ -12,6 +12,7 @@ export type SalaryCardData = {
   totalPaid: number;
   totalCalculated: number;
   totalHoursPay: number;
+  totalHours: number;
   totalCommission: number;
   totalMissions: number;
   lastPaymentDate: string | null;

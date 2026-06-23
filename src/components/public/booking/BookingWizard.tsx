@@ -10,6 +10,7 @@ import { Step2Configure } from "./Step2Configure";
 import { StepMission, SpecialMission } from "./StepMission";
 import { Step3Date } from "./Step3Date";
 import { Step5Customer } from "./Step5Customer";
+import { Step6Summary } from "./Step6Summary";
 import { SuccessScreen } from "./SuccessScreen";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
@@ -19,7 +20,7 @@ import { useBooking } from "@/contexts/BookingContext";
 // ---------------------------------------------------------------------------
 // Step name type — the canonical identifier for each wizard step
 // ---------------------------------------------------------------------------
-type StepName = 'game' | 'configure' | 'date' | 'mission' | 'customer';
+type StepName = 'game' | 'configure' | 'date' | 'mission' | 'customer' | 'summary';
 
 interface BookingWizardProps {
   onSuccess?: () => void;
@@ -54,6 +55,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
     'date',
     ...(hasMissions ? ['mission' as const] : []),
     'customer',
+    'summary',
   ], [isGamePreselected, hasMissions]);
 
   const totalSteps = steps.length;
@@ -168,6 +170,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
       case 'date':      return !!draft.date && !!draft.start_time;
       case 'mission':   return true; // optional selection
       case 'customer':  return isStep5Valid;
+      case 'summary':   return true;
       default:          return false;
     }
   }, [currentStepName, draft, isStep5Valid]);
@@ -287,6 +290,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
     date:      { title: t('Step3.title'),       description: t('Step4.description') },
     mission:   { title: t('StepMission.title'), description: t('StepMission.description') },
     customer:  { title: t('Step5.title'),       description: t('Step5.description') },
+    summary:   { title: t('Step6.title'),       description: t('Step6.description') },
   };
 
   // ---------------------------------------------------------------------------
@@ -331,7 +335,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
 
   return (
     // Fills the height given by BookingModal; flex-col so wizard + footer stack
-    <div className="flex flex-col flex-1 min-h-0 pt-8 md:pt-10">
+    <div className="flex flex-col flex-1 min-h-0 pt-3 md:pt-10">
 
       {/* Wizard area */}
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-12 items-start flex-1 min-h-0 px-0 lg:px-6 lg:py-6">
@@ -346,7 +350,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
             onBack={() => goToStep(draft.currentStep - 1)}
             onNext={() => goToStep(draft.currentStep + 1)}
             isNextDisabled={!isStepValid || isNavigating}
-            showNext={true}
+            showNext={currentStepName !== 'summary'}
             isSubmitting={isSubmitting || isNavigating}
             formId={currentStepName === 'customer' ? 'booking-form' : undefined}
             nextLabel={currentStepName === 'customer' ? t('confirm') : undefined}
@@ -358,6 +362,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
                 onSelect={(game) => {
                   setSelectedGame(game);
                   updateDraft({ game_id: game.id, duration_minutes: 30 });
+                  setTimeout(() => goToStep(draft.currentStep + 1), 200);
                 }}
               />
             )}
@@ -409,12 +414,30 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
                       currency: 'EGP',
                     });
                   }
-                  // Save customer data to draft, then submit directly — no summary step needed
                   updateDraft({ ...data });
-                  handleFinalSubmit(data);
+                  goToStep(draft.currentStep + 1);
                 }}
                 onValidationChange={setIsStep5Valid}
                 isSubmitting={isSubmitting}
+              />
+            )}
+
+            {currentStepName === 'summary' && (
+              <Step6Summary
+                bookingData={draft}
+                gameName={displayGameName || selectedGame?.name_en || ''}
+                missionName={selectedMission
+                  ? (locale === 'ar' ? selectedMission.name_ar : selectedMission.name_en)
+                  : null}
+                totalAmount={
+                  Math.round(
+                    ((currentPricePerPlayer + (draft.mission_additional_price || 0)) *
+                     (draft.player_count || 0)) * 100
+                  ) / 100
+                }
+                onSubmit={() => handleFinalSubmit(draft)}
+                isSubmitting={isSubmitting}
+                locale={locale as 'en' | 'ar'}
               />
             )}
           </WizardShell>

@@ -66,7 +66,7 @@ export function SalaryCard({ data }: { data: SalaryCardData }) {
       <div className="space-y-2 mt-1">
         <div className="flex justify-between text-xs border-b border-wa-green/5 pb-2">
           <span className="opacity-50 uppercase tracking-widest text-[10px]">
-            Hours Pay
+            Hours Pay ({data.totalHours}h)
           </span>
           <span className="font-mono">{formatEGP(data.totalHoursPay)} EGP</span>
         </div>
@@ -92,7 +92,7 @@ export function SalaryCard({ data }: { data: SalaryCardData }) {
             {formatEGP(data.totalPaid)} EGP
           </span>
         </div>
-        {data.status === "partial" && remaining > 0.01 && (
+        {remaining > 0.01 && (
           <div className="flex justify-between text-xs pt-1">
             <span className="opacity-50 uppercase tracking-widest text-[10px] text-wa-orange">
               Remaining

@@ -23,6 +23,7 @@ type PayrollRecordRow = {
   staff_id: string;
   week_start: string;
   hours_pay: number | null;
+  total_hours: number | null;
   games_count: number | null;
   commission_pay: number | null;
   total_calculated_payroll: number | null;
@@ -50,6 +51,7 @@ export const GET = requirePermission(async (request: Request) => {
         staff_id,
         week_start,
         hours_pay,
+        total_hours,
         games_count,
         commission_pay,
         total_calculated_payroll,
@@ -87,6 +89,7 @@ export const GET = requirePermission(async (request: Request) => {
           totalPaid: 0,
           totalCalculated: 0,
           totalHoursPay: 0,
+          totalHours: 0,
           totalCommission: 0,
           totalMissions: 0,
           lastPaymentDate: null,
@@ -97,6 +100,7 @@ export const GET = requirePermission(async (request: Request) => {
 
       const g = grouped.get(staff_id)!;
       g.totalHoursPay = roundEGP(g.totalHoursPay + Number(record.hours_pay ?? 0));
+      g.totalHours += Number(record.total_hours ?? 0);
       g.totalCommission = roundEGP(g.totalCommission + Number(record.commission_pay ?? 0));
       g.totalMissions += Number(record.games_count ?? 0);
       g.totalCalculated = roundEGP(g.totalCalculated + Number(record.total_calculated_payroll ?? 0));

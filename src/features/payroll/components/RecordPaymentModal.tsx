@@ -18,7 +18,6 @@ export function RecordPaymentModal({ staffPayroll, onClose, onSuccess }: Props) 
   const [modalState, setModalState] = useState<ModalState>("enter_amount");
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
-  const [remainingAction, setRemainingAction] = useState<"keep" | "forgive" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,31 +35,23 @@ export function RecordPaymentModal({ staffPayroll, onClose, onSuccess }: Props) 
       return;
     }
     if (diff < -0.01) {
-      setRemainingAction(null);
       setModalState("underpayment");
     } else if (diff > 0.01) {
-      setNotes(`Overpayment of ${formatEGP(overage)} EGP recorded`);
+      if (!notes.trim()) setNotes(`Overpayment of ${formatEGP(overage)} EGP recorded`);
       setModalState("overpayment");
     } else {
       setModalState("exact");
     }
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = async (action: "keep" | "forgive" | "credit") => {
     setIsSubmitting(true);
     setError(null);
 
-    let remaining_action: "keep" | "forgive" | "credit" = "keep";
-    if (modalState === "underpayment" && remainingAction === "forgive") {
-      remaining_action = "forgive";
-    } else if (modalState === "overpayment") {
-      remaining_action = "credit";
-    }
-
     const defaultNotes =
-      remaining_action === "forgive"
+      action === "forgive"
         ? `Shortfall of ${formatEGP(shortfall)} EGP written off`
-        : remaining_action === "credit"
+        : action === "credit"
         ? `Overpayment of ${formatEGP(overage)} EGP recorded`
         : "Weekly payroll payment";
 
@@ -73,7 +64,7 @@ export function RecordPaymentModal({ staffPayroll, onClose, onSuccess }: Props) 
           amount_paid: entered,
           payment_method: "cash",
           notes: notes.trim() || defaultNotes,
-          remaining_action,
+          remaining_action: action,
         }),
       });
 
@@ -198,68 +189,45 @@ export function RecordPaymentModal({ staffPayroll, onClose, onSuccess }: Props) 
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <div className="text-[10px] uppercase tracking-widest opacity-50 font-bold">
-                Remaining {formatEGP(shortfall)} EGP — what should happen?
-              </div>
-
-              <label className="flex items-start gap-3 p-4 border border-wa-text/10 rounded-xl cursor-pointer hover:border-wa-green/30 transition-colors">
-                <input
-                  type="radio"
-                  name="remaining_action"
-                  checked={remainingAction === "keep"}
-                  onChange={() => setRemainingAction("keep")}
-                  className="mt-0.5 accent-[#39FF14]"
-                />
-                <div>
-                  <div className="font-bold text-sm uppercase tracking-wider">Keep in balance</div>
-                  <div className="text-[11px] opacity-50 mt-0.5">
-                    Deduct from next payment — {formatEGP(shortfall)} EGP remains owing
-                  </div>
-                </div>
-              </label>
-
-              <label className="flex items-start gap-3 p-4 border border-wa-text/10 rounded-xl cursor-pointer hover:border-wa-orange/30 transition-colors">
-                <input
-                  type="radio"
-                  name="remaining_action"
-                  checked={remainingAction === "forgive"}
-                  onChange={() => setRemainingAction("forgive")}
-                  className="mt-0.5 accent-[#FF8C00]"
-                />
-                <div>
-                  <div className="font-bold text-sm uppercase tracking-wider text-wa-orange">
-                    Write off
-                  </div>
-                  <div className="text-[11px] opacity-50 mt-0.5">
-                    Forgive the remaining {formatEGP(shortfall)} EGP — mark week as settled
-                  </div>
-                </div>
-              </label>
+            <div className="text-[10px] uppercase tracking-widest opacity-50 font-bold">
+              Remaining {formatEGP(shortfall)} EGP — what should happen?
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-3">
+              <WAButton
+                type="button"
+                onClick={() => handleConfirm("keep")}
+                disabled={isSubmitting}
+                className="w-full bg-wa-green text-black font-bold flex flex-col items-start gap-0.5 px-5 py-4 h-auto"
+              >
+                <span className="text-sm uppercase tracking-wider">Keep in balance</span>
+                <span className="text-[11px] opacity-70 font-normal normal-case">
+                  {formatEGP(shortfall)} EGP remains owing — deduct from next payment
+                </span>
+              </WAButton>
               <WAButton
                 type="button"
                 variant="ghost"
-                onClick={() => setModalState("enter_amount")}
-                className="flex-1 border-wa-text/20 flex items-center justify-center gap-2"
+                onClick={() => handleConfirm("forgive")}
+                disabled={isSubmitting}
+                className="w-full border-wa-orange/30 text-wa-orange flex flex-col items-start gap-0.5 px-5 py-4 h-auto"
               >
-                <ArrowLeft className="w-4 h-4" /> BACK
-              </WAButton>
-              <WAButton
-                type="button"
-                onClick={handleConfirm}
-                disabled={remainingAction === null || isSubmitting}
-                className="flex-1 bg-wa-green text-black font-bold disabled:opacity-30"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                ) : (
-                  "CONFIRM PAYMENT"
-                )}
+                <span className="text-sm uppercase tracking-wider">Write off</span>
+                <span className="text-[11px] opacity-70 font-normal normal-case">
+                  Forgive the remaining {formatEGP(shortfall)} EGP — mark week as settled
+                </span>
               </WAButton>
             </div>
+
+            <WAButton
+              type="button"
+              variant="ghost"
+              onClick={() => setModalState("enter_amount")}
+              disabled={isSubmitting}
+              className="border-wa-text/20 flex items-center justify-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" /> BACK
+            </WAButton>
           </div>
         )}
 
@@ -288,7 +256,7 @@ export function RecordPaymentModal({ staffPayroll, onClose, onSuccess }: Props) 
               </WAButton>
               <WAButton
                 type="button"
-                onClick={handleConfirm}
+                onClick={() => handleConfirm("keep")}
                 disabled={isSubmitting}
                 className="flex-1 bg-wa-green text-black font-bold"
               >
@@ -347,7 +315,7 @@ export function RecordPaymentModal({ staffPayroll, onClose, onSuccess }: Props) 
               </WAButton>
               <WAButton
                 type="button"
-                onClick={handleConfirm}
+                onClick={() => handleConfirm("credit")}
                 disabled={isSubmitting}
                 className="flex-1 bg-wa-green text-black font-bold"
               >

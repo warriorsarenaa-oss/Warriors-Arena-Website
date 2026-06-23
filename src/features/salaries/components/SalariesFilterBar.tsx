@@ -1,15 +1,18 @@
 "use client";
 
 import {
-  format,
   startOfWeek,
   endOfWeek,
   startOfMonth,
   endOfMonth,
   subMonths,
+  subWeeks,
 } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 
-type QuickFilter = "this_week" | "this_month" | "last_month";
+type QuickFilter = "this_week" | "last_week" | "this_month" | "last_month" | "all_time";
+
+const CAIRO_TZ = "Africa/Cairo";
 
 interface Props {
   fromDate: string;
@@ -20,29 +23,47 @@ interface Props {
 function computeRange(filter: QuickFilter): { from: string; to: string } {
   const now = new Date();
   if (filter === "this_week") {
+    const sun = startOfWeek(now, { weekStartsOn: 0 });
+    const sat = endOfWeek(now, { weekStartsOn: 0 });
     return {
-      from: format(startOfWeek(now, { weekStartsOn: 0 }), "yyyy-MM-dd"),
-      to: format(endOfWeek(now, { weekStartsOn: 0 }), "yyyy-MM-dd"),
+      from: formatInTimeZone(sun, CAIRO_TZ, "yyyy-MM-dd"),
+      to: formatInTimeZone(sat, CAIRO_TZ, "yyyy-MM-dd"),
+    };
+  }
+  if (filter === "last_week") {
+    const sun = startOfWeek(subWeeks(now, 1), { weekStartsOn: 0 });
+    const sat = endOfWeek(subWeeks(now, 1), { weekStartsOn: 0 });
+    return {
+      from: formatInTimeZone(sun, CAIRO_TZ, "yyyy-MM-dd"),
+      to: formatInTimeZone(sat, CAIRO_TZ, "yyyy-MM-dd"),
     };
   }
   if (filter === "this_month") {
     return {
-      from: format(startOfMonth(now), "yyyy-MM-dd"),
-      to: format(endOfMonth(now), "yyyy-MM-dd"),
+      from: formatInTimeZone(startOfMonth(now), CAIRO_TZ, "yyyy-MM-dd"),
+      to: formatInTimeZone(endOfMonth(now), CAIRO_TZ, "yyyy-MM-dd"),
     };
   }
-  // last_month
-  const lastMonth = subMonths(now, 1);
+  if (filter === "last_month") {
+    const lm = subMonths(now, 1);
+    return {
+      from: formatInTimeZone(startOfMonth(lm), CAIRO_TZ, "yyyy-MM-dd"),
+      to: formatInTimeZone(endOfMonth(lm), CAIRO_TZ, "yyyy-MM-dd"),
+    };
+  }
+  // all_time — from project epoch through today Cairo
   return {
-    from: format(startOfMonth(lastMonth), "yyyy-MM-dd"),
-    to: format(endOfMonth(lastMonth), "yyyy-MM-dd"),
+    from: "2024-01-01",
+    to: formatInTimeZone(now, CAIRO_TZ, "yyyy-MM-dd"),
   };
 }
 
 const FILTERS: { key: QuickFilter; label: string }[] = [
   { key: "this_week", label: "This Week" },
+  { key: "last_week", label: "Last Week" },
   { key: "this_month", label: "This Month" },
   { key: "last_month", label: "Last Month" },
+  { key: "all_time", label: "All Time" },
 ];
 
 export function SalariesFilterBar({ fromDate, toDate, onSelect }: Props) {

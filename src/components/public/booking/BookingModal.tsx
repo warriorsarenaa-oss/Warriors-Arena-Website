@@ -14,7 +14,7 @@ export default function BookingModal({ isOpen, onClose, children }: BookingModal
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 pt-10 md:p-6 pb-0 md:pb-6">
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}

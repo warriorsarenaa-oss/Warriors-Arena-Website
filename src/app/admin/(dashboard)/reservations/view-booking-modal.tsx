@@ -419,7 +419,7 @@ export function ViewBookingModal({ booking, onClose, onUpdate }: ViewBookingModa
                           })}
                         </div>
                         {selectedStaffIds.length === 0 && (
-                          <p className="text-[9px] text-wa-text/30 font-mono italic">No assignment → commission auto-split between all on-shift staff.</p>
+                          <p className="text-[9px] text-wa-text/30 font-mono italic">No staff selected → commission will be recorded for all on-shift staff independently. Each staff member receives their full commission amount.</p>
                         )}
                       </div>
                     ) : (

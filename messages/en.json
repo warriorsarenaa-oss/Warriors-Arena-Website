@@ -140,6 +140,10 @@
       "cancelPolicy": "CANCELLATION PROTOCOLS",
       "submitting": "UPLOADING INTEL..."
     },
+    "Step6": {
+      "title": "MISSION DEBRIEF",
+      "description": "Review your mission before locking in."
+    },
     "Summary": {
       "title": "TACTICAL SUMMARY",
       "game": "Game",

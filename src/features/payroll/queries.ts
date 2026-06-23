@@ -5,6 +5,7 @@ export interface CommissionBreakdownItem {
   booking_code: string;
   game_name: string;
   commission_amount: number;
+  commission_source: string;
   booking_date: string;
   start_time: string;
 }
@@ -31,6 +32,7 @@ export async function getCommissionBreakdown(
       booking_code,
       game_name,
       commission_amount,
+      commission_source,
       game_completed_at,
       bookings!booking_id (
         booking_date,
@@ -52,6 +54,7 @@ export async function getCommissionBreakdown(
       booking_code: log.booking_code ?? "—",
       game_name: log.game_name ?? "Game",
       commission_amount: Number(log.commission_amount ?? 0),
+      commission_source: (log as any).commission_source ?? "realtime",
       booking_date: booking?.booking_date ?? "",
       start_time: booking?.start_time ?? "",
     };

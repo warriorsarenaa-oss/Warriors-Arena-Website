@@ -6,6 +6,7 @@ import { DollarSign, TrendingUp, TrendingDown, Plus, X, Trash2, Loader2, AlertCi
 import Link from "next/link";
 import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
+import { formatEGP } from "@/lib/utils/format";
 import { SalaryCard } from "@/features/salaries/components/SalaryCard";
 import { SalariesFilterBar } from "@/features/salaries/components/SalariesFilterBar";
 import type { SalaryCardData } from "@/features/salaries/types";
@@ -228,7 +229,7 @@ export default function FinancialsPage() {
                    />
                    <div className="text-right shrink-0">
                      <div className="text-[10px] uppercase opacity-40 font-bold">Total Paid</div>
-                     <div className="text-lg font-bold font-mono text-wa-green">{totalPayroll.toLocaleString()} EGP</div>
+                     <div className="text-lg font-bold font-mono text-wa-green">{formatEGP(totalPayroll)} EGP</div>
                    </div>
                  </div>
                </div>
