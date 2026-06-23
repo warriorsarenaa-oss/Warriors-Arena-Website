@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/auth/permission-middleware";
 import { supabaseService } from "@/lib/db/supabase-service";
 import { logAuditAction } from "@/lib/admin/audit-log";
+import { roundEGP } from "@/lib/utils/format";
 
 export const POST = requirePermission(async (request: Request, { user, params }) => {
   const { id } = await params;
 
   try {
     const body = await request.json();
-    const { final_amount_paid, payment_method, lead_staff_id, discount_amount, discount_type, discount_value } = body;
+    const { final_amount_paid, payment_method, lead_staff_ids, discount_amount, discount_type, discount_value } = body;
 
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     let booking = null;
@@ -66,11 +67,18 @@ export const POST = requirePermission(async (request: Request, { user, params })
     try {
       const bookingDate = updated.booking_date;
       const bookingTime = updated.start_time;
+      const fullRevenue = Number(updated.final_amount_paid || 0);
 
-      // Determine target staff: either lead provided or auto-detect from shift
-      let targetStaffIds = (lead_staff_id && lead_staff_id !== "") ? [lead_staff_id] : [];
+      // Explicit multi-staff selection: each selected staff gets FULL commission (not split)
+      const explicitStaffIds = Array.isArray(lead_staff_ids)
+        ? lead_staff_ids.filter(Boolean)
+        : [];
+      const isManualAssignment = explicitStaffIds.length > 0;
 
-      if (targetStaffIds.length === 0) {
+      let targetStaffIds: string[] = explicitStaffIds;
+
+      if (!isManualAssignment) {
+        // Auto-detect: find all staff whose shift covers this booking's start_time
         const { data: shiftsOnDate } = await supabaseService
           .from('staff_shifts')
           .select('staff_id, start_time, end_time')
@@ -82,18 +90,16 @@ export const POST = requirePermission(async (request: Request, { user, params })
             .filter(s => {
               const sStart = s.start_time?.slice(0, 5);
               const sEnd = s.end_time?.slice(0, 5);
-              return sStart <= normalizedBookingTime && sEnd > normalizedBookingTime;
+              return sStart && sEnd && sStart <= normalizedBookingTime && sEnd > normalizedBookingTime;
             })
             .map(s => s.staff_id);
         }
       }
 
       if (targetStaffIds.length > 0) {
-        // Split revenue equally between all active staff
-        const splitRevenue = (updated.final_amount_paid || 0) / targetStaffIds.length;
-
+        // Every staff member — whether auto-detected or manually selected — receives
+        // commission on the FULL booking revenue independently (no split between workers)
         for (const staffId of targetStaffIds) {
-          // Fetch current commission rate for accurate historical logging
           const { data: staffUser } = await supabaseService
             .from('users')
             .select('commission_rate')
@@ -101,7 +107,7 @@ export const POST = requirePermission(async (request: Request, { user, params })
             .single();
 
           const rate = staffUser?.commission_rate || 0;
-          const commissionAmount = (splitRevenue * rate) / 100;
+          const commissionAmount = roundEGP((fullRevenue * rate) / 100);
 
           const { data: activeShift } = await supabaseService
             .from('staff_shifts')
@@ -111,11 +117,13 @@ export const POST = requirePermission(async (request: Request, { user, params })
             .maybeSingle();
 
           if (activeShift) {
-            // Guard: skip insert if a log already exists for this booking (prevents duplicates on re-complete)
+            // Guard: per (booking_id, shift_id) — prevents duplicates on re-complete and
+            // correctly handles multiple staff receiving separate commission records
             const { data: existingLog } = await supabaseService
               .from('shift_game_log')
               .select('id')
               .eq('booking_id', booking.id)
+              .eq('shift_id', activeShift.id)
               .maybeSingle();
 
             if (!existingLog) {
@@ -125,11 +133,12 @@ export const POST = requirePermission(async (request: Request, { user, params })
                 booking_code: booking.booking_code,
                 game_name: updated.game_name || 'Game',
                 game_completed_at: new Date().toISOString(),
-                game_revenue: splitRevenue,
+                game_revenue: fullRevenue,
                 commission_amount: commissionAmount,
+                commission_source: isManualAssignment ? 'manual' : 'realtime',
               });
             } else {
-              console.log(`[SHIFT_LOG] Entry already exists for booking ${booking.booking_code} — skipping duplicate.`);
+              console.log(`[SHIFT_LOG] Entry already exists for booking ${booking.booking_code} / shift ${activeShift.id} — skipping duplicate.`);
             }
           }
         }

@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Calendar, User as UserIcon, CheckCircle2, Al
 import { WAPanel } from "@/components/UI/WAPanel";
 import { WAButton } from "@/components/UI/WAButton";
 import { format, startOfWeek, addDays } from "date-fns";
+import { formatEGP } from "@/lib/utils/format";
 
 export default function PayrollPage() {
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
@@ -25,7 +26,11 @@ export default function PayrollPage() {
     try {
       const weekStartStr = format(currentWeek, "yyyy-MM-dd");
       const weekEndStr = format(addDays(currentWeek, 6), "yyyy-MM-dd");
-      const res = await fetch(`/api/v1/admin/staff/payroll?week_start=${weekStartStr}&week_end=${weekEndStr}`);
+      const res = await fetch('/api/v1/admin/staff/payroll/recalculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ week_start: weekStartStr, week_end: weekEndStr }),
+      });
       const data = await res.json();
       if (!res.ok) {
         console.error('[PAYROLL_FETCH_ERROR]', data);
@@ -125,12 +130,12 @@ export default function PayrollPage() {
           {totalAlreadyPaid > 0 && (
             <div>
               <div className="text-[10px] uppercase tracking-widest opacity-40 mb-0.5">Total Paid This Week</div>
-              <div className="text-lg font-mono font-bold text-wa-text/50">{totalAlreadyPaid.toLocaleString()} EGP</div>
+              <div className="text-lg font-mono font-bold text-wa-text/50">{formatEGP(totalAlreadyPaid)} EGP</div>
             </div>
           )}
           <div>
             <div className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Outstanding Liability</div>
-            <div className="text-3xl font-mono font-bold text-wa-green">{totalOutstanding.toLocaleString()} EGP</div>
+            <div className="text-3xl font-mono font-bold text-wa-green">{formatEGP(totalOutstanding)} EGP</div>
           </div>
         </div>
       </div>
@@ -176,7 +181,7 @@ export default function PayrollPage() {
                 
                 {isOverpaid && (
                   <div className="absolute -top-3 left-6 bg-red-500/20 border border-red-500/50 text-red-400 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full backdrop-blur-md">
-                    OVERPAID BY {Math.abs(remainingBalance)} EGP
+                    OVERPAID BY {formatEGP(Math.abs(remainingBalance))} EGP
                   </div>
                 )}
 
@@ -205,26 +210,26 @@ export default function PayrollPage() {
                     <span className="font-mono font-bold text-wa-green">
                       {p.total_hours}h <span className="text-wa-text/30 text-[10px]">@ {p.staff.hourly_rate}/h</span>
                     </span>
-                    <span className="font-bold text-sm">{Number(p.hours_pay).toLocaleString()} EGP</span>
+                    <span className="font-bold text-sm">{formatEGP(Number(p.hours_pay))} EGP</span>
                   </div>
                   <div className="flex flex-col border-l border-wa-text/5 pl-4">
                     <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Commission</span>
                     <span className="font-mono font-bold text-wa-green">
                       {p.games_count} games
                     </span>
-                    <span className="font-bold text-sm">{Number(p.commission_pay).toLocaleString()} EGP</span>
+                    <span className="font-bold text-sm">{formatEGP(Number(p.commission_pay))} EGP</span>
                   </div>
                   <div className="flex flex-col border-l border-wa-text/5 pl-4">
                     <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Total Earned</span>
-                    <span className="text-xl font-mono font-bold text-wa-text">{totalEarned.toLocaleString()} EGP</span>
+                    <span className="text-xl font-mono font-bold text-wa-text">{formatEGP(totalEarned)} EGP</span>
                     {alreadyPaid > 0 && (
-                      <span className="text-[10px] text-wa-text/40 font-mono">— {alreadyPaid} paid</span>
+                      <span className="text-[10px] text-wa-text/40 font-mono">— {formatEGP(alreadyPaid)} paid</span>
                     )}
                   </div>
                   <div className="flex flex-col border-l border-wa-text/5 pl-4">
                     <span className="text-[10px] uppercase tracking-widest opacity-40 mb-1">Due Now</span>
                     <span className={`text-xl font-mono font-bold ${isFullyPaid ? 'text-wa-green/40' : (isOverpaid ? 'text-red-400' : 'text-wa-green')}`}>
-                      {remainingBalance > 0 ? remainingBalance.toLocaleString() : '0'} EGP
+                      {remainingBalance > 0 ? formatEGP(remainingBalance) : '0.00'} EGP
                     </span>
                   </div>
                 </div>
@@ -238,7 +243,7 @@ export default function PayrollPage() {
                   ) : (
                     <WAButton
                       type="button"
-                      onClick={() => setPaymentModal({ isOpen: true, staffPayroll: p, amount: remainingBalance > 0 ? String(remainingBalance) : '', notes: '' })}
+                      onClick={() => setPaymentModal({ isOpen: true, staffPayroll: p, amount: remainingBalance > 0 ? formatEGP(remainingBalance) : '', notes: '' })}
                       disabled={isProcessing === p.staff.id}
                       className="bg-wa-green text-wa-bg font-bold flex items-center gap-2 group-hover:scale-105 transition-all"
                     >

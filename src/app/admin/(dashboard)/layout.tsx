@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { getUserPermissions } from "@/lib/auth/permissions";
 import { AdminLayoutShell } from "../components/AdminLayoutShell";
+import { supabaseService } from "@/lib/db/supabase-service";
 
 export default async function AdminLayout({
   children,
@@ -31,13 +32,7 @@ export default async function AdminLayout({
   }
 
   // Double-check must_change_password via direct query because session might not have it
-  const { createClient } = await import('@supabase/supabase-js');
-  const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-  
-  const { data: profile } = await supabase
+  const { data: profile } = await supabaseService
       .from('users')
       .select('must_change_password, full_name')
       .eq('id', user.id)
