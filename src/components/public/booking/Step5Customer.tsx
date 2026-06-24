@@ -17,7 +17,7 @@ const schema = z.object({
   customer_email: z.string().email("Invalid email format").optional().or(z.literal("")),
   customer_notes: z.string().max(500).optional(),
   terms_agreed: z.boolean().refine((val) => val === true, {
-    message: "You must accept the terms",
+    message: "Please accept the cancellation policy to continue",
   }),
 });
 
@@ -65,9 +65,9 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
 
   return (
     // Tighter gaps so all fields + checkbox fit on a single mobile viewport without scrolling
-    <form id="booking-form" onSubmit={handleSubmit(onFormSubmit)} className="flex flex-col gap-4">
+    <form id="booking-form" onSubmit={handleSubmit(onFormSubmit)} className="flex flex-col gap-3 md:gap-4">
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
         {/* 1. Name */}
         <div className="flex flex-col gap-1.5">
           <label
@@ -84,7 +84,7 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
             {...register("customer_name")}
             aria-invalid={!!errors.customer_name}
             aria-describedby={errors.customer_name ? "name-error" : undefined}
-            className={`bg-wa-text/5 border-2 px-3 py-3 text-base text-wa-text outline-none transition-all ${
+            className={`bg-wa-text/5 border-2 px-3 py-2.5 md:py-3 text-base text-wa-text outline-none transition-all ${
               errors.customer_name
                 ? "border-wa-error/50"
                 : "border-wa-text/10 focus:border-wa-green shadow-[inset_0_0_10px_rgba(255,255,255,0.02)]"
@@ -115,7 +115,7 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
             {...register("customer_phone")}
             aria-invalid={!!errors.customer_phone}
             aria-describedby={errors.customer_phone ? "phone-error" : undefined}
-            className={`bg-wa-text/5 border-2 px-3 py-3 text-base text-wa-text outline-none transition-all ${
+            className={`bg-wa-text/5 border-2 px-3 py-2.5 md:py-3 text-base text-wa-text outline-none transition-all ${
               errors.customer_phone
                 ? "border-wa-error/50"
                 : "border-wa-text/10 focus:border-wa-green shadow-[inset_0_0_10px_rgba(255,255,255,0.02)]"
@@ -145,7 +145,7 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
             {...register("customer_email")}
             aria-invalid={!!errors.customer_email}
             aria-describedby={errors.customer_email ? "email-error" : undefined}
-            className={`bg-wa-text/5 border-2 px-3 py-3 text-base text-wa-text outline-none transition-all border-wa-text/10 focus:border-wa-green shadow-[inset_0_0_10px_rgba(255,255,255,0.02)] ${
+            className={`bg-wa-text/5 border-2 px-3 py-2.5 md:py-3 text-base text-wa-text outline-none transition-all border-wa-text/10 focus:border-wa-green shadow-[inset_0_0_10px_rgba(255,255,255,0.02)] ${
               errors.customer_email ? "border-wa-error/50" : ""
             }`}
             placeholder="email@example.com"
@@ -171,14 +171,14 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
             autoComplete="off"
             {...register("customer_notes")}
             rows={2}
-            className="bg-wa-text/5 border-2 border-wa-text/10 px-3 py-3 text-base text-wa-text outline-none focus:border-wa-green transition-all shadow-[inset_0_0_10px_rgba(255,255,255,0.02)] resize-none"
+            className="bg-wa-text/5 border-2 border-wa-text/10 px-3 py-2.5 md:py-3 text-base text-wa-text outline-none focus:border-wa-green transition-all shadow-[inset_0_0_10px_rgba(255,255,255,0.02)] resize-none"
             placeholder={t("notesPlaceholder")}
           />
         </div>
       </div>
 
       {/* 5. Policy checkbox — min-height 44px for WCAG touch target */}
-      <div className="flex flex-col gap-1.5 pt-3 border-t border-wa-gray/20">
+      <div className="flex flex-col gap-1.5 pt-2 md:pt-3 border-t border-wa-gray/20">
         <div className="relative">
           <input
             id="terms_agreed"
@@ -217,7 +217,8 @@ export const Step5Customer: React.FC<Step5CustomerProps> = ({
           </label>
         </div>
         {errors.terms_agreed && (
-          <span id="terms-error" role="alert" className="text-wa-error text-[10px] font-mono uppercase tracking-widest">
+          <span id="terms-error" role="alert" className="text-wa-error text-xs font-mono uppercase tracking-widest flex items-center gap-1">
+            <span aria-hidden="true">⚠</span>
             {errors.terms_agreed.message}
           </span>
         )}

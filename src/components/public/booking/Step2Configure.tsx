@@ -49,9 +49,9 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
   };
 
   return (
-    <div className={`flex flex-col gap-10 ${disabled ? "opacity-50 pointer-events-none" : ""}`}>
+    <div className={`flex flex-col gap-6 md:gap-10 ${disabled ? "opacity-50 pointer-events-none" : ""}`}>
       {/* 1. Duration Selection */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 md:gap-4">
         <label className="flex items-center gap-2 text-wa-text font-archivo text-xl uppercase">
           <Clock className="w-5 h-5 text-wa-green" />
           {t("chooseDuration")}
@@ -68,7 +68,7 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
               >
                 <WAPanel
                   hot={isSelected}
-                  className={`p-6 transition-all duration-200 ${
+                  className={`p-4 md:p-6 transition-all duration-200 ${
                     isSelected ? "bg-wa-green/5 border-wa-green" : "hover:border-wa-text/20"
                   }`}
                   withBrackets={false}
@@ -105,12 +105,12 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
       </div>
 
       {/* 2. Player Count Stepper */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 md:gap-4">
         <label className="flex items-center gap-2 text-wa-text font-archivo text-xl uppercase">
           <Users className="w-5 h-5 text-wa-green" />
           {t("playerCount")}
         </label>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 md:gap-6">
           <button
             onClick={handleDecrement}
             disabled={disabled || playerCount <= 1}
@@ -120,7 +120,7 @@ export const Step2Configure: React.FC<Step2ConfigureProps> = ({
           </button>
           
           <div className="flex flex-col items-center min-w-[60px]">
-            <span className="text-5xl font-archivo text-wa-text leading-none">
+            <span className="text-4xl md:text-5xl font-archivo text-wa-text leading-none">
               {formatNumber(playerCount, locale)}
             </span>
             <span className="text-[10px] text-wa-text/40 font-mono uppercase mt-2">

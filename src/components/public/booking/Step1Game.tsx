@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { formatNumber } from "@/lib/i18n/formatters";
 import { WAPanel } from "@/components/UI/WAPanel";
-import { Loader2, Shield, Sword, Target } from "lucide-react";
+import { Loader2, Crosshair, Droplets, Target } from "lucide-react";
 import { StrategicNotice } from "@/components/UI/StrategicNotice";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -38,6 +38,10 @@ export const Step1Game: React.FC<Step1GameProps> = ({ selectedGameId, onSelect, 
   const [availableGamesIds, setAvailableGamesIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedDescs, setExpandedDescs] = useState<Record<string, boolean>>({});
+
+  const toggleDesc = (gameId: string) =>
+    setExpandedDescs((prev) => ({ ...prev, [gameId]: !prev[gameId] }));
 
   useEffect(() => {
     async function fetchGames() {
@@ -112,7 +116,7 @@ export const Step1Game: React.FC<Step1GameProps> = ({ selectedGameId, onSelect, 
             transition: { staggerChildren: 0.1 }
           }
         }}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        className="grid grid-cols-2 gap-4"
       >
         {games.map((game) => {
           const isSelected = selectedGameId === game.id;
@@ -150,12 +154,12 @@ export const Step1Game: React.FC<Step1GameProps> = ({ selectedGameId, onSelect, 
                   />
                 )}
 
-                <div className="p-6 flex flex-col h-full gap-4 relative z-10">
+                <div className="p-4 md:p-6 flex flex-col h-full gap-3 md:gap-4 relative z-10">
                   <div className="flex justify-between items-start">
                     <div className={`p-3 bg-wa-text/5 border transition-colors ${
                       isSelected ? "border-wa-green text-wa-green" : "border-wa-text/10 text-wa-text/40 group-hover:border-wa-text/20 group-hover:text-wa-text"
                     }`}>
-                      {game.slug.includes("laser") ? <Shield className="w-6 h-6" /> : <Sword className="w-6 h-6" />}
+                      {game.slug.includes("laser") ? <Crosshair className="w-6 h-6" /> : <Droplets className="w-6 h-6" />}
                     </div>
                     {isSelected && (
                       <div className="flex flex-col items-end">
@@ -168,20 +172,29 @@ export const Step1Game: React.FC<Step1GameProps> = ({ selectedGameId, onSelect, 
                   </div>
 
                   <div>
-                    <h3 className={`text-2xl font-archivo uppercase mb-2 transition-colors ${
+                    <h3 className={`text-lg md:text-2xl font-archivo uppercase mb-1 md:mb-2 transition-colors ${
                       isSelected ? "text-wa-green" : "text-wa-text group-hover:text-wa-green/80"
                     }`}>
                       {name}
                     </h3>
-                    <p className="text-wa-text/60 font-barlow text-sm line-clamp-3 leading-relaxed">
+                    <p className={`text-wa-text/60 font-barlow text-xs md:text-sm leading-relaxed ${
+                      expandedDescs[game.id] ? '' : 'hidden md:block md:line-clamp-3'
+                    }`}>
                       {description}
                     </p>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); toggleDesc(game.id); }}
+                      className="md:hidden text-[10px] font-mono text-wa-green/70 hover:text-wa-green uppercase tracking-widest text-start transition-colors"
+                    >
+                      {expandedDescs[game.id] ? 'Less ↑' : 'More ↓'}
+                    </button>
                   </div>
 
-                  <div className="mt-auto pt-4 border-t border-wa-gray/20 flex justify-between items-end">
+                  <div className="mt-auto pt-3 md:pt-4 border-t border-wa-gray/20 flex justify-between items-end">
                     <div className="flex flex-col">
                       <span className="text-[9px] text-wa-text/40 uppercase font-mono tracking-widest">{t("startingAt")}</span>
-                      <span className={`text-xl font-archivo ${isSelected ? "text-wa-green" : "text-wa-text"}`}>
+                      <span className={`text-base md:text-xl font-archivo ${isSelected ? "text-wa-green" : "text-wa-text"}`}>
                         {formatNumber(game.min_price_per_player, locale)} <small className="text-xs">EGP</small>
                       </span>
                     </div>

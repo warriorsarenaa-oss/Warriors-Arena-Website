@@ -101,9 +101,8 @@ export const Hero: React.FC<HeroProps> = ({ locale, hours = "6 PM - 9 PM", cms }
           </motion.div>
 
           {/* 3-line hero headline */}
-          <h1 
-            className={`font-archivo uppercase mt-5 ${isRtl ? "leading-[1.15]" : "leading-[0.88]"}`} 
-            style={{ fontSize: "clamp(40px,10vw,150px)" }}
+          <h1
+            className={`font-archivo uppercase mt-5 text-[clamp(34px,11vw,54px)] md:text-[clamp(40px,10vw,150px)] ${isRtl ? "leading-[1.1] md:leading-[1.15]" : "leading-[0.92] md:leading-[0.88]"}`}
           >
             <motion.span
               className="block text-wa-text"
@@ -141,7 +140,7 @@ export const Hero: React.FC<HeroProps> = ({ locale, hours = "6 PM - 9 PM", cms }
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.75, ease: [0.16, 1, 0.3, 1] }}
           >
-            <WAButton variant="primary" size="lg" type="button" onClick={() => {
+            <WAButton variant="primary" size="lg" type="button" className="w-full sm:w-auto" onClick={() => {
               if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
                 (window as any).fbq("track", "InitiateCheckout", {
                   content_category: "Game Booking",
@@ -191,7 +190,7 @@ export const Hero: React.FC<HeroProps> = ({ locale, hours = "6 PM - 9 PM", cms }
           <img 
             src={getCmsValue('hero_image_url', "https://images.unsplash.com/photo-1552072092-7f9b8d63efcb?auto=format&fit=crop&w=1200")} 
             alt="Arena Tactical" 
-            className="w-full h-auto max-h-[80vh] object-contain rounded-3xl shadow-2xl"
+            className="w-full h-auto max-h-[45dvh] md:max-h-[80vh] object-contain rounded-3xl shadow-2xl"
           />
         </motion.div>
       </motion.div>

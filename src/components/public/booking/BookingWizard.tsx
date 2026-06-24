@@ -43,6 +43,18 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
   const [isStep5Valid, setIsStep5Valid] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
 
+  // Step 3 internal back: ref holds the fn registered by Step3Date on mount.
+  // When step is 'date', back calls this fn instead of goToStep(-1).
+  const step3BackFnRef = useRef<(() => void) | null>(null);
+
+  const handleBack = () => {
+    if (currentStepName === 'date' && step3BackFnRef.current) {
+      step3BackFnRef.current();
+    } else {
+      goToStep(draft.currentStep - 1);
+    }
+  };
+
   // ---------------------------------------------------------------------------
   // Dynamic step array
   // Game pre-selection: skip Step A. Mission conditional: skip Step D if none.
@@ -347,7 +359,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
             totalSteps={totalSteps}
             title={meta.title}
             description={meta.description}
-            onBack={() => goToStep(draft.currentStep - 1)}
+            onBack={handleBack}
             onNext={() => goToStep(draft.currentStep + 1)}
             isNextDisabled={!isStepValid || isNavigating}
             showNext={currentStepName !== 'summary'}
@@ -385,6 +397,8 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onSuccess }) => {
                 onSelectTime={(start_time) => updateDraft({ start_time })}
                 duration={draft.duration_minutes ?? 30}
                 gameId={draft.game_id}
+                onRequestBack={(fn) => { step3BackFnRef.current = fn; }}
+                goToPrevStep={() => goToStep(draft.currentStep - 1)}
               />
             )}
 

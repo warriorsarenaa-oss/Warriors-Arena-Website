@@ -87,8 +87,8 @@ export const Navbar: React.FC = () => {
             {tTrack("trackBooking")}
           </Link>
 
-          {/* Book CTA */}
-          <WAButton variant="primary" size="sm" type="button" onClick={() => {
+          {/* Book CTA — hidden on mobile (hamburger menu has one) */}
+          <WAButton variant="primary" size="sm" type="button" className="hidden md:inline-flex" onClick={() => {
             if (typeof window !== "undefined" && typeof (window as any).fbq === "function") {
               (window as any).fbq("track", "InitiateCheckout", {
                 content_category: "Game Booking",
