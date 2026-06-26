@@ -161,7 +161,7 @@ export const GameShowcase: React.FC<GameShowcaseProps> = ({ games, locale = "en"
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ duration: 0.8 }}
                   src={current.image}
-                  alt={current.name}
+                  alt={`${current.name} at Warriors Arena, Heliopolis Cairo`}
                   className="w-full h-full object-contain p-12 drop-shadow-[0_0_50px_rgba(143,224,74,0.3)]"
                 />
 

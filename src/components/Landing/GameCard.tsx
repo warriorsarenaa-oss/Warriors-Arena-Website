@@ -36,7 +36,7 @@ export const GameCard: React.FC<GameCardProps> = ({
       <div className="relative aspect-video overflow-hidden">
         <Image
           src={image}
-          alt={name}
+          alt={`${name} game at Warriors Arena, Heliopolis Cairo`}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[30%]"

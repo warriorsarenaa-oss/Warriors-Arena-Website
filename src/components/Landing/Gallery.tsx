@@ -50,7 +50,7 @@ export const Gallery: React.FC<{ locale?: string }> = ({ locale = "en" }) => {
             <div key={i} className={`${colSpan} relative overflow-hidden wa-panel-clip border border-wa-line group`}>
               <Image
                 src={src}
-                alt="Arena"
+                alt={i === 0 ? 'Warriors Arena tactical laser tag arena interior — Heliopolis, Cairo' : i === displayImages.length - 1 ? 'Gel blasters gameplay at Warriors Arena, Heliopolis Cairo' : 'Laser tag and gel blasters gameplay at Warriors Arena, Cairo'}
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover transition-all duration-700 hover:scale-105"

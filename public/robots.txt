@@ -1,6 +1,9 @@
 User-agent: *
 Allow: /
+Allow: /en
+Allow: /ar
 Disallow: /admin/
 Disallow: /api/
+Disallow: /_next/
 
 Sitemap: https://warriorsarenabookings.online/sitemap.xml

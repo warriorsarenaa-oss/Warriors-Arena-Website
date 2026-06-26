@@ -14,8 +14,24 @@ import { supabaseAnon } from '@/lib/db/supabase-anon';
 import { unstable_noStore as noStore } from 'next/cache';
 
 export const metadata = {
-  title: 'Warriors Arena — Laser Tag & Gel Blasters · Heliopolis, Cairo',
-  description: "Cairo's tactical arena for laser tag & gel blasters. Exclusive 30-minute slots. Six players max. Book your mission.",
+  title: 'Book Laser Tag & Gel Blasters Online — Warriors Arena Heliopolis, Cairo',
+  description:
+    'Book laser tag and gel blasters online in Heliopolis, Cairo. Real-time availability. Exclusive 30-minute slots for up to 6 players. Safe for all ages.',
+  keywords: [
+    'laser tag Cairo', 'gel blasters Cairo', 'laser tag Heliopolis',
+    'book laser tag online', 'gel blasters booking Cairo',
+  ],
+  openGraph: {
+    title: 'Book Laser Tag & Gel Blasters — Warriors Arena, Heliopolis Cairo',
+    description:
+      'Tactical entertainment in Heliopolis. Real-time booking. Exclusive slots. No phone calls needed.',
+    images: [{
+      url: '/og-image.jpg',
+      width: 1200,
+      height: 630,
+      alt: 'Warriors Arena laser tag and gel blasters arena in Heliopolis, Cairo',
+    }],
+  },
 };
 
 export const dynamic = 'force-dynamic';

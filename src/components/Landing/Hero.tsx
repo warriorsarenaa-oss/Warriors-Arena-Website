@@ -189,7 +189,7 @@ export const Hero: React.FC<HeroProps> = ({ locale, hours = "6 PM - 9 PM", cms }
           {/* Immersive Action Shot */}
           <img 
             src={getCmsValue('hero_image_url', "https://images.unsplash.com/photo-1552072092-7f9b8d63efcb?auto=format&fit=crop&w=1200")} 
-            alt="Arena Tactical" 
+            alt="Warriors Arena laser tag and gel blasters arena in Heliopolis, Cairo"
             className="w-full h-auto max-h-[45dvh] md:max-h-[80vh] object-contain rounded-3xl shadow-2xl"
           />
         </motion.div>

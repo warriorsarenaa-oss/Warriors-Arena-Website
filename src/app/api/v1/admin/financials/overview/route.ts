@@ -52,15 +52,9 @@ export const GET = requirePermission(async (request: Request) => {
     if (bookings) {
       bookings.forEach(b => {
         let moneyCollected = 0;
-        const price = Number(b.total_price_at_booking);
-        const deposit = Number((b as any).deposit_amount || price * 0.25);
-        
+
         if (b.status === 'completed') {
-          moneyCollected = b.final_amount_paid ? Number(b.final_amount_paid) : price;
-        } else if (b.status === 'no_show') {
-          moneyCollected = deposit;
-        } else if (b.status === 'cancelled' && (b as any).deposit_status === 'forfeited') {
-          moneyCollected = deposit;
+          moneyCollected = b.final_amount_paid ? Number(b.final_amount_paid) : Number(b.total_price_at_booking);
         }
 
         if (moneyCollected > 0) {

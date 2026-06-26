@@ -17,28 +17,71 @@ export const viewport = {
   maximumScale: 5.0,
 };
 
-export const metadata: Metadata = {
-  title: 'Warriors Arena | Laser Tag & Gel Blasters · Cairo',
-  description: "Cairo's tactical arena. 30-min exclusive slots. Up to 6 players. Book your mission in Heliopolis.",
-  openGraph: {
-    title: 'Warriors Arena — Book Your Mission',
-    description: "Laser Tag & Gel Blasters in Heliopolis, Cairo. Nightly sessions. 6 players max.",
-    url: 'https://warriorsarenabookings.online',
-    siteName: 'Warriors Arena',
-    images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'Warriors Arena tactical arena' }],
-    locale: 'en_US',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Warriors Arena — Book Your Mission',
-    description: "Laser Tag & Gel Blasters in Heliopolis, Cairo.",
-    images: ['/og-image.jpg'],
-  },
-  icons: {
-    icon: '/logo.jpg',
-  }
-};
+export async function generateMetadata({ params }: RootLayoutProps): Promise<Metadata> {
+  const { locale } = await params;
+  const isAr = locale === 'ar';
+  return {
+    metadataBase: new URL('https://warriorsarenabookings.online'),
+    title: 'Warriors Arena | Laser Tag & Gel Blasters · Heliopolis, Cairo',
+    description:
+      'Book laser tag and gel blasters in Heliopolis, Cairo. Real-time availability. Exclusive 30-minute slots for up to 6 players. Book your mission now.',
+    keywords: [
+      'laser tag Cairo',
+      'gel blasters Cairo',
+      'laser tag Heliopolis',
+      'book laser tag online Cairo',
+      'entertainment Heliopolis',
+      'tactical arena Cairo',
+      'gel blasters Masr El Gedida',
+      'team building Cairo',
+    ],
+    openGraph: {
+      title: 'Warriors Arena — Book Laser Tag & Gel Blasters, Cairo',
+      description: 'Real-time booking. Exclusive 30-min slots. Safe for all ages.',
+      url: 'https://warriorsarenabookings.online',
+      siteName: 'Warriors Arena',
+      images: [{
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Warriors Arena laser tag and gel blasters arena in Heliopolis, Cairo',
+      }],
+      locale: isAr ? 'ar_EG' : 'en_EG',
+      alternateLocale: isAr ? 'en_EG' : 'ar_EG',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Book Laser Tag & Gel Blasters in Heliopolis, Cairo',
+      description: 'Real-time availability. Safe. Thrilling. Book now.',
+      images: ['/og-image.jpg'],
+    },
+    alternates: {
+      canonical: isAr
+        ? 'https://warriorsarenabookings.online/ar'
+        : 'https://warriorsarenabookings.online/en',
+      languages: {
+        en: 'https://warriorsarenabookings.online/en',
+        ar: 'https://warriorsarenabookings.online/ar',
+        'x-default': 'https://warriorsarenabookings.online/en',
+      },
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-snippet': -1,
+        'max-image-preview': 'large',
+        'max-video-preview': -1,
+      },
+    },
+    icons: {
+      icon: '/logo.jpg',
+    },
+  };
+}
 
 interface RootLayoutProps {
   children: ReactNode;
@@ -64,6 +107,43 @@ export default async function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#1aff6e" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'LocalBusiness',
+              name: 'Warriors Arena',
+              image: 'https://warriorsarenabookings.online/og-image.jpg',
+              description:
+                'Laser tag and gel blasters booking arena in Heliopolis, Cairo with real-time online availability.',
+              address: {
+                '@type': 'PostalAddress',
+                streetAddress: 'Merryland Park',
+                addressLocality: 'Heliopolis',
+                addressRegion: 'Cairo',
+                postalCode: '11357',
+                addressCountry: 'EG',
+              },
+              telephone: '+20122655759',
+              url: 'https://warriorsarenabookings.online',
+              openingHoursSpecification: [
+                {
+                  '@type': 'OpeningHoursSpecification',
+                  dayOfWeek: ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+                  opens: '18:00',
+                  closes: '21:00',
+                },
+              ],
+              serviceArea: {
+                '@type': 'City',
+                name: 'Heliopolis, Masr El Gedida, Nasr City, Cairo',
+              },
+              areaServed: 'Cairo, Egypt',
+              priceRange: '$$',
+            }),
+          }}
+        />
         <meta name="apple-mobile-web-app-capable" content="true" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <Script id="meta-pixel" strategy="afterInteractive">
