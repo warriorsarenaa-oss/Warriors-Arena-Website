@@ -54,11 +54,12 @@ export default function WeeklyPlannerPage() {
     fetchData();
   }, [currentWeekStart]);
 
-  const fetchData = async () => {
+  const fetchData = async (preserveEditMode = false) => {
     setLoading(true);
+    const editModeSnapshot = isEditMode;
     try {
       const startStr = format(currentWeekStart, "yyyy-MM-dd");
-      
+
       const staffRes = await fetch("/api/v1/admin/users?role=staff&role=manager");
       const staffData = await staffRes.json();
       setStaffList(Array.isArray(staffData) ? staffData : []);
@@ -80,7 +81,7 @@ export default function WeeklyPlannerPage() {
       toast.error("Failed to load schedule data");
     } finally {
       setLoading(false);
-      setIsEditMode(false);
+      setIsEditMode(preserveEditMode ? editModeSnapshot : false);
     }
   };
 
@@ -122,7 +123,9 @@ export default function WeeklyPlannerPage() {
       });
       if (res.ok) {
         toast.success("Shift added");
-        fetchData();
+        fetchData(true);
+      } else {
+        toast.error("Failed to add shift");
       }
     } catch (error) {
       toast.error("Failed to add shift");
@@ -363,9 +366,10 @@ export default function WeeklyPlannerPage() {
                                       </div>
                                     </div>
                                     <div className="flex gap-1">
-                                      <button 
-                                        onClick={() => {
-                                          addShift(staff.id, day, inlineStart, inlineEnd);
+                                      <button
+                                        type="button"
+                                        onClick={async () => {
+                                          await addShift(staff.id, day, inlineStart, inlineEnd);
                                           setEditingCell(null);
                                         }}
                                         className="flex-1 bg-wa-green text-wa-bg text-[9px] font-bold py-1 rounded"
