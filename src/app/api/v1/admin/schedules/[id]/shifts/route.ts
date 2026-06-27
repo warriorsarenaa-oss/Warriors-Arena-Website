@@ -43,7 +43,10 @@ export const POST = requirePermission(async (request: Request, { user, params })
     p_notes: notes ?? null,
   });
 
-  if (error || !data) return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+  if (error || !data) {
+    console.error('[ShiftAPI] RPC error:', error);
+    return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
+  }
 
   await logAuditAction({
     actor_user_id: user.id,
