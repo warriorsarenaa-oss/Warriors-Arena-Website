@@ -44,7 +44,7 @@ export const POST = requirePermission(async (request: Request, { user, params })
   });
 
   if (error || !data) {
-    console.error('[ShiftAPI] RPC error:', error);
+    console.error('[ShiftAPI] RPC error FULL:', JSON.stringify(error));
     return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
   }
 
