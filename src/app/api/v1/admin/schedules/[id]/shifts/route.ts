@@ -34,6 +34,7 @@ export const POST = requirePermission(async (request: Request, { user, params })
   const isPublished = schedule?.is_published;
 
   // Use the transactional RPC so shift creation + retroactive commission inserts are atomic
+  console.log('[ShiftAPI] Calling RPC with:', JSON.stringify({ p_schedule_id: id, p_staff_id: staff_id, p_shift_date: shift_date, p_start_time: start_time, p_end_time: end_time }));
   const { data, error } = await supabaseService.rpc('insert_shift_with_retroactive_commission', {
     p_schedule_id: id,
     p_staff_id: staff_id,
@@ -44,7 +45,7 @@ export const POST = requirePermission(async (request: Request, { user, params })
   });
 
   if (error || !data) {
-    console.error('[ShiftAPI] RPC error FULL:', JSON.stringify(error));
+    console.error('[ShiftAPI] RPC error FULL:', JSON.stringify(error), 'staff_id received:', staff_id, 'schedule_id:', id);
     return NextResponse.json({ error: "An unexpected error occurred." }, { status: 500 });
   }
 
